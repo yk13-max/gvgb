@@ -31,11 +31,27 @@ the **Balancer** (squad, board, balance readout) and the **Player stats** table.
   (correct any match from the dropdown), header lines and chatter come in pre-skipped, and
   unknown names are created at 60 across the board with the editor walking you through them
   one by one.
-- **WhatsApp text** — a phone-width preview of the teams as chat-ready text (asterisks for
-  bold, one short line per player) with copy to clipboard, plus a native share sheet on devices
-  that have one.
+- **WhatsApp text** — chat-ready text with a live preview, copy to clipboard and a native share
+  sheet where there is one:
+
+  ```
+  📅 Fri 07/08/26 | 🕢 7.30pm | ⚽ Tolworth Pitch 8
+
+  🔴 Team Red/White ⚪
+  Siv, Sank, Bobby, Ali, Ahren, Matt
+
+  🔵 Team Blue/Black ⚫
+  Sam, Senthan, Feranmi, Niro, Umesh R, Karthi
+  ```
+
+  Date, kick-off and pitch are entered in the dialog. The clock emoji follows the kick-off time
+  to the nearest half hour, and any detail left blank drops out of the first line. **Include
+  ratings** is off by default — turn it on to append each player's OVR and a team average and
+  balance line.
 - **Export PNG** — the board drawn to a canvas so the image matches what's on screen. On phones
-  it goes to the share sheet when available, otherwise it downloads.
+  it goes to the share sheet when available, otherwise it downloads. The **PNG ratings** switch
+  in the header controls whether OVR numbers appear next to the names on the exported image; it
+  is on by default.
 
 ### Player stats
 
@@ -55,7 +71,7 @@ top.
 On a phone the table scrolls sideways with the player name column pinned to the left edge, and
 the header, filter and averages rows stay pinned while you scroll.
 
-The roster, format and selection are saved to `localStorage` — there is no backend and no
+The roster, format, selection and the match's kick-off time and pitch are saved to `localStorage` — there is no backend and no
 account. Clearing site data resets to the twelve sample players.
 
 ## Layouts
@@ -86,7 +102,7 @@ src/
   lib/
     model.js        stats model, position-weighted OVR, balancing algorithm, pitch placement
     parseList.js    WhatsApp signup-list parser and fuzzy roster matching
-    whatsapp.js     teams -> chat-ready text
+    whatsapp.js     teams + match details -> chat-ready text
     exportBoard.js  board -> PNG
     storage.js      localStorage persistence
   components/   RosterPanel, PlayerCard, PlayerEditor, Pitch, Metrics, StatsTable,

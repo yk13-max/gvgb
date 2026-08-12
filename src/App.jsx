@@ -15,6 +15,12 @@ import { loadSaved, save } from './lib/storage.js';
 const NARROW = '(max-width:760px)';
 const isNarrow = () => window.matchMedia(NARROW).matches;
 
+function todayISO() {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+}
+
 // Header pill switch — used for the page and for the match format.
 function Segmented({ options, value, onChange, className }) {
   return (
@@ -69,6 +75,14 @@ export default function App() {
   const [teams, setTeams] = useState({ red: [], blue: [] });
   const [pos, setPos] = useState({});
   const [showStats, setShowStats] = useState(false);
+  const [pngRatings, setPngRatings] = useState(true);
+  // Kick-off time and pitch carry over between sessions; the date always starts at today
+  // so last week's fixture can never be pasted by accident.
+  const [match, setMatch] = useState(() => ({
+    date: todayISO(),
+    time: (saved && saved.match && saved.match.time) || '19:30',
+    venue: (saved && saved.match && saved.match.venue) || '',
+  }));
   const [sel, setSel] = useState(null);
   const [draft, setDraft] = useState(null);
   const [seed, setSeed] = useState(0);
@@ -91,8 +105,8 @@ export default function App() {
   const needed = teamSize * 2;
 
   useEffect(() => {
-    save({ players, teamSize, selected });
-  }, [players, teamSize, selected]);
+    save({ players, teamSize, selected, match: { time: match.time, venue: match.venue } });
+  }, [players, teamSize, selected, match.time, match.venue]);
 
   const teamOf = useMemo(() => {
     const m = {};
@@ -299,12 +313,13 @@ export default function App() {
             WhatsApp text
           </Button>
           <Switch checked={showStats} onChange={(e) => setShowStats(e.target.checked)} label="Stat labels" />
+          <Switch checked={pngRatings} onChange={(e) => setPngRatings(e.target.checked)} label="PNG ratings" />
           <Button
             variant="secondary"
             size="sm"
             icon={<Icon name="download" size={15} />}
             disabled={!built}
-            onClick={() => exportBoard(teams, pos)}
+            onClick={() => exportBoard(teams, pos, pngRatings)}
           >
             Export PNG
           </Button>
@@ -474,7 +489,9 @@ export default function App() {
         queueNote={queue.length ? 'New from list · ' + queue.length + ' left' : null}
       />
       {importing && <ImportDialog players={players} onCancel={() => setImporting(false)} onConfirm={applyImport} />}
-      {sharing && <ShareDialog teams={teams} teamSize={teamSize} onClose={() => setSharing(false)} />}
+      {sharing && (
+        <ShareDialog teams={teams} match={match} onMatchChange={setMatch} onClose={() => setSharing(false)} />
+      )}
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { overall } from './model.js';
 import { firstName, initials } from './names.js';
 
 // Board -> PNG, drawn directly so the export matches what's on screen.
-function drawBoard(teams, pos) {
+function drawBoard(teams, pos, showRatings) {
   const W = 760;
   const H = 1118;
   const c = document.createElement('canvas');
@@ -48,7 +48,7 @@ function drawBoard(teams, pos) {
       g.fillText(initials(p.name), x, y + 1);
       g.font = '600 12px Inter,sans-serif';
       g.fillStyle = 'rgba(255,255,255,0.95)';
-      g.fillText(firstName(p.name) + '  ' + overall(p), x, y + 36);
+      g.fillText(showRatings ? firstName(p.name) + '  ' + overall(p) : firstName(p.name), x, y + 36);
     })
   );
   g.textAlign = 'left';
@@ -71,8 +71,8 @@ function download(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export function exportBoard(teams, pos) {
-  const canvas = drawBoard(teams, pos);
+export function exportBoard(teams, pos, showRatings = true) {
+  const canvas = drawBoard(teams, pos, showRatings);
   const filename = 'fufa-teams.png';
   canvas.toBlob((blob) => {
     if (!blob) return;
