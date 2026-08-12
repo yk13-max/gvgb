@@ -6,6 +6,7 @@ import Pitch from './components/Pitch.jsx';
 import PlayerEditor from './components/PlayerEditor.jsx';
 import RosterPanel from './components/RosterPanel.jsx';
 import ShareDialog from './components/ShareDialog.jsx';
+import StatsTable from './components/StatsTable.jsx';
 import { exportBoard } from './lib/exportBoard.js';
 import { DEFAULT_STATS, balance, layout, relax } from './lib/model.js';
 import { samplePlayers } from './lib/samplePlayers.js';
@@ -13,6 +14,50 @@ import { loadSaved, save } from './lib/storage.js';
 
 const NARROW = '(max-width:760px)';
 const isNarrow = () => window.matchMedia(NARROW).matches;
+
+// Header pill switch — used for the page and for the match format.
+function Segmented({ options, value, onChange, className }) {
+  return (
+    <div
+      className={className}
+      style={{
+        display: 'flex',
+        gap: 2,
+        background: 'var(--color-surface-sunken)',
+        borderRadius: 'var(--radius-sm)',
+        padding: 2,
+        flexShrink: 0,
+      }}
+    >
+      {options.map(([v, label]) => {
+        const on = value === v;
+        return (
+          <button
+            key={v}
+            type="button"
+            aria-pressed={on}
+            onClick={() => onChange(v)}
+            style={{
+              cursor: 'pointer',
+              border: 'none',
+              borderRadius: 'var(--radius-xs)',
+              padding: '6px 12px',
+              whiteSpace: 'nowrap',
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-xs)',
+              fontWeight: 'var(--weight-semibold)',
+              background: on ? 'var(--color-surface)' : 'transparent',
+              color: on ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+              boxShadow: on ? 'var(--shadow-sm)' : 'none',
+            }}
+          >
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function App() {
   const saved = useMemo(loadSaved, []);
@@ -32,6 +77,7 @@ export default function App() {
   const [queue, setQueue] = useState([]);
   const [narrow, setNarrow] = useState(isNarrow);
   const [view, setView] = useState('squad');
+  const [page, setPage] = useState('balancer');
 
   useEffect(() => {
     const mq = window.matchMedia(NARROW);
@@ -87,6 +133,13 @@ export default function App() {
     setPlayers((ps) => ps.filter((p) => p.id !== id));
     setSelected((s) => s.filter((x) => x !== id));
     resetBoard();
+  }
+
+  // Inline edits from the stats table. Any change to a rating makes the current
+  // split stale, so the board clears once and stays clear until you re-balance.
+  function patchPlayer(id, patch) {
+    setPlayers((ps) => ps.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+    if (teams.red.length) resetBoard();
   }
 
   function advanceQueue() {
@@ -205,43 +258,28 @@ export default function App() {
             Team balancer
           </span>
         </div>
-        <div
-          className="tb-fmt"
-          style={{
-            display: 'flex',
-            gap: 2,
-            background: 'var(--color-surface-sunken)',
-            borderRadius: 'var(--radius-sm)',
-            padding: 2,
-          }}
-        >
-          {[5, 6].map((n) => (
-            <button
-              key={n}
-              type="button"
-              aria-pressed={teamSize === n}
-              onClick={() => {
-                setTeamSize(n);
-                resetBoard();
-              }}
-              style={{
-                cursor: 'pointer',
-                border: 'none',
-                borderRadius: 'var(--radius-xs)',
-                padding: '6px 12px',
-                fontFamily: 'var(--font-body)',
-                fontSize: 'var(--text-xs)',
-                fontWeight: 'var(--weight-semibold)',
-                background: teamSize === n ? 'var(--color-surface)' : 'transparent',
-                color: teamSize === n ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-                boxShadow: teamSize === n ? 'var(--shadow-sm)' : 'none',
-              }}
-            >
-              {n}-a-side
-            </button>
-          ))}
-        </div>
+        <Segmented
+          className="tb-pageswitch"
+          options={[
+            ['balancer', 'Balancer'],
+            ['stats', 'Player stats'],
+          ]}
+          value={page}
+          onChange={setPage}
+        />
+        {page === 'balancer' && (
+          <Segmented
+            className="tb-fmt"
+            options={[5, 6].map((n) => [n, n + '-a-side'])}
+            value={teamSize}
+            onChange={(n) => {
+              setTeamSize(n);
+              resetBoard();
+            }}
+          />
+        )}
         <div className="tb-spacer" style={{ flex: 1 }} />
+        {page === 'balancer' && (
         <div className="tb-actions">
           <Button
             variant="secondary"
@@ -287,8 +325,19 @@ export default function App() {
             {built ? 'Re-balance' : 'Balance teams'}
           </Button>
         </div>
+        )}
       </header>
 
+      {page === 'stats' ? (
+        <StatsTable
+          players={players}
+          selected={selected}
+          onPatch={patchPlayer}
+          onEdit={(p) => setDraft({ ...p, stats: { ...p.stats }, alt: [...(p.alt || [])] })}
+          onDelete={removePlayer}
+          onAdd={() => setDraft({ name: '', pos: 'Midfielder', alt: [], stats: { ...DEFAULT_STATS } })}
+        />
+      ) : (
       <main className="tb-main" data-view={narrow ? view : 'all'}>
         <section className="tb-pane tb-pane-squad" style={{ minHeight: 0 }}>
           <RosterPanel
@@ -390,6 +439,7 @@ export default function App() {
           <Metrics teams={teams} />
         </aside>
       </main>
+      )}
 
       <nav className="tb-tabs">
         {[
@@ -397,11 +447,23 @@ export default function App() {
           ['board', 'layout-grid', 'Board'],
           ['stats', 'bar-chart-2', 'Balance'],
         ].map(([k, ic, label]) => (
-          <button key={k} type="button" data-on={view === k ? '1' : '0'} onClick={() => setView(k)}>
+          <button
+            key={k}
+            type="button"
+            data-on={page === 'balancer' && view === k ? '1' : '0'}
+            onClick={() => {
+              setPage('balancer');
+              setView(k);
+            }}
+          >
             <Icon name={ic} size={19} />
             <span>{label}</span>
           </button>
         ))}
+        <button type="button" data-on={page === 'stats' ? '1' : '0'} onClick={() => setPage('stats')}>
+          <Icon name="table" size={19} />
+          <span>Table</span>
+        </button>
       </nav>
 
       <PlayerEditor

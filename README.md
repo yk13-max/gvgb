@@ -8,6 +8,11 @@ as a real Vite + React app.
 
 ## What it does
 
+The app has two pages, switched from the header on desktop and the bottom tab bar on a phone:
+the **Balancer** (squad, board, balance readout) and the **Player stats** table.
+
+### Balancer
+
 - **Squad** — a card grid of players with six 0–100 stats each (PAC, SHO, PAS, DEF, PHY, DRI),
   a primary position and any number of "can also play" positions. Add, edit and delete anyone.
   Overall (OVR) is weighted by primary position: a striker's shooting and pace count for more
@@ -32,6 +37,24 @@ as a real Vite + React app.
 - **Export PNG** — the board drawn to a canvas so the image matches what's on screen. On phones
   it goes to the share sheet when available, otherwise it downloads.
 
+### Player stats
+
+The whole roster as one editable table — every player down the side, every rating across the
+top.
+
+- **Edit in place** — name, primary position, the "can also play" chips and all six ratings are
+  editable directly in their cells. OVR recomputes as you type, and the averages row at the
+  bottom follows the rows currently shown. Editing a rating clears the current teams, since the
+  split it produced is no longer the one those ratings give; re-balance to get it back.
+- **Filter any column** — a filter row sits under the headers: substring search on name,
+  dropdowns for primary position, "can also play" and squad status, and a `≥`/`≤` pair on each
+  rating and on OVR. Filters combine, and **Clear filters** resets them.
+- **Sort any column** — click a header to sort ascending, again for descending.
+- The row's pencil opens the same full editor used elsewhere; the bin deletes.
+
+On a phone the table scrolls sideways with the player name column pinned to the left edge, and
+the header, filter and averages rows stay pinned while you scroll.
+
 The roster, format and selection are saved to `localStorage` — there is no backend and no
 account. Clearing site data resets to the twelve sample players.
 
@@ -39,7 +62,8 @@ account. Clearing site data resets to the twelve sample players.
 
 - **Desktop (>1100px)** — three columns: squad, board, balance readout.
 - **Tablet (761–1100px)** — squad and board side by side, balance readout full width below.
-- **Phone (≤760px)** — one pane at a time with a bottom tab bar (Squad / Board / Balance), a
+- **Phone (≤760px)** — one pane at a time with a bottom tab bar (Squad / Board / Balance /
+  Table), a
   sticky header whose action row scrolls horizontally, 44px touch targets, and pins enlarged to
   44px. Balancing jumps you straight to the Board tab.
 
@@ -65,7 +89,8 @@ src/
     whatsapp.js     teams -> chat-ready text
     exportBoard.js  board -> PNG
     storage.js      localStorage persistence
-  components/   RosterPanel, PlayerCard, PlayerEditor, Pitch, Metrics, ImportDialog, ShareDialog
+  components/   RosterPanel, PlayerCard, PlayerEditor, Pitch, Metrics, StatsTable,
+                ImportDialog, ShareDialog
   styles/       design tokens + the shell's responsive layout
   App.jsx       state, balancing, pin drag/swap, view switching
 ```

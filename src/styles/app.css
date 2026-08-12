@@ -112,6 +112,11 @@ a:hover {
     display: none;
   }
 
+  /* The bottom tab bar already switches pages on a phone. */
+  .tb-pageswitch {
+    display: none !important;
+  }
+
   .tb-actions {
     width: 100%;
     flex-wrap: nowrap;
@@ -178,7 +183,7 @@ a:hover {
 
   .tb-tabs {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     background: var(--color-surface);
     border-top: 1px solid var(--color-border);
     flex-shrink: 0;
@@ -213,6 +218,303 @@ a:hover {
   select,
   textarea {
     font-size: 16px !important;
+  }
+}
+
+/* ---- Player stats table ---------------------------------------------------- */
+
+.tb-page-stats {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+
+.tb-tblbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 10px;
+  flex-shrink: 0;
+}
+
+/* The table is the only thing that scrolls — horizontally on narrow screens,
+   vertically within the page. */
+.tb-tblwrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.tb-tbl {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+}
+
+.tb-tbl th,
+.tb-tbl td {
+  padding: 4px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.tb-tbl thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  height: 34px;
+  background: var(--color-surface-sunken);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+/* Second header row sits directly under the first, which is a fixed 34px tall. */
+.tb-tbl thead tr.tb-tbl-filters th {
+  top: 34px;
+  height: 38px;
+  z-index: 3;
+  border-bottom: 1px solid var(--color-border-strong);
+}
+
+/* The name column stays put while the stats scroll sideways. */
+.tb-tbl .tb-col-name {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  min-width: 170px;
+  border-right: 1px solid var(--color-border);
+}
+
+/* Both header rows' name cells must outrank their own row's other cells, which the
+   `.tb-tbl thead tr.tb-tbl-filters th` rule would otherwise tie with and win on order. */
+.tb-tbl thead tr:first-child th.tb-col-name,
+.tb-tbl thead tr.tb-tbl-filters th.tb-col-name {
+  z-index: 5;
+}
+
+.tb-tbl tbody tr:hover td {
+  background: var(--color-surface-sunken);
+}
+
+.tb-col-pos {
+  min-width: 130px;
+}
+
+.tb-col-alt {
+  min-width: 190px;
+}
+
+.tb-col-stat {
+  min-width: 84px;
+}
+
+.tb-col-ovr {
+  min-width: 78px;
+}
+
+/* Beats the `.tb-tbl th, .tb-tbl td` base rule, which is a class + an element. */
+.tb-tbl th.tb-col-stat,
+.tb-tbl td.tb-col-stat,
+.tb-tbl th.tb-col-ovr,
+.tb-tbl td.tb-col-ovr {
+  text-align: right;
+}
+
+/* Averages sit under inputs that carry their own 6px of padding. */
+.tb-tbl tfoot td.tb-col-stat {
+  padding-right: 14px;
+}
+
+.tb-col-squad {
+  min-width: 92px;
+}
+
+.tb-col-act {
+  min-width: 76px;
+}
+
+.tb-sort {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+}
+
+.tb-sort:hover {
+  color: var(--color-text-primary);
+}
+
+/* Editable cells read as text until you focus them. */
+.tb-cellinput {
+  width: 100%;
+  min-width: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-xs);
+  padding: 5px 6px;
+  min-height: 32px;
+}
+
+.tb-cellinput:hover {
+  border-color: var(--color-border);
+}
+
+.tb-cellinput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background: var(--color-surface);
+  box-shadow: var(--focus-ring);
+}
+
+.tb-cellnum {
+  font-family: var(--font-mono);
+  text-align: right;
+}
+
+.tb-filterinput {
+  width: 100%;
+  min-width: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-xs);
+  padding: 5px 6px;
+  min-height: 28px;
+}
+
+.tb-filterinput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
+}
+
+.tb-range {
+  display: flex;
+  gap: 4px;
+}
+
+.tb-range .tb-filterinput {
+  padding: 5px 4px;
+}
+
+.tb-alts {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.tb-altchip {
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: var(--text-2xs);
+  padding: 3px 6px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-tertiary);
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.tb-altchip[data-on='1'] {
+  border-color: var(--color-primary);
+  background: var(--color-primary-subtle);
+  color: var(--green-700);
+  font-weight: var(--weight-semibold);
+}
+
+.tb-ovrcell {
+  font-family: var(--font-mono);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+}
+
+.tb-tbl tfoot td {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background: var(--color-surface-sunken);
+  border-top: 1px solid var(--color-border-strong);
+  border-bottom: none;
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--color-text-tertiary);
+}
+
+.tb-tbl tfoot .tb-col-name {
+  z-index: 3;
+}
+
+.tb-avgcell {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: none;
+  letter-spacing: var(--tracking-normal);
+  color: var(--color-text-secondary);
+}
+
+.tb-tblempty {
+  padding: 24px 12px !important;
+  text-align: center !important;
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 760px) {
+  .tb-page-stats {
+    padding: 12px;
+  }
+
+  .tb-tblbar {
+    align-items: flex-start;
+  }
+
+  /* Touch targets, and a narrower sticky name column so the stats still get room. */
+  .tb-tbl .tb-col-name {
+    min-width: 132px;
+  }
+
+  .tb-cellinput {
+    min-height: 40px;
+  }
+
+  .tb-filterinput {
+    min-height: 36px;
+  }
+
+  .tb-altchip {
+    min-height: 32px;
+    padding: 3px 9px;
   }
 }
 
