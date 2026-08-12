@@ -1,4 +1,5 @@
 import { balanceScore, overall, ovrAvg } from './model.js';
+import { shortName } from './names.js';
 
 // Clock faces run 12:00, 12:30, 1:00, 1:30 … so the index is hour*2 plus a half.
 const CLOCKS = [
@@ -63,7 +64,7 @@ export function whatsappText(teams, match, showScores) {
 
   const side = (list, label) => {
     L.push(label);
-    L.push(list.map((p) => p.name.trim() + (showScores ? ' ' + overall(p) : '')).join(', '));
+    L.push(list.map((p) => shortName(p.name) + (showScores ? ' ' + overall(p) : '')).join(', '));
   };
 
   side(teams.red, RED_LABEL);

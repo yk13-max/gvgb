@@ -6,6 +6,7 @@ import Pitch from './components/Pitch.jsx';
 import PlayerEditor from './components/PlayerEditor.jsx';
 import RosterPanel from './components/RosterPanel.jsx';
 import ShareDialog from './components/ShareDialog.jsx';
+import StatLadder from './components/StatLadder.jsx';
 import StatsTable from './components/StatsTable.jsx';
 import { exportBoard } from './lib/exportBoard.js';
 import { DEFAULT_STATS, balance, layout, relax } from './lib/model.js';
@@ -277,6 +278,7 @@ export default function App() {
           options={[
             ['balancer', 'Balancer'],
             ['stats', 'Player stats'],
+            ['ladder', 'Stat ladder'],
           ]}
           value={page}
           onChange={setPage}
@@ -343,7 +345,9 @@ export default function App() {
         )}
       </header>
 
-      {page === 'stats' ? (
+      {page === 'ladder' ? (
+        <StatLadder players={players} selected={selected} onPatch={patchPlayer} />
+      ) : page === 'stats' ? (
         <StatsTable
           players={players}
           selected={selected}
@@ -478,6 +482,10 @@ export default function App() {
         <button type="button" data-on={page === 'stats' ? '1' : '0'} onClick={() => setPage('stats')}>
           <Icon name="table" size={19} />
           <span>Table</span>
+        </button>
+        <button type="button" data-on={page === 'ladder' ? '1' : '0'} onClick={() => setPage('ladder')}>
+          <Icon name="sliders-vertical" size={19} />
+          <span>Ladder</span>
         </button>
       </nav>
 

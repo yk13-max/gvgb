@@ -1,5 +1,5 @@
 import { overall } from './model.js';
-import { firstName, initials } from './names.js';
+import { initials, shortName } from './names.js';
 
 // Board -> PNG, drawn directly so the export matches what's on screen.
 function drawBoard(teams, pos, showRatings) {
@@ -48,7 +48,7 @@ function drawBoard(teams, pos, showRatings) {
       g.fillText(initials(p.name), x, y + 1);
       g.font = '600 12px Inter,sans-serif';
       g.fillStyle = 'rgba(255,255,255,0.95)';
-      g.fillText(showRatings ? firstName(p.name) + '  ' + overall(p) : firstName(p.name), x, y + 36);
+      g.fillText(showRatings ? shortName(p.name) + '  ' + overall(p) : shortName(p.name), x, y + 36);
     })
   );
   g.textAlign = 'left';

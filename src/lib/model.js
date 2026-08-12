@@ -1,6 +1,6 @@
 // FUFA team balancer: stats model, position-weighted overall, balancing algorithm.
 
-export const STATS = ['Pace', 'Shooting', 'Passing', 'Defending', 'Physical', 'Dribbling'];
+export const STATS = ['Pace', 'Shooting', 'Passing', 'Defending', 'Physical', 'Dribbling', 'Stamina', 'Goalkeeping'];
 
 export const ABBR = {
   Pace: 'PAC',
@@ -9,21 +9,28 @@ export const ABBR = {
   Defending: 'DEF',
   Physical: 'PHY',
   Dribbling: 'DRI',
+  Stamina: 'STA',
+  // GKP, not GK — GK is already the shorthand for the goalkeeper position.
+  Goalkeeping: 'GKP',
 };
 
 export const POSITIONS = ['Goalkeeper', 'Defender', 'Midfielder', 'Striker', 'Any'];
 
 export const SHORT = { Goalkeeper: 'GK', Defender: 'DEF', Midfielder: 'MID', Striker: 'ST', Any: 'FLEX' };
 
+// Each row sums to 1. Goalkeeping carries the keeper's rating and stays a token weight
+// outfield — in 5-a-side someone usually ends up in goal, but it shouldn't sway their OVR.
 export const WEIGHTS = {
-  Goalkeeper: { Pace: 0.1, Shooting: 0.05, Passing: 0.2, Defending: 0.35, Physical: 0.25, Dribbling: 0.05 },
-  Defender: { Pace: 0.2, Shooting: 0.05, Passing: 0.15, Defending: 0.3, Physical: 0.25, Dribbling: 0.05 },
-  Midfielder: { Pace: 0.15, Shooting: 0.1, Passing: 0.3, Defending: 0.1, Physical: 0.15, Dribbling: 0.2 },
-  Striker: { Pace: 0.25, Shooting: 0.3, Passing: 0.05, Defending: 0.05, Physical: 0.15, Dribbling: 0.2 },
-  Any: { Pace: 1 / 6, Shooting: 1 / 6, Passing: 1 / 6, Defending: 1 / 6, Physical: 1 / 6, Dribbling: 1 / 6 },
+  Goalkeeper: { Pace: 0.06, Shooting: 0.03, Passing: 0.1, Defending: 0.15, Physical: 0.12, Dribbling: 0.04, Stamina: 0.08, Goalkeeping: 0.42 },
+  Defender: { Pace: 0.18, Shooting: 0.04, Passing: 0.13, Defending: 0.27, Physical: 0.22, Dribbling: 0.04, Stamina: 0.1, Goalkeeping: 0.02 },
+  Midfielder: { Pace: 0.13, Shooting: 0.09, Passing: 0.27, Defending: 0.09, Physical: 0.12, Dribbling: 0.18, Stamina: 0.11, Goalkeeping: 0.01 },
+  Striker: { Pace: 0.22, Shooting: 0.27, Passing: 0.05, Defending: 0.04, Physical: 0.13, Dribbling: 0.18, Stamina: 0.1, Goalkeeping: 0.01 },
+  Any: { Pace: 0.14, Shooting: 0.14, Passing: 0.14, Defending: 0.14, Physical: 0.14, Dribbling: 0.14, Stamina: 0.14, Goalkeeping: 0.02 },
 };
 
-export const DEFAULT_STATS = { Pace: 60, Shooting: 60, Passing: 60, Defending: 60, Physical: 60, Dribbling: 60 };
+export const DEFAULT_STAT = 60;
+
+export const DEFAULT_STATS = STATS.reduce((o, k) => ({ ...o, [k]: DEFAULT_STAT }), {});
 
 export function overall(p) {
   const w = WEIGHTS[p.pos] || WEIGHTS.Any;
@@ -67,7 +74,7 @@ export function balanceScore(a, b) {
 }
 
 // Each side must field a keeper: best two goalkeepers, falling back to anyone who
-// can also play there, then to the best defenders.
+// can also play there, then to the best goalkeeping rating in the pool.
 function pickKeepers(players) {
   const byOvr = (x, y) => overall(y) - overall(x);
   let cand = players.filter((p) => p.pos === 'Goalkeeper').sort(byOvr);
@@ -78,7 +85,7 @@ function pickKeepers(players) {
   }
   if (cand.length < 2) {
     cand = cand.concat(
-      players.filter((p) => !cand.includes(p)).sort((x, y) => (y.stats.Defending || 0) - (x.stats.Defending || 0))
+      players.filter((p) => !cand.includes(p)).sort((x, y) => (y.stats.Goalkeeping || 0) - (x.stats.Goalkeeping || 0))
     );
   }
   return [cand[0], cand[1]];

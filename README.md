@@ -8,22 +8,26 @@ as a real Vite + React app.
 
 ## What it does
 
-The app has two pages, switched from the header on desktop and the bottom tab bar on a phone:
-the **Balancer** (squad, board, balance readout) and the **Player stats** table.
+The app has three pages, switched from the header on desktop and the bottom tab bar on a phone:
+the **Balancer** (squad, board, balance readout), the **Player stats** table and the **Stat
+ladder**.
 
 ### Balancer
 
-- **Squad** — a card grid of players with six 0–100 stats each (PAC, SHO, PAS, DEF, PHY, DRI),
-  a primary position and any number of "can also play" positions. Add, edit and delete anyone.
-  Overall (OVR) is weighted by primary position: a striker's shooting and pace count for more
-  than their defending.
+- **Squad** — a card grid of players with eight 0–100 stats each (PAC, SHO, PAS, DEF, PHY, DRI,
+  STA for stamina, GKP for goalkeeping), a primary position and any number of "can also play"
+  positions. Add, edit and delete anyone. Overall (OVR) is weighted by primary position: a
+  striker's shooting and pace count for more than their defending, and goalkeeping carries a
+  keeper's rating while staying a token weight outfield.
 - **Balance** — pick exactly `2 × team size` players (everyone else is benched) and the balancer
   splits them by overall, per-stat averages and position mix. Each side always gets a keeper —
   the best two goalkeepers, falling back to anyone who can also play there, then to the best
-  defenders. **Reshuffle** re-runs it for a different split of equal quality.
+  goalkeeping rating in the pool. **Reshuffle** re-runs it for a different split of equal
+  quality.
 - **Board** — a vertical dark tactics pitch with red and blue pins placed freeform near their
   position band. Drag a pin to reposition it; tap a pin then tap an opponent to swap the two
-  between teams. **Stat labels** toggles the per-pin stat lines.
+  between teams. **Stat labels** toggles the per-pin stat lines. Pins are labelled first name
+  plus second initial ("Sam O"), so two players sharing a first name still read apart.
 - **Balance readout** — balance score out of 100 and the average-OVR delta, team total and
   average, stat-by-stat comparison bars, strongest/weakest callouts, and the position mix.
 - **Paste list** — paste a WhatsApp signup thread or numbered list. Numbering, timestamps,
@@ -41,8 +45,10 @@ the **Balancer** (squad, board, balance readout) and the **Player stats** table.
   Siv, Sank, Bobby, Ali, Ahren, Matt
 
   🔵 Team Blue/Black ⚫
-  Sam, Senthan, Feranmi, Niro, Umesh R, Karthi
+  Sam O, Senthan R, Feranmi A, Niro K, Umesh R, Karthi S
   ```
+
+  Names are first name plus second initial, matching the board.
 
   Date, kick-off and pitch are entered in the dialog. The clock emoji follows the kick-off time
   to the nearest half hour, and any detail left blank drops out of the first line. **Include
@@ -53,12 +59,21 @@ the **Balancer** (squad, board, balance readout) and the **Player stats** table.
   in the header controls whether OVR numbers appear next to the names on the exported image; it
   is on by default.
 
+### Stat ladder
+
+One stat at a time, everyone on the same 0–100 scale. Click a stat to switch to it, then drag a
+player up or down to rate them against the others — the point being that "better than Ali,
+worse than Sam" is easier to judge than a number in isolation. Arrow keys nudge the focused
+player by 1, Page keys by 10, and the dashed line marks the squad average. Benched players are
+dashed and dimmed. Chips fan into columns when a band gets crowded so nothing overlaps; on a
+phone the scale is taller than the screen and scrolls vertically.
+
 ### Player stats
 
 The whole roster as one editable table — every player down the side, every rating across the
 top.
 
-- **Edit in place** — name, primary position, the "can also play" chips and all six ratings are
+- **Edit in place** — name, primary position, the "can also play" chips and all eight ratings are
   editable directly in their cells. OVR recomputes as you type, and the averages row at the
   bottom follows the rows currently shown. Editing a rating clears the current teams, since the
   split it produced is no longer the one those ratings give; re-balance to get it back.
@@ -78,10 +93,9 @@ account. Clearing site data resets to the twelve sample players.
 
 - **Desktop (>1100px)** — three columns: squad, board, balance readout.
 - **Tablet (761–1100px)** — squad and board side by side, balance readout full width below.
-- **Phone (≤760px)** — one pane at a time with a bottom tab bar (Squad / Board / Balance /
-  Table), a
-  sticky header whose action row scrolls horizontally, 44px touch targets, and pins enlarged to
-  44px. Balancing jumps you straight to the Board tab.
+- **Phone (≤760px)** — one pane at a time with a bottom tab bar (Squad / Board / Balance / Table
+  / Ladder), a sticky header whose action row scrolls horizontally, 44px touch targets, and pins
+  enlarged to 44px. Balancing jumps you straight to the Board tab.
 
 ## Running it
 
@@ -104,9 +118,10 @@ src/
     parseList.js    WhatsApp signup-list parser and fuzzy roster matching
     whatsapp.js     teams + match details -> chat-ready text
     exportBoard.js  board -> PNG
-    storage.js      localStorage persistence
+    storage.js      localStorage persistence, and back-filling stats added since a
+                    roster was last saved
   components/   RosterPanel, PlayerCard, PlayerEditor, Pitch, Metrics, StatsTable,
-                ImportDialog, ShareDialog
+                StatLadder, ImportDialog, ShareDialog
   styles/       design tokens + the shell's responsive layout
   App.jsx       state, balancing, pin drag/swap, view switching
 ```

@@ -1,5 +1,5 @@
 import { ABBR, STATS, overall } from '../lib/model.js';
-import { firstName, initials } from '../lib/names.js';
+import { initials, shortName } from '../lib/names.js';
 
 function Pin({ p, team, x, y, showStats, selected, onPointerDown }) {
   const col = team === 'red' ? 'var(--team-red)' : 'var(--team-blue)';
@@ -63,7 +63,7 @@ function Pin({ p, team, x, y, showStats, selected, onPointerDown }) {
             whiteSpace: 'nowrap',
           }}
         >
-          {firstName(p.name)}
+          {shortName(p.name)}
         </span>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-2xs)', color: 'var(--color-accent)' }}>
           {overall(p)}
