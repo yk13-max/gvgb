@@ -1,0 +1,246 @@
+/* Team-balancer shell layout. Three columns on desktop, one pane at a time under 760px. */
+
+:root {
+  /* Team colors — not part of the design system, added for this surface. */
+  --team-red: oklch(52% 0.18 27);
+  --team-blue: oklch(50% 0.15 255);
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--color-bg);
+  font-family: var(--font-body);
+  color: var(--color-text-primary);
+  /* Stop iOS from auto-inflating text in the dense stat columns. */
+  -webkit-text-size-adjust: 100%;
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--color-primary-hover);
+  text-decoration: underline;
+}
+
+.tb-shell {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+}
+
+.tb-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  row-gap: 8px;
+  padding: 12px 20px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.tb-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tb-main {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(230px, 1fr) minmax(300px, 0.9fr) 272px;
+  gap: 16px;
+  padding: 16px;
+}
+
+.tb-pitch {
+  position: relative;
+  height: 100%;
+  min-height: 470px;
+  aspect-ratio: 0.68;
+  max-width: 100%;
+}
+
+.tb-tabs {
+  display: none;
+}
+
+/* Tablet: roster + board side by side, balance readout drops full width below. */
+@media (max-width: 1100px) and (min-width: 761px) {
+  .tb-main {
+    grid-template-columns: minmax(240px, 1fr) minmax(300px, 1fr);
+    grid-template-rows: minmax(540px, 1fr) auto;
+    overflow-y: auto;
+  }
+
+  .tb-aside {
+    grid-column: 1 / -1;
+    min-height: auto !important;
+    max-height: none;
+    height: auto;
+    overflow: visible !important;
+  }
+}
+
+/* Phone: single column, one pane at a time, bottom tab bar. */
+@media (max-width: 760px) {
+  .tb-head {
+    padding: 10px 12px;
+    gap: 8px;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+
+  .tb-brand span:last-child {
+    display: none;
+  }
+
+  .tb-spacer {
+    display: none;
+  }
+
+  .tb-actions {
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 6px;
+    padding-bottom: 2px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .tb-actions::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tb-actions > * {
+    flex: 0 0 auto;
+  }
+
+  .tb-actions button {
+    min-height: 44px;
+  }
+
+  .tb-main {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr);
+    gap: 0;
+    padding: 12px;
+    overflow: hidden;
+  }
+
+  .tb-main > .tb-pane {
+    grid-area: 1 / 1;
+    min-width: 0;
+  }
+
+  .tb-main[data-view='squad'] .tb-pane-board,
+  .tb-main[data-view='squad'] .tb-pane-stats,
+  .tb-main[data-view='board'] .tb-pane-squad,
+  .tb-main[data-view='board'] .tb-pane-stats,
+  .tb-main[data-view='stats'] .tb-pane-squad,
+  .tb-main[data-view='stats'] .tb-pane-board {
+    display: none !important;
+  }
+
+  .tb-pitch {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+  }
+
+  .tb-pane-board {
+    overflow-y: auto;
+    overflow-x: hidden;
+    justify-content: flex-start;
+  }
+
+  .tb-pane-board > div:first-child {
+    flex: 0 0 auto !important;
+  }
+
+  .tb-pane-squad {
+    overflow: hidden;
+  }
+
+  .tb-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    flex-shrink: 0;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .tb-tabs button {
+    appearance: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    min-height: 56px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    font-family: var(--font-body);
+    font-size: var(--text-2xs);
+    letter-spacing: var(--tracking-wide);
+    color: var(--color-text-tertiary);
+  }
+
+  .tb-tabs button[data-on='1'] {
+    color: var(--color-primary);
+    box-shadow: inset 0 2px 0 var(--color-primary);
+  }
+
+  /* Anything under 16px makes iOS Safari zoom the page when the field takes focus.
+     Overrides the components' inline font sizes, which stay as designed on desktop. */
+  input:not([type='range']),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Invisible hit ring so pins stay tappable at their drawn size. */
+.tb-pin-badge::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+}
+
+@media (max-width: 760px) {
+  .tb-pin-badge {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 15px;
+  }
+
+  .tb-pin-badge::before {
+    inset: -4px;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--slate-300);
+  border-radius: var(--radius-full);
+}
