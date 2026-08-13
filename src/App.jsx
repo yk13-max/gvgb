@@ -97,6 +97,7 @@ export default function App() {
   const [narrow, setNarrow] = useState(isNarrow);
   const [view, setView] = useState('squad');
   const [page, setPage] = useState('balancer');
+  const [mini, setMini] = useState(() => !!(saved && saved.mini));
   const [history, setHistory] = useState(() => (saved && Array.isArray(saved.history) ? saved.history : []));
   const [recording, setRecording] = useState(null); // null | {} for a new result | an existing entry
   const [notice, setNotice] = useState(null);
@@ -113,8 +114,8 @@ export default function App() {
   const needed = teamSize * 2;
 
   useEffect(() => {
-    save({ players, teamSize, selected, history, match: { time: match.time, venue: match.venue } });
-  }, [players, teamSize, selected, history, match.time, match.venue]);
+    save({ players, teamSize, selected, history, mini, match: { time: match.time, venue: match.venue } });
+  }, [players, teamSize, selected, history, mini, match.time, match.venue]);
 
   const teamOf = useMemo(() => {
     const m = {};
@@ -433,6 +434,8 @@ export default function App() {
             selected={selected}
             teamOf={teamOf}
             needed={needed}
+            mini={mini}
+            onMiniChange={setMini}
             onToggle={toggle}
             onEdit={(p) => setDraft({ ...p, stats: { ...p.stats }, alt: [...(p.alt || [])], nicknames: [...(p.nicknames || [])] })}
             onDelete={removePlayer}

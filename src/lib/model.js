@@ -1,6 +1,17 @@
 // FUFA team balancer: stats model, position-weighted overall, balancing algorithm.
 
-export const STATS = ['Pace', 'Shooting', 'Passing', 'Defending', 'Physical', 'Dribbling', 'Stamina', 'Goalkeeping'];
+export const STATS = [
+  'Pace',
+  'Shooting',
+  'Passing',
+  'Defending',
+  'Physical',
+  'Dribbling',
+  'Stamina',
+  'Goalkeeping',
+  'Vision',
+  'Positioning',
+];
 
 export const ABBR = {
   Pace: 'PAC',
@@ -12,6 +23,8 @@ export const ABBR = {
   Stamina: 'STA',
   // GKP, not GK — GK is already the shorthand for the goalkeeper position.
   Goalkeeping: 'GKP',
+  Vision: 'VIS',
+  Positioning: 'POS',
 };
 
 export const POSITIONS = ['Goalkeeper', 'Defender', 'Midfielder', 'Striker', 'Any'];
@@ -20,12 +33,13 @@ export const SHORT = { Goalkeeper: 'GK', Defender: 'DEF', Midfielder: 'MID', Str
 
 // Each row sums to 1. Goalkeeping carries the keeper's rating and stays a token weight
 // outfield — in 5-a-side someone usually ends up in goal, but it shouldn't sway their OVR.
+// Positioning counts for every role; vision is weighted towards the players who create.
 export const WEIGHTS = {
-  Goalkeeper: { Pace: 0.06, Shooting: 0.03, Passing: 0.1, Defending: 0.15, Physical: 0.12, Dribbling: 0.04, Stamina: 0.08, Goalkeeping: 0.42 },
-  Defender: { Pace: 0.18, Shooting: 0.04, Passing: 0.13, Defending: 0.27, Physical: 0.22, Dribbling: 0.04, Stamina: 0.1, Goalkeeping: 0.02 },
-  Midfielder: { Pace: 0.13, Shooting: 0.09, Passing: 0.27, Defending: 0.09, Physical: 0.12, Dribbling: 0.18, Stamina: 0.11, Goalkeeping: 0.01 },
-  Striker: { Pace: 0.22, Shooting: 0.27, Passing: 0.05, Defending: 0.04, Physical: 0.13, Dribbling: 0.18, Stamina: 0.1, Goalkeeping: 0.01 },
-  Any: { Pace: 0.14, Shooting: 0.14, Passing: 0.14, Defending: 0.14, Physical: 0.14, Dribbling: 0.14, Stamina: 0.14, Goalkeeping: 0.02 },
+  Goalkeeper: { Pace: 0.05, Shooting: 0.02, Passing: 0.08, Defending: 0.12, Physical: 0.1, Dribbling: 0.02, Stamina: 0.06, Goalkeeping: 0.38, Vision: 0.05, Positioning: 0.12 },
+  Defender: { Pace: 0.14, Shooting: 0.02, Passing: 0.1, Defending: 0.24, Physical: 0.18, Dribbling: 0.03, Stamina: 0.08, Goalkeeping: 0.01, Vision: 0.05, Positioning: 0.15 },
+  Midfielder: { Pace: 0.09, Shooting: 0.08, Passing: 0.22, Defending: 0.06, Physical: 0.07, Dribbling: 0.13, Stamina: 0.09, Goalkeeping: 0.01, Vision: 0.15, Positioning: 0.1 },
+  Striker: { Pace: 0.17, Shooting: 0.24, Passing: 0.02, Defending: 0.01, Physical: 0.09, Dribbling: 0.14, Stamina: 0.07, Goalkeeping: 0.01, Vision: 0.08, Positioning: 0.17 },
+  Any: { Pace: 0.11, Shooting: 0.11, Passing: 0.11, Defending: 0.11, Physical: 0.11, Dribbling: 0.11, Stamina: 0.11, Goalkeeping: 0.01, Vision: 0.11, Positioning: 0.11 },
 };
 
 export const DEFAULT_STAT = 60;

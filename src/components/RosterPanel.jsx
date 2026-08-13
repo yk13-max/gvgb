@@ -1,7 +1,18 @@
 import { Button, Icon } from '../ds/index.js';
-import PlayerCard from './PlayerCard.jsx';
+import PlayerCard, { MiniPlayerCard } from './PlayerCard.jsx';
 
-export default function RosterPanel({ players, selected, teamOf, onToggle, onEdit, onDelete, onAdd, needed }) {
+export default function RosterPanel({
+  players,
+  selected,
+  teamOf,
+  onToggle,
+  onEdit,
+  onDelete,
+  onAdd,
+  needed,
+  mini,
+  onMiniChange,
+}) {
   const inCount = selected.length;
   const ok = inCount === needed;
   return (
@@ -38,9 +49,29 @@ export default function RosterPanel({ players, selected, teamOf, onToggle, onEdi
             {inCount}/{needed} selected · {players.length - inCount} benched
           </div>
         </div>
-        <Button size="sm" variant="secondary" icon={<Icon name="plus" size={15} />} onClick={onAdd}>
-          Add player
-        </Button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <div className="tb-viewtoggle" role="group" aria-label="Squad view">
+            {[
+              [false, 'layout-grid', 'Card view'],
+              [true, 'list', 'Mini view'],
+            ].map(([v, ic, label]) => (
+              <button
+                key={label}
+                type="button"
+                data-on={mini === v ? '1' : '0'}
+                aria-pressed={mini === v}
+                aria-label={label}
+                title={label}
+                onClick={() => onMiniChange(v)}
+              >
+                <Icon name={ic} size={15} />
+              </button>
+            ))}
+          </div>
+          <Button size="sm" variant="secondary" icon={<Icon name="plus" size={15} />} onClick={onAdd}>
+            Add player
+          </Button>
+        </div>
       </div>
       {!ok && (
         <div
@@ -65,24 +96,34 @@ export default function RosterPanel({ players, selected, teamOf, onToggle, onEdi
           overflowY: 'auto',
           overflowX: 'hidden',
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill,minmax(205px,1fr))',
-          gap: 10,
+          gridTemplateColumns: mini ? 'repeat(auto-fill,minmax(150px,1fr))' : 'repeat(auto-fill,minmax(205px,1fr))',
+          gap: mini ? 6 : 10,
           paddingRight: 4,
           paddingBottom: 4,
           alignContent: 'start',
         }}
       >
-        {players.map((p) => (
-          <PlayerCard
-            key={p.id}
-            p={p}
-            selected={selected.includes(p.id)}
-            team={teamOf[p.id]}
-            onToggle={onToggle}
-            onEdit={onEdit}
-            onDelete={onDelete}
-          />
-        ))}
+        {players.map((p) =>
+          mini ? (
+            <MiniPlayerCard
+              key={p.id}
+              p={p}
+              selected={selected.includes(p.id)}
+              team={teamOf[p.id]}
+              onToggle={onToggle}
+            />
+          ) : (
+            <PlayerCard
+              key={p.id}
+              p={p}
+              selected={selected.includes(p.id)}
+              team={teamOf[p.id]}
+              onToggle={onToggle}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
+          )
+        )}
       </div>
     </div>
   );

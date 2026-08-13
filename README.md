@@ -14,11 +14,16 @@ and the **Match history**.
 
 ### Balancer
 
-- **Squad** — a card grid of players with eight 0–100 stats each (PAC, SHO, PAS, DEF, PHY, DRI,
-  STA for stamina, GKP for goalkeeping), a primary position and any number of "can also play"
-  positions, plus any number of nicknames. Add, edit and delete anyone. Overall (OVR) is weighted
-  by primary position: a striker's shooting and pace count for more than their defending, and
-  goalkeeping carries a keeper's rating while staying a token weight outfield.
+- **Squad** — a card grid of players with ten 0–100 stats each (PAC, SHO, PAS, DEF, PHY, DRI,
+  STA for stamina, GKP for goalkeeping, VIS for vision, POS for positioning), a primary position
+  and any number of "can also play" positions, plus any number of nicknames. Add, edit and delete
+  anyone. Overall (OVR) is weighted by primary position: a striker's shooting, pace and
+  positioning count for more than their defending, vision is weighted towards the players who
+  create, and goalkeeping carries a keeper's rating while staying a token weight outfield.
+
+  The **card / mini** toggle beside *Add player* switches the grid between full cards and a mini
+  view of name and overall only — denser for picking a squad from a long roster or scanning
+  ratings at a glance. Tapping still selects and benches; the choice is remembered.
 - **Balance** — pick exactly `2 × team size` players (everyone else is benched) and the balancer
   splits them by overall, per-stat averages and position mix. Each side always gets a keeper —
   the best two goalkeepers, falling back to anyone who can also play there, then to the best
@@ -89,7 +94,7 @@ phone the scale is taller than the screen and scrolls vertically.
 The whole roster as one editable table — every player down the side, every rating across the
 top.
 
-- **Edit in place** — name, primary position, the "can also play" chips and all eight ratings are
+- **Edit in place** — name, primary position, the "can also play" chips and all ten ratings are
   editable directly in their cells. OVR recomputes as you type, and the averages row at the
   bottom follows the rows currently shown. Editing a rating clears the current teams, since the
   split it produced is no longer the one those ratings give; re-balance to get it back.
@@ -107,7 +112,7 @@ top.
 On a phone the table scrolls sideways with the player name column pinned to the left edge, and
 the header, filter and averages rows stay pinned while you scroll.
 
-The roster, format, selection, match history and the kick-off time and pitch are saved to
+The roster, format, selection, squad view, match history and the kick-off time and pitch are saved to
 `localStorage` — there is no backend and no account. Clearing site data resets to the twelve
 sample players, so use **Export JSON** for anything you want to keep.
 

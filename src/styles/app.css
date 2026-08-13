@@ -522,6 +522,88 @@ a:hover {
   }
 }
 
+/* ---- Squad mini view -------------------------------------------------------- */
+
+.tb-viewtoggle {
+  display: flex;
+  gap: 2px;
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+
+.tb-viewtoggle button {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 28px;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--color-text-secondary);
+  transition: background 120ms ease;
+}
+
+.tb-viewtoggle button[data-on='1'] {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.tb-mini {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 38px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  cursor: pointer;
+  text-align: left;
+  opacity: 0.55;
+  transition: opacity 120ms ease, border-color 120ms ease;
+}
+
+.tb-mini[data-on='1'] {
+  opacity: 1;
+  box-shadow: var(--shadow-sm);
+}
+
+.tb-mini-name {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tb-mini-ovr {
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
+}
+
+@media (max-width: 760px) {
+  .tb-viewtoggle button {
+    width: 36px;
+    height: 34px;
+  }
+
+  .tb-mini {
+    min-height: 44px;
+  }
+}
+
 /* ---- Nicknames + score inputs ---------------------------------------------- */
 
 .tb-nickchip {

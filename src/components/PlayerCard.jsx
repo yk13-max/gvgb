@@ -48,6 +48,27 @@ export function StatRow({ k, v }) {
   );
 }
 
+// Mini view: name and overall only, for scanning a long roster or picking a squad fast.
+export function MiniPlayerCard({ p, selected, team, onToggle }) {
+  const teamColor = team === 'red' ? 'var(--team-red)' : team === 'blue' ? 'var(--team-blue)' : null;
+  return (
+    <button
+      type="button"
+      className="tb-mini"
+      data-on={selected ? '1' : '0'}
+      aria-pressed={selected}
+      title={p.name + (selected ? (team ? ' — ' + team + ' team' : ' — in squad') : ' — benched')}
+      onClick={() => onToggle(p.id)}
+      style={{ borderColor: selected ? teamColor || 'var(--color-primary)' : 'var(--color-border)' }}
+    >
+      <span className="tb-mini-name">{p.name}</span>
+      <span className="tb-mini-ovr" style={{ color: selected && teamColor ? teamColor : 'var(--color-text-primary)' }}>
+        {overall(p)}
+      </span>
+    </button>
+  );
+}
+
 export default function PlayerCard({ p, selected, team, onToggle, onEdit, onDelete }) {
   const ovr = overall(p);
   const teamColor = team === 'red' ? 'var(--team-red)' : team === 'blue' ? 'var(--team-blue)' : null;
