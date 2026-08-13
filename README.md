@@ -56,9 +56,13 @@ and the **Match history**.
   ratings** is off by default — turn it on to append each player's OVR and a team average and
   balance line.
 - **Export PNG** — the board drawn to a canvas so the image matches what's on screen. On phones
-  it goes to the share sheet when available, otherwise it downloads. The **PNG ratings** switch
-  in the header controls whether OVR numbers appear next to the names on the exported image; it
-  is on by default.
+  it goes to the share sheet when available, otherwise it downloads. Two switches in the header
+  shape the image, and they combine freely:
+  - **PNG ratings** (on by default) — whether OVR numbers sit next to the names on each pin.
+  - **PNG summary** (off by default) — adds a strip under the pitch carrying the balance
+    readout: each side's average OVR and total, the balance score, and the per-stat averages
+    with the leading side highlighted. It extends the image by 190px rather than covering any
+    of the pitch.
 
 ### Match history
 

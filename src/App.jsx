@@ -80,6 +80,7 @@ export default function App() {
   const [pos, setPos] = useState({});
   const [showStats, setShowStats] = useState(false);
   const [pngRatings, setPngRatings] = useState(true);
+  const [pngSummary, setPngSummary] = useState(false);
   // Kick-off time and pitch carry over between sessions; the date always starts at today
   // so last week's fixture can never be pasted by accident.
   const [match, setMatch] = useState(() => ({
@@ -370,6 +371,7 @@ export default function App() {
           </Button>
           <Switch checked={showStats} onChange={(e) => setShowStats(e.target.checked)} label="Stat labels" />
           <Switch checked={pngRatings} onChange={(e) => setPngRatings(e.target.checked)} label="PNG ratings" />
+          <Switch checked={pngSummary} onChange={(e) => setPngSummary(e.target.checked)} label="PNG summary" />
           <Button
             variant="secondary"
             size="sm"
@@ -384,7 +386,7 @@ export default function App() {
             size="sm"
             icon={<Icon name="download" size={15} />}
             disabled={!built}
-            onClick={() => exportBoard(teams, pos, pngRatings)}
+            onClick={() => exportBoard(teams, pos, { ratings: pngRatings, summary: pngSummary })}
           >
             Export PNG
           </Button>
