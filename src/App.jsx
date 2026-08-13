@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Dialog, Icon, Switch } from './ds/index.js';
+import { Button, Dialog, Icon, IconButton, Switch } from './ds/index.js';
 import History from './components/History.jsx';
 import ImportDialog from './components/ImportDialog.jsx';
 import Metrics from './components/Metrics.jsx';
@@ -11,7 +11,7 @@ import WeekAwardsDialog from './components/WeekAwardsDialog.jsx';
 import ShareDialog from './components/ShareDialog.jsx';
 import StatLadder from './components/StatLadder.jsx';
 import StatsTable from './components/StatsTable.jsx';
-import { exportJSON } from './lib/backup.js';
+import { exportJSON, readBackupFile } from './lib/backup.js';
 import { exportBoard } from './lib/exportBoard.js';
 import { DEFAULT_STATS, balance, layout, relax } from './lib/model.js';
 import { samplePlayers } from './lib/samplePlayers.js';
@@ -71,6 +71,27 @@ function Segmented({ options, value, onChange, className }) {
   );
 }
 
+// Label first, switch pinned to the right edge — a switch reads as a settings row here,
+// not as the inline control it is in the desktop header.
+const SWITCH_ROW = {
+  width: '100%',
+  minHeight: 44,
+  flexDirection: 'row-reverse',
+  justifyContent: 'space-between',
+  fontSize: 'var(--text-sm)',
+};
+
+// A full-width row in the phone's actions sheet. Everything the header holds on a
+// desktop lives here instead, stacked, so nothing has to be scrolled sideways to reach.
+function MenuRow({ icon, label, disabled, onClick }) {
+  return (
+    <button type="button" className="tb-menu-row" disabled={disabled} onClick={onClick}>
+      <Icon name={icon} size={17} />
+      <span>{label}</span>
+    </button>
+  );
+}
+
 export default function App() {
   const saved = useMemo(loadSaved, []);
   const [players, setPlayers] = useState(saved ? saved.players : samplePlayers);
@@ -104,6 +125,8 @@ export default function App() {
   const [recording, setRecording] = useState(null); // null | {} for a new match | { week, match } to edit
   const [awarding, setAwarding] = useState(null); // the week whose nominations are open
   const [notice, setNotice] = useState(null);
+  const [menu, setMenu] = useState(false); // the phone's actions sheet
+  const [dataMenu, setDataMenu] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia(NARROW);
@@ -114,6 +137,7 @@ export default function App() {
 
   const pitchRef = useRef(null);
   const drag = useRef(null);
+  const fileRef = useRef(null);
   const needed = teamSize * 2;
 
   useEffect(() => {
@@ -243,30 +267,72 @@ export default function App() {
     setHistory((h) => h.filter((w) => w.id !== weekId));
   }
 
-  // A JSON import replaces the roster outright, so it always asks first.
+  // Everything the app keeps, written to one file.
+  function exportAll() {
+    exportJSON({ players, history, teamSize, selected, mini, match });
+  }
+
+  const dataRows = (close) => (
+    <>
+      <MenuRow
+        icon="file-json"
+        label="Export all data"
+        onClick={() => {
+          close();
+          exportAll();
+        }}
+      />
+      <MenuRow
+        icon="upload"
+        label="Import data"
+        onClick={() => {
+          close();
+          if (fileRef.current) fileRef.current.click();
+        }}
+      />
+    </>
+  );
+
+  function pickBackupFile(e) {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = ''; // let the same file be picked again after a cancelled import
+    if (file) readBackupFile(file, applyBackup);
+  }
+
+  // An import replaces what's here outright, so it always asks first.
   function applyBackup(result, filename) {
     if (result.error) {
       setNotice({ title: 'Import failed', text: result.error });
       return;
     }
-    const extra = result.history.length ? ' and ' + result.history.length + ' recorded match(es)' : '';
+    const weeks = result.history.length;
+    const holds = [
+      result.players.length + ' player' + (result.players.length === 1 ? '' : 's'),
+      weeks ? weeks + ' game week' + (weeks === 1 ? '' : 's') : null,
+    ]
+      .filter(Boolean)
+      .join(' and ');
     setNotice({
-      title: 'Replace the roster?',
+      title: 'Replace everything?',
       text:
         filename +
         ' holds ' +
-        result.players.length +
-        ' player(s)' +
-        extra +
+        holds +
         '. This replaces the current ' +
         players.length +
-        ' player(s) — export first if you want a copy.',
-      confirmLabel: 'Replace roster',
+        ' player(s)' +
+        (history.length ? ' and ' + history.length + ' game week(s)' : '') +
+        ' — export first if you want a copy.',
+      confirmLabel: 'Replace data',
       onConfirm: () => {
         setPlayers(result.players);
-        setSelected([]);
-        if (result.history.length) setHistory(result.history);
+        // A backup carries its own squad selection; a bare player list doesn't, and
+        // ids from elsewhere would select the wrong people, so that starts empty.
+        setSelected(result.selected || []);
+        if (weeks) setHistory(result.history);
         if (result.teamSize) setTeamSize(result.teamSize);
+        if (result.mini != null) setMini(result.mini);
+        if (result.match) setMatch((m) => ({ ...m, time: result.match.time || m.time, venue: result.match.venue }));
         resetBoard();
         setNotice(null);
       },
@@ -429,6 +495,42 @@ export default function App() {
           </Button>
         </div>
         )}
+        {/* Backup lives on every page, but as one button — the balancer's header is
+            already the widest thing here. */}
+        <div className="tb-data">
+          <IconButton
+            icon={<Icon name="file-json" size={16} />}
+            aria-label="Data"
+            aria-expanded={dataMenu}
+            variant="secondary"
+            size="sm"
+            onClick={() => setDataMenu(true)}
+          />
+        </div>
+        {/* Phone: one primary action plus a sheet holding the rest, so nothing in the
+            header has to be scrolled sideways to be found. */}
+        <div className="tb-mobilebar">
+          <IconButton
+            icon={<Icon name="more-horizontal" size={19} />}
+            aria-label="More actions"
+            aria-expanded={menu}
+            variant="secondary"
+            size="sm"
+            onClick={() => setMenu(true)}
+          />
+          {page === 'balancer' && (
+            <Button variant="primary" size="sm" disabled={selected.length !== needed} onClick={() => build()}>
+              {built ? 'Re-balance' : 'Balance teams'}
+            </Button>
+          )}
+        </div>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/json,.json"
+          onChange={pickBackupFile}
+          style={{ display: 'none' }}
+        />
       </header>
 
       {page === 'history' ? (
@@ -450,7 +552,7 @@ export default function App() {
           onEdit={(p) => setDraft({ ...p, stats: { ...p.stats }, alt: [...(p.alt || [])], nicknames: [...(p.nicknames || [])] })}
           onDelete={removePlayer}
           onAdd={() => setDraft({ name: '', pos: 'Midfielder', alt: [], nicknames: [], stats: { ...DEFAULT_STATS } })}
-          onExport={() => exportJSON({ players, history, teamSize })}
+          onExport={exportAll}
           onImport={applyBackup}
         />
       ) : (
@@ -591,6 +693,140 @@ export default function App() {
           <span>History</span>
         </button>
       </nav>
+
+      {menu && (
+        <Dialog
+          open
+          title="Actions"
+          onClose={() => setMenu(false)}
+          footer={
+            <Button variant="secondary" size="sm" onClick={() => setMenu(false)}>
+              Close
+            </Button>
+          }
+        >
+          <div className="tb-menu">
+            {page === 'balancer' && (
+              <>
+                <div className="tb-menu-group">
+                  <div className="tb-menu-label">Format</div>
+                  <Segmented
+                    className="tb-menu-seg"
+                    options={[5, 6].map((n) => [n, n + '-a-side'])}
+                    value={teamSize}
+                    onChange={(n) => {
+                      setTeamSize(n);
+                      resetBoard();
+                    }}
+                  />
+                </div>
+
+                <div className="tb-menu-group">
+                  <div className="tb-menu-label">Squad</div>
+                  <MenuRow
+                    icon="clipboard-list"
+                    label="Paste list"
+                    onClick={() => {
+                      setMenu(false);
+                      setImporting(true);
+                    }}
+                  />
+                  <MenuRow
+                    icon="shuffle"
+                    label="Reshuffle teams"
+                    disabled={!built}
+                    onClick={() => {
+                      setMenu(false);
+                      const s = seed + 1;
+                      setSeed(s);
+                      build(s);
+                    }}
+                  />
+                </div>
+
+                <div className="tb-menu-group">
+                  <div className="tb-menu-label">Share &amp; record</div>
+                  <MenuRow
+                    icon="message-circle"
+                    label="WhatsApp text"
+                    disabled={!built}
+                    onClick={() => {
+                      setMenu(false);
+                      setSharing(true);
+                    }}
+                  />
+                  <MenuRow
+                    icon="download"
+                    label="Export PNG"
+                    disabled={!built}
+                    onClick={() => {
+                      setMenu(false);
+                      exportBoard(teams, pos, { ratings: pngRatings, summary: pngSummary });
+                    }}
+                  />
+                  <MenuRow
+                    icon="trophy"
+                    label="Record result"
+                    disabled={!built}
+                    onClick={() => {
+                      setMenu(false);
+                      setRecording({});
+                    }}
+                  />
+                </div>
+
+                <div className="tb-menu-group">
+                  <div className="tb-menu-label">Board &amp; image</div>
+                  <Switch
+                    style={SWITCH_ROW}
+                    checked={showStats}
+                    onChange={(e) => setShowStats(e.target.checked)}
+                    label="Stat labels on pins"
+                  />
+                  <Switch
+                    style={SWITCH_ROW}
+                    checked={pngRatings}
+                    onChange={(e) => setPngRatings(e.target.checked)}
+                    label="Ratings in the PNG"
+                  />
+                  <Switch
+                    style={SWITCH_ROW}
+                    checked={pngSummary}
+                    onChange={(e) => setPngSummary(e.target.checked)}
+                    label="Team stats under the PNG"
+                  />
+                </div>
+              </>
+            )}
+
+            <div className="tb-menu-group">
+              <div className="tb-menu-label">Data</div>
+              {dataRows(() => setMenu(false))}
+            </div>
+          </div>
+        </Dialog>
+      )}
+
+      {dataMenu && (
+        <Dialog
+          open
+          title="Data"
+          onClose={() => setDataMenu(false)}
+          footer={
+            <Button variant="secondary" size="sm" onClick={() => setDataMenu(false)}>
+              Close
+            </Button>
+          }
+        >
+          <div className="tb-menu">
+            <div className="tb-menu-note">
+              One file holds the whole app: the roster, the game weeks and their ratings snapshots,
+              the current squad and format, and the kick-off details. Importing replaces all of it.
+            </div>
+            <div className="tb-menu-group">{dataRows(() => setDataMenu(false))}</div>
+          </div>
+        </Dialog>
+      )}
 
       <PlayerEditor
         draft={draft}

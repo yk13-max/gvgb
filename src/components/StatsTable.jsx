@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Icon, IconButton } from '../ds/index.js';
-import { parseBackup } from '../lib/backup.js';
+import { readBackupFile } from '../lib/backup.js';
 import { ABBR, POSITIONS, SHORT, STATS, overall, statAvg, ovrAvg } from '../lib/model.js';
 
 const RANGE_KEYS = [...STATS, 'ovr'];
@@ -100,11 +100,7 @@ export default function StatsTable({ players, selected, onPatch, onEdit, onDelet
   function pickFile(e) {
     const file = e.target.files && e.target.files[0];
     e.target.value = ''; // let the same file be picked again after a cancelled import
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => onImport(parseBackup(String(reader.result)), file.name);
-    reader.onerror = () => onImport({ error: 'That file could not be read.' }, file.name);
-    reader.readAsText(file);
+    if (file) readBackupFile(file, onImport);
   }
 
   const setRange = (key, side, v) =>

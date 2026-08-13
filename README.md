@@ -116,26 +116,44 @@ top.
   rating and on OVR. Filters combine, and **Clear filters** resets them.
 - **Sort any column** — click a header to sort ascending, again for descending.
 - The row's pencil opens the same full editor used elsewhere; the bin deletes.
-- **Import JSON / Export JSON** — export writes a file holding the roster, the game weeks and
-  the format. Import accepts that file, a bare `{"players": [...]}` object, or a plain array of
-  players; missing stats are filled at 60, colliding or missing ids are re-issued, and nameless
-  entries are dropped. Importing replaces the current roster, so it confirms first — export a
-  copy before you do.
+- **Import JSON / Export JSON** — the same backup the header's **Data** button gives you, from
+  the page where you are most likely to want it.
 
 On a phone the table scrolls sideways with the player name column pinned to the left edge, and
 the header, filter and averages rows stay pinned while you scroll.
 
+### Data
+
 The roster, format, selection, squad view, game weeks and the kick-off time and pitch are saved to
-`localStorage` — there is no backend and no account. Clearing site data resets to the twelve
-sample players, so use **Export JSON** for anything you want to keep.
+`localStorage` — there is no backend and no account. Clearing site data, switching browser or
+picking up a new phone loses the lot, so the header carries a **Data** button on every page (in
+the actions sheet on a phone) with the two halves of a backup:
+
+- **Export all data** — writes `fufa-backup-YYYY-MM-DD.json`, holding everything above: every
+  player with their nicknames and ten ratings, every game week with its matches, nominations and
+  ratings snapshots, and the format, squad selection, squad view and kick-off details. It is
+  plain readable JSON, so it can be diffed, edited or kept in a repo.
+- **Import data** — reads that file back and restores the app to exactly the state it was
+  exported in. It also accepts a hand-written `{"players": [...]}` object or a plain array of
+  players, for seeding a roster from somewhere else: missing stats are filled at 60, colliding or
+  missing ids are re-issued, and nameless entries are dropped. Player ids survive a full backup
+  intact, which is what keeps the squad selection and every recorded week pointing at the right
+  people. Importing replaces what's there, so it says what the file holds and confirms first.
 
 ## Layouts
 
 - **Desktop (>1100px)** — three columns: squad, board, balance readout.
 - **Tablet (761–1100px)** — squad and board side by side, balance readout full width below.
 - **Phone (≤760px)** — one pane at a time with a bottom tab bar (Squad / Board / Balance / Table
-  / Ladder / History), a sticky header whose action row scrolls horizontally, 44px touch targets,
-  and pins enlarged to 44px. Balancing jumps you straight to the Board tab.
+  / Ladder / History), 44px touch targets, and pins enlarged to 44px. Balancing jumps you
+  straight to the Board tab.
+
+  The header stays one row that never scrolls: the wordmark, a **…** button, and the one action
+  worth a tap of its own — *Balance teams*, which becomes *Re-balance* once there are teams.
+  Everything the desktop header spreads across its width moves into the **…** sheet, grouped and
+  stacked full width: the format toggle, Paste list and Reshuffle, WhatsApp text / Export PNG /
+  Record result, the three board-and-image switches, and Export / Import data. Anything that
+  needs teams is greyed out until there are teams, and every action is two taps from anywhere.
 
 ## Running it
 
@@ -158,7 +176,7 @@ src/
     parseList.js    WhatsApp signup-list parser and fuzzy roster matching
     whatsapp.js     teams + match details -> chat-ready text
     exportBoard.js  board -> PNG
-    backup.js       roster + history <-> JSON file
+    backup.js       the whole app state <-> one JSON file
     weeks.js        game weeks: grouping matches by date, award slots, ratings
                     snapshots and their diffs, and migrating pre-week history
     storage.js      localStorage persistence, and back-filling stats added since a
@@ -167,7 +185,7 @@ src/
                 StatLadder, History, ImportDialog, ShareDialog, RecordResultDialog,
                 WeekAwardsDialog
   styles/       design tokens + the shell's responsive layout
-  App.jsx       state, balancing, pin drag/swap, view switching
+  App.jsx       state, balancing, pin drag/swap, view switching, the phone actions sheet
 ```
 
 Design tokens (color, type, spacing, radius, shadow) come from the FUFA design system and are
