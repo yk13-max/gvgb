@@ -1083,3 +1083,164 @@ a:hover {
   background: var(--slate-300);
   border-radius: var(--radius-full);
 }
+
+/* ---- Game weeks ------------------------------------------------------------- */
+
+.tb-week {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tb-weekhead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tb-weekdate {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+  line-height: 1.1;
+}
+
+.tb-weeksub {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--color-text-tertiary);
+  margin-top: 2px;
+}
+
+.tb-awards {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tb-award {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-sunken);
+}
+
+.tb-award[data-potm='1'] {
+  border-color: var(--color-primary);
+  background: var(--color-primary-subtle);
+}
+
+.tb-award-label {
+  font-family: var(--font-body);
+  font-size: 9px;
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.tb-award[data-potm='1'] .tb-award-label {
+  color: var(--green-700);
+}
+
+.tb-award-name {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.tb-weekmatches {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Ratings snapshot */
+
+.tb-ratpanel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-sm);
+}
+
+.tb-ratnote,
+.tb-ratempty {
+  font-family: var(--font-body);
+  font-size: var(--text-2xs);
+  color: var(--color-text-tertiary);
+  margin-bottom: 4px;
+}
+
+.tb-ratrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+.tb-ratname {
+  font-family: var(--font-body);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+  min-width: 92px;
+}
+
+.tb-ratovr {
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+}
+
+.tb-ratdelta[data-dir='up'] {
+  color: var(--color-primary);
+}
+
+.tb-ratdelta[data-dir='down'] {
+  color: var(--color-danger);
+}
+
+.tb-ratdelta[data-dir='flat'] {
+  color: var(--color-text-tertiary);
+}
+
+.tb-ratgone,
+.tb-ratchanges {
+  font-family: var(--font-body);
+  font-size: var(--text-2xs);
+  color: var(--color-text-tertiary);
+}
+
+.tb-ratchanges {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .tb-ratname {
+    min-width: 76px;
+  }
+
+  .tb-ratchanges {
+    flex-basis: 100%;
+  }
+}
+
+.tb-ratrow[data-moved='0'] .tb-ratovr {
+  color: var(--color-text-secondary);
+  font-weight: var(--weight-regular);
+}

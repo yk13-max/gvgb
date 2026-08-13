@@ -1,4 +1,5 @@
 import { DEFAULT_STAT, STATS } from './model.js';
+import { toWeeks } from './weeks.js';
 
 // Roster and format persist locally — there is no backend.
 const STORE = 'fufa.tb.v1';
@@ -26,7 +27,7 @@ export function loadSaved() {
     return {
       ...d,
       players: d.players.map(normalizePlayer),
-      history: Array.isArray(d.history) ? d.history : [],
+      history: toWeeks(d.history),
     };
   } catch {
     return null;

@@ -7,6 +7,7 @@ import Pitch from './components/Pitch.jsx';
 import PlayerEditor from './components/PlayerEditor.jsx';
 import RecordResultDialog from './components/RecordResultDialog.jsx';
 import RosterPanel from './components/RosterPanel.jsx';
+import WeekAwardsDialog from './components/WeekAwardsDialog.jsx';
 import ShareDialog from './components/ShareDialog.jsx';
 import StatLadder from './components/StatLadder.jsx';
 import StatsTable from './components/StatsTable.jsx';
@@ -15,6 +16,7 @@ import { exportBoard } from './lib/exportBoard.js';
 import { DEFAULT_STATS, balance, layout, relax } from './lib/model.js';
 import { samplePlayers } from './lib/samplePlayers.js';
 import { loadSaved, save } from './lib/storage.js';
+import { putMatch } from './lib/weeks.js';
 
 const NARROW = '(max-width:760px)';
 const isNarrow = () => window.matchMedia(NARROW).matches;
@@ -99,7 +101,8 @@ export default function App() {
   const [page, setPage] = useState('balancer');
   const [mini, setMini] = useState(() => !!(saved && saved.mini));
   const [history, setHistory] = useState(() => (saved && Array.isArray(saved.history) ? saved.history : []));
-  const [recording, setRecording] = useState(null); // null | {} for a new result | an existing entry
+  const [recording, setRecording] = useState(null); // null | {} for a new match | { week, match } to edit
+  const [awarding, setAwarding] = useState(null); // the week whose nominations are open
   const [notice, setNotice] = useState(null);
 
   useEffect(() => {
@@ -210,17 +213,34 @@ export default function App() {
     if (fresh.length) setDraft({ ...fresh[0], stats: { ...fresh[0].stats }, alt: [], nicknames: [] });
   }
 
+  // A match belongs to the week matching its date; recording one creates that week
+  // and snapshots what every player who turned out was rated at the time.
   function saveResult(entry) {
-    setHistory((h) => {
-      const without = h.filter((m) => m.id !== entry.id);
-      return [...without, entry];
-    });
+    const next = putMatch(history, { ...entry, players });
+    setHistory(next);
     setRecording(null);
     setPage('history');
+    // Ask for the week's nominations once it has a result to nominate from. Only on a
+    // newly recorded match — editing a score shouldn't re-open the prompt every time.
+    const week = next.find((w) => w.date === entry.date);
+    if (entry.isNew && week && !Object.keys(week.awards).some((k) => week.awards[k] != null)) setAwarding(week);
   }
 
-  function deleteResult(id) {
-    setHistory((h) => h.filter((m) => m.id !== id));
+  function saveAwards(weekId, awards) {
+    setHistory((h) => h.map((w) => (w.id === weekId ? { ...w, awards } : w)));
+    setAwarding(null);
+  }
+
+  function deleteMatch(weekId, matchId) {
+    setHistory((h) =>
+      h
+        .map((w) => (w.id === weekId ? { ...w, matches: w.matches.filter((m) => m.id !== matchId) } : w))
+        .filter((w) => w.matches.length)
+    );
+  }
+
+  function deleteWeek(weekId) {
+    setHistory((h) => h.filter((w) => w.id !== weekId));
   }
 
   // A JSON import replaces the roster outright, so it always asks first.
@@ -412,7 +432,14 @@ export default function App() {
       </header>
 
       {page === 'history' ? (
-        <History history={history} onEdit={(m) => setRecording(m)} onDelete={deleteResult} />
+        <History
+          weeks={history}
+          players={players}
+          onAwards={(w) => setAwarding(w)}
+          onEditMatch={(week, match) => setRecording({ week, match })}
+          onDeleteMatch={deleteMatch}
+          onDeleteWeek={deleteWeek}
+        />
       ) : page === 'ladder' ? (
         <StatLadder players={players} selected={selected} onPatch={patchPlayer} />
       ) : page === 'stats' ? (
@@ -581,9 +608,26 @@ export default function App() {
           teams={teams}
           teamSize={teamSize}
           match={match}
-          existing={recording.id ? recording : null}
+          weeks={history}
+          existing={
+            recording.week
+              ? {
+                  date: recording.week.date,
+                  venue: recording.week.venue,
+                  teamSize: recording.week.teamSize,
+                  match: recording.match,
+                }
+              : null
+          }
           onSave={saveResult}
           onClose={() => setRecording(null)}
+        />
+      )}
+      {awarding && (
+        <WeekAwardsDialog
+          week={history.find((w) => w.id === awarding.id) || awarding}
+          onSave={saveAwards}
+          onClose={() => setAwarding(null)}
         />
       )}
       {notice && (

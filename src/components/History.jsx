@@ -1,15 +1,9 @@
 import { useMemo, useState } from 'react';
 import { Button, Icon, IconButton } from '../ds/index.js';
+import { ABBR, SHORT } from '../lib/model.js';
 import { shortName } from '../lib/names.js';
+import { AWARDS, outcome, ratingDiff, tally, weekPlayerIds } from '../lib/weeks.js';
 import { formatDate } from '../lib/whatsapp.js';
-
-function outcome(m) {
-  if (!m.played) return 'off';
-  if (m.redScore == null || m.blueScore == null) return 'noscore';
-  if (m.redScore > m.blueScore) return 'red';
-  if (m.blueScore > m.redScore) return 'blue';
-  return 'draw';
-}
 
 function Stat({ label, value, color }) {
   return (
@@ -40,38 +34,200 @@ function Stat({ label, value, color }) {
   );
 }
 
-export default function History({ history, onEdit, onDelete }) {
+// What each player was rated that week, and how that compares with now.
+function RatingsPanel({ week, players }) {
+  const rows = Object.keys(week.ratings).map((id) => {
+    const snap = week.ratings[id];
+    const current = players.find((p) => p.id === Number(id));
+    return { id: Number(id), snap, current, ...ratingDiff(snap, current) };
+  });
+  if (!rows.length) {
+    return <div className="tb-ratempty">No ratings were snapshotted for this week.</div>;
+  }
+  rows.sort((a, b) => b.snap.ovr - a.snap.ovr);
+  const changedCount = rows.filter((r) => r.changed.length).length;
+
+  return (
+    <div className="tb-ratpanel">
+      <div className="tb-ratnote">
+        Ratings as they stood on the day.{' '}
+        {changedCount
+          ? changedCount + ' player' + (changedCount === 1 ? ' has' : 's have') + ' been re-rated since.'
+          : 'Nothing has been re-rated since.'}
+      </div>
+      {rows.map((r) => {
+        const gone = r.ovrNow == null;
+        const delta = gone ? 0 : r.ovrNow - r.snap.ovr;
+        const posMoved = !gone && r.current.pos !== r.snap.pos;
+        // Only a row that actually moved earns the before/after treatment; the rest
+        // read as a plain list of what they were rated.
+        const moved = !gone && (delta !== 0 || r.changed.length > 0 || posMoved);
+        return (
+          <div key={r.id} className="tb-ratrow" data-moved={moved ? '1' : '0'}>
+            <span className="tb-ratname">{shortName(r.snap.name)}</span>
+            <span className="tb-ratovr">{r.snap.ovr}</span>
+            {gone && <span className="tb-ratgone">no longer on the roster</span>}
+            {moved && (
+              <>
+                <Icon name="chevron-right" size={13} />
+                <span className="tb-ratovr">{r.ovrNow}</span>
+                {delta !== 0 && (
+                  <span className="tb-ratdelta" data-dir={delta > 0 ? 'up' : 'down'}>
+                    {delta > 0 ? '+' + delta : delta}
+                  </span>
+                )}
+                <span className="tb-ratchanges">
+                  {[
+                    ...(posMoved ? [SHORT[r.snap.pos] + '→' + SHORT[r.current.pos]] : []),
+                    ...r.changed.map((c) => ABBR[c.k] + ' ' + c.was + '→' + c.now),
+                  ].join(' · ')}
+                </span>
+              </>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function WeekCard({ week, players, onAwards, onEditMatch, onDeleteMatch, onDeleteWeek }) {
+  const [open, setOpen] = useState(false);
+  const t = tally([week]);
+  const named = weekPlayerIds(week);
+  const nameOf = (id) => {
+    const p = named.find((x) => x.id === id);
+    return p ? shortName(p.name) : week.ratings[id] ? shortName(week.ratings[id].name) : '—';
+  };
+  const anyAward = AWARDS.some(([k]) => week.awards && week.awards[k] != null);
+
+  return (
+    <div className="tb-week">
+      <div className="tb-weekhead">
+        <div>
+          <div className="tb-weekdate">{formatDate(week.date)}</div>
+          <div className="tb-weeksub">
+            {week.matches.length} match{week.matches.length === 1 ? '' : 'es'} · {week.teamSize}-a-side ·{' '}
+            {named.length} players{week.venue ? ' · ' + week.venue : ''}
+            {t.played > 0 && ' · ' + t.goalsRed + '–' + t.goalsBlue}
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={<Icon name="trophy" size={15} />}
+            onClick={() => onAwards(week)}
+          >
+            {anyAward ? 'Nominations' : 'Nominate'}
+          </Button>
+          <IconButton
+            icon={<Icon name={open ? 'chevron-up' : 'chevron-down'} size={15} />}
+            aria-label={(open ? 'Hide' : 'Show') + ' ratings for ' + formatDate(week.date)}
+            aria-expanded={open}
+            variant="ghost"
+            size="sm"
+            onClick={() => setOpen((v) => !v)}
+          />
+          <IconButton
+            icon={<Icon name="trash-2" size={14} />}
+            aria-label={'Delete week ' + formatDate(week.date)}
+            variant="ghost"
+            size="sm"
+            onClick={() => onDeleteWeek(week.id)}
+          />
+        </div>
+      </div>
+
+      {anyAward && (
+        <div className="tb-awards">
+          {AWARDS.filter(([k]) => week.awards[k] != null).map(([k, label]) => (
+            <span key={k} className="tb-award" data-potm={k === 'potm' ? '1' : '0'}>
+              <span className="tb-award-label">{label}</span>
+              <span className="tb-award-name">{nameOf(week.awards[k])}</span>
+            </span>
+          ))}
+        </div>
+      )}
+
+      <div className="tb-weekmatches">
+        {week.matches.map((m, i) => {
+          const o = outcome(m);
+          return (
+            <div key={m.id} className="tb-histrow" data-outcome={o}>
+              <div className="tb-histdate">
+                <div className="tb-histdate-main">Match {i + 1}</div>
+                <div className="tb-histdate-sub">
+                  {o === 'red' ? 'Red win' : o === 'blue' ? 'Blue win' : o === 'draw' ? 'Draw' : ''}
+                </div>
+              </div>
+              <div className="tb-histscore">
+                {o === 'off' ? (
+                  <span className="tb-histoff">Called off</span>
+                ) : o === 'noscore' ? (
+                  <span className="tb-histoff">No score</span>
+                ) : (
+                  <>
+                    <span style={{ color: 'var(--team-red)', fontWeight: o === 'red' ? 'var(--weight-bold)' : 'var(--weight-regular)' }}>
+                      {m.redScore}
+                    </span>
+                    <span style={{ color: 'var(--color-text-tertiary)' }}>–</span>
+                    <span style={{ color: 'var(--team-blue)', fontWeight: o === 'blue' ? 'var(--weight-bold)' : 'var(--weight-regular)' }}>
+                      {m.blueScore}
+                    </span>
+                  </>
+                )}
+              </div>
+              <div className="tb-histteams">
+                <div>
+                  <span className="tb-histteam-label" style={{ color: 'var(--team-red)' }}>
+                    RED
+                  </span>{' '}
+                  {m.red.map((p) => shortName(p.name)).join(', ')}
+                </div>
+                <div>
+                  <span className="tb-histteam-label" style={{ color: 'var(--team-blue)' }}>
+                    BLUE
+                  </span>{' '}
+                  {m.blue.map((p) => shortName(p.name)).join(', ')}
+                </div>
+              </div>
+              <div className="tb-histacts">
+                <IconButton
+                  icon={<Icon name="pencil" size={14} />}
+                  aria-label={'Edit match ' + (i + 1) + ' on ' + formatDate(week.date)}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onEditMatch(week, m)}
+                />
+                <IconButton
+                  icon={<Icon name="trash-2" size={14} />}
+                  aria-label={'Delete match ' + (i + 1) + ' on ' + formatDate(week.date)}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onDeleteMatch(week.id, m.id)}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {open && <RatingsPanel week={week} players={players} />}
+    </div>
+  );
+}
+
+export default function History({ weeks, players, onAwards, onEditMatch, onDeleteMatch, onDeleteWeek }) {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
 
   // ISO dates compare correctly as strings, so the range needs no parsing.
   const rows = useMemo(
-    () =>
-      history
-        .filter((m) => (!from || m.date >= from) && (!to || m.date <= to))
-        .slice()
-        .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id)),
-    [history, from, to]
+    () => weeks.filter((w) => (!from || w.date >= from) && (!to || w.date <= to)),
+    [weeks, from, to]
   );
-
-  const summary = useMemo(() => {
-    const s = { played: 0, off: 0, red: 0, blue: 0, draw: 0, goalsRed: 0, goalsBlue: 0 };
-    rows.forEach((m) => {
-      const o = outcome(m);
-      if (o === 'off') {
-        s.off += 1;
-        return;
-      }
-      s.played += 1;
-      if (o === 'red' || o === 'blue' || o === 'draw') {
-        s[o] += 1;
-        s.goalsRed += m.redScore;
-        s.goalsBlue += m.blueScore;
-      }
-    });
-    return s;
-  }, [rows]);
-
+  const t = useMemo(() => tally(rows), [rows]);
   const filtered = !!(from || to);
 
   return (
@@ -97,7 +253,7 @@ export default function History({ history, onEdit, onDelete }) {
               marginTop: 2,
             }}
           >
-            {filtered ? rows.length + '/' + history.length + ' shown' : history.length + ' recorded'}
+            {filtered ? rows.length + '/' + weeks.length + ' weeks shown' : weeks.length + ' weeks recorded'}
           </div>
         </div>
         <div className="tb-daterange">
@@ -126,84 +282,33 @@ export default function History({ history, onEdit, onDelete }) {
 
       {rows.length > 0 && (
         <div className="tb-histsummary">
-          <Stat label="Played" value={summary.played} />
-          <Stat label="Red wins" value={summary.red} color="var(--team-red)" />
-          <Stat label="Blue wins" value={summary.blue} color="var(--team-blue)" />
-          <Stat label="Draws" value={summary.draw} />
-          <Stat label="Goals R–B" value={summary.goalsRed + '–' + summary.goalsBlue} />
-          {summary.off > 0 && <Stat label="Called off" value={summary.off} />}
+          <Stat label="Weeks" value={t.weeks} />
+          <Stat label="Played" value={t.played} />
+          <Stat label="Red wins" value={t.red} color="var(--team-red)" />
+          <Stat label="Blue wins" value={t.blue} color="var(--team-blue)" />
+          <Stat label="Draws" value={t.draw} />
+          <Stat label="Goals R–B" value={t.goalsRed + '–' + t.goalsBlue} />
+          {t.off > 0 && <Stat label="Called off" value={t.off} />}
         </div>
       )}
 
       <div className="tb-histlist">
-        {rows.map((m) => {
-          const o = outcome(m);
-          return (
-            <div key={m.id} className="tb-histrow" data-outcome={o}>
-              <div className="tb-histdate">
-                <div className="tb-histdate-main">{formatDate(m.date)}</div>
-                <div className="tb-histdate-sub">
-                  {m.teamSize}-a-side{m.venue ? ' · ' + m.venue : ''}
-                </div>
-              </div>
-
-              <div className="tb-histscore">
-                {o === 'off' ? (
-                  <span className="tb-histoff">Called off</span>
-                ) : o === 'noscore' ? (
-                  <span className="tb-histoff">No score</span>
-                ) : (
-                  <>
-                    <span style={{ color: 'var(--team-red)', fontWeight: o === 'red' ? 'var(--weight-bold)' : 'var(--weight-regular)' }}>
-                      {m.redScore}
-                    </span>
-                    <span style={{ color: 'var(--color-text-tertiary)' }}>–</span>
-                    <span style={{ color: 'var(--team-blue)', fontWeight: o === 'blue' ? 'var(--weight-bold)' : 'var(--weight-regular)' }}>
-                      {m.blueScore}
-                    </span>
-                  </>
-                )}
-              </div>
-
-              <div className="tb-histteams">
-                <div>
-                  <span className="tb-histteam-label" style={{ color: 'var(--team-red)' }}>
-                    RED
-                  </span>{' '}
-                  {m.red.map((p) => shortName(p.name)).join(', ')}
-                </div>
-                <div>
-                  <span className="tb-histteam-label" style={{ color: 'var(--team-blue)' }}>
-                    BLUE
-                  </span>{' '}
-                  {m.blue.map((p) => shortName(p.name)).join(', ')}
-                </div>
-              </div>
-
-              <div className="tb-histacts">
-                <IconButton
-                  icon={<Icon name="pencil" size={14} />}
-                  aria-label={'Edit result for ' + formatDate(m.date)}
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onEdit(m)}
-                />
-                <IconButton
-                  icon={<Icon name="trash-2" size={14} />}
-                  aria-label={'Delete result for ' + formatDate(m.date)}
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onDelete(m.id)}
-                />
-              </div>
-            </div>
-          );
-        })}
+        {rows.map((w) => (
+          <WeekCard
+            key={w.id}
+            week={w}
+            players={players}
+            onAwards={onAwards}
+            onEditMatch={onEditMatch}
+            onDeleteMatch={onDeleteMatch}
+            onDeleteWeek={onDeleteWeek}
+          />
+        ))}
 
         {!rows.length && (
           <div className="tb-histempty">
-            {history.length
-              ? 'No matches in that date range.'
+            {weeks.length
+              ? 'No weeks in that date range.'
               : 'Nothing recorded yet. Balance a squad, then use Record result on the Balancer to log the score.'}
           </div>
         )}

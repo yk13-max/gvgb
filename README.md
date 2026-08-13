@@ -71,14 +71,27 @@ and the **Match history**.
 
 ### Match history
 
-**Record result** on the Balancer logs the drafted teams: the date played (typically a Friday),
-whether the match actually went ahead, the final score and the pitch. A called-off fixture can be
-logged too — the teams are kept, without a score.
+History is organised by **game week** — one session, typically a Friday, holding however many
+matches you played that night.
 
-The history page lists every result newest first, colour-flagged by winner, with the two squads
-and buttons to edit or delete an entry. **From** and **To** dates filter the list to a range, and
-the summary above it — played, red wins, blue wins, draws, goals for and against — recomputes for
-whatever the range shows.
+- **Record result** on the Balancer logs the drafted teams against a date. If a week already
+  exists for that date the match joins it ("match 2 of this session"); otherwise the week is
+  created. The date on a match is what decides its week, so editing a match's date moves it
+  between weeks, and a week with no matches left disappears.
+- **Nominations** — after the first match of a week is recorded, the app asks for **best
+  attacker**, **best midfielder**, **best defender** and the **overall POTM**. Only players who
+  turned out that week can be nominated, and nobody is filtered out by position — the lists are
+  just ordered so the obvious candidates come first. Skip and come back to it from the week's
+  Nominations button; editing a score later won't re-open the prompt.
+- **Ratings that week** — creating a week snapshots every participating player's ten ratings and
+  their OVR. Expand a week to see them, with anyone re-rated since shown as `81 › 70 −11` plus
+  exactly what moved (`PAC 92→50 · SHO 86→70`, and a position change if there was one). Players
+  nobody has touched read as a plain list of what they were rated on the day.
+- **From** and **To** dates filter to a range of weeks, and the summary above — weeks, matches
+  played, wins each side, draws, goals — recomputes for whatever the range shows.
+
+A history saved before weeks existed migrates automatically: flat matches sharing a date are
+grouped into one week.
 
 ### Stat ladder
 
@@ -103,7 +116,7 @@ top.
   rating and on OVR. Filters combine, and **Clear filters** resets them.
 - **Sort any column** — click a header to sort ascending, again for descending.
 - The row's pencil opens the same full editor used elsewhere; the bin deletes.
-- **Import JSON / Export JSON** — export writes a file holding the roster, the match history and
+- **Import JSON / Export JSON** — export writes a file holding the roster, the game weeks and
   the format. Import accepts that file, a bare `{"players": [...]}` object, or a plain array of
   players; missing stats are filled at 60, colliding or missing ids are re-issued, and nameless
   entries are dropped. Importing replaces the current roster, so it confirms first — export a
@@ -112,7 +125,7 @@ top.
 On a phone the table scrolls sideways with the player name column pinned to the left edge, and
 the header, filter and averages rows stay pinned while you scroll.
 
-The roster, format, selection, squad view, match history and the kick-off time and pitch are saved to
+The roster, format, selection, squad view, game weeks and the kick-off time and pitch are saved to
 `localStorage` — there is no backend and no account. Clearing site data resets to the twelve
 sample players, so use **Export JSON** for anything you want to keep.
 
@@ -146,10 +159,13 @@ src/
     whatsapp.js     teams + match details -> chat-ready text
     exportBoard.js  board -> PNG
     backup.js       roster + history <-> JSON file
+    weeks.js        game weeks: grouping matches by date, award slots, ratings
+                    snapshots and their diffs, and migrating pre-week history
     storage.js      localStorage persistence, and back-filling stats added since a
                     roster was last saved
   components/   RosterPanel, PlayerCard, PlayerEditor, Pitch, Metrics, StatsTable,
-                StatLadder, History, ImportDialog, ShareDialog, RecordResultDialog
+                StatLadder, History, ImportDialog, ShareDialog, RecordResultDialog,
+                WeekAwardsDialog
   styles/       design tokens + the shell's responsive layout
   App.jsx       state, balancing, pin drag/swap, view switching
 ```

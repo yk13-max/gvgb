@@ -1,5 +1,6 @@
 import { downloadBlob } from './download.js';
 import { normalizePlayer } from './storage.js';
+import { toWeeks } from './weeks.js';
 
 export const BACKUP_APP = 'fufa-team-balancer';
 export const BACKUP_VERSION = 1;
@@ -50,7 +51,7 @@ export function parseBackup(text) {
   });
   if (!players.length) return { error: 'No players in that file had a name.' };
 
-  const history = Array.isArray(data && data.history) ? data.history.filter((m) => m && m.date) : [];
+  const history = toWeeks(data && data.history);
   const teamSize = data && (data.teamSize === 5 || data.teamSize === 6) ? data.teamSize : null;
   return { players, history, teamSize };
 }

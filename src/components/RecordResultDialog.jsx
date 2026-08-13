@@ -31,38 +31,46 @@ function ScoreBox({ label, color, value, onChange }) {
   );
 }
 
-export default function RecordResultDialog({ teams, teamSize, match, existing, onSave, onClose }) {
+export default function RecordResultDialog({ teams, teamSize, match, weeks, existing, onSave, onClose }) {
   const [date, setDate] = useState(existing ? existing.date : match.date);
-  const [played, setPlayed] = useState(existing ? existing.played : true);
-  const [red, setRed] = useState(existing && existing.redScore != null ? existing.redScore : '');
-  const [blue, setBlue] = useState(existing && existing.blueScore != null ? existing.blueScore : '');
+  const [played, setPlayed] = useState(existing ? existing.match.played : true);
+  const [red, setRed] = useState(existing && existing.match.redScore != null ? existing.match.redScore : '');
+  const [blue, setBlue] = useState(existing && existing.match.blueScore != null ? existing.match.blueScore : '');
   const [venue, setVenue] = useState(existing ? existing.venue || '' : match.venue || '');
 
   const sides = existing
-    ? { red: existing.red, blue: existing.blue }
+    ? { red: existing.match.red, blue: existing.match.blue }
     : {
         red: teams.red.map((p) => ({ id: p.id, name: p.name })),
         blue: teams.blue.map((p) => ({ id: p.id, name: p.name })),
       };
 
+  // Which match of that week's session this is — a Friday can hold several.
+  const week = weeks.find((w) => w.date === date);
+  const already = week ? week.matches.filter((m) => !existing || m.id !== existing.match.id).length : 0;
+  const ordinal = already + 1;
+
   function save() {
     onSave({
-      id: existing ? existing.id : Date.now(),
+      isNew: !existing,
       date,
-      played,
       venue: venue.trim(),
       teamSize: existing ? existing.teamSize : teamSize,
-      redScore: played && red !== '' ? Number(red) : null,
-      blueScore: played && blue !== '' ? Number(blue) : null,
-      red: sides.red,
-      blue: sides.blue,
+      match: {
+        id: existing ? existing.match.id : undefined,
+        played,
+        redScore: played && red !== '' ? Number(red) : null,
+        blueScore: played && blue !== '' ? Number(blue) : null,
+        red: sides.red,
+        blue: sides.blue,
+      },
     });
   }
 
   return (
     <Dialog
       open
-      title={existing ? 'Edit result' : 'Record result'}
+      title={existing ? 'Edit match' : 'Record match'}
       onClose={onClose}
       footer={
         <>
@@ -94,7 +102,7 @@ export default function RecordResultDialog({ teams, teamSize, match, existing, o
         </div>
         {date && (
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
-            {formatDate(date)}
+            {formatDate(date)} · {already ? 'match ' + ordinal + ' of this session' : 'first match of this session'}
           </div>
         )}
 
