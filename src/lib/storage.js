@@ -3,15 +3,18 @@ import { DEFAULT_STAT, STATS } from './model.js';
 // Roster and format persist locally — there is no backend.
 const STORE = 'fufa.tb.v1';
 
-// Rosters saved before a stat existed have no value for it. Fill the gaps rather than
-// letting `overall()` read undefined as zero and quietly tank everyone's rating.
-function normalize(p) {
+// Rosters saved before a stat or field existed have no value for it. Fill the gaps rather
+// than letting `overall()` read undefined as zero and quietly tank everyone's rating.
+export function normalizePlayer(p) {
   const stats = {};
   STATS.forEach((k) => {
     const v = Number(p && p.stats ? p.stats[k] : undefined);
     stats[k] = Number.isFinite(v) ? v : DEFAULT_STAT;
   });
-  return { ...p, alt: Array.isArray(p.alt) ? p.alt : [], stats };
+  const nicknames = Array.isArray(p && p.nicknames)
+    ? p.nicknames.map((n) => String(n).trim()).filter(Boolean)
+    : [];
+  return { ...p, alt: Array.isArray(p && p.alt) ? p.alt : [], nicknames, stats };
 }
 
 export function loadSaved() {
@@ -20,7 +23,11 @@ export function loadSaved() {
     if (!raw) return null;
     const d = JSON.parse(raw);
     if (!d || !Array.isArray(d.players)) return null;
-    return { ...d, players: d.players.map(normalize) };
+    return {
+      ...d,
+      players: d.players.map(normalizePlayer),
+      history: Array.isArray(d.history) ? d.history : [],
+    };
   } catch {
     return null;
   }

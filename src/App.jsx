@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Icon, Switch } from './ds/index.js';
+import { Button, Dialog, Icon, Switch } from './ds/index.js';
+import History from './components/History.jsx';
 import ImportDialog from './components/ImportDialog.jsx';
 import Metrics from './components/Metrics.jsx';
 import Pitch from './components/Pitch.jsx';
 import PlayerEditor from './components/PlayerEditor.jsx';
+import RecordResultDialog from './components/RecordResultDialog.jsx';
 import RosterPanel from './components/RosterPanel.jsx';
 import ShareDialog from './components/ShareDialog.jsx';
 import StatLadder from './components/StatLadder.jsx';
 import StatsTable from './components/StatsTable.jsx';
+import { exportJSON } from './lib/backup.js';
 import { exportBoard } from './lib/exportBoard.js';
 import { DEFAULT_STATS, balance, layout, relax } from './lib/model.js';
 import { samplePlayers } from './lib/samplePlayers.js';
@@ -93,6 +96,9 @@ export default function App() {
   const [narrow, setNarrow] = useState(isNarrow);
   const [view, setView] = useState('squad');
   const [page, setPage] = useState('balancer');
+  const [history, setHistory] = useState(() => (saved && Array.isArray(saved.history) ? saved.history : []));
+  const [recording, setRecording] = useState(null); // null | {} for a new result | an existing entry
+  const [notice, setNotice] = useState(null);
 
   useEffect(() => {
     const mq = window.matchMedia(NARROW);
@@ -106,8 +112,8 @@ export default function App() {
   const needed = teamSize * 2;
 
   useEffect(() => {
-    save({ players, teamSize, selected, match: { time: match.time, venue: match.venue } });
-  }, [players, teamSize, selected, match.time, match.venue]);
+    save({ players, teamSize, selected, history, match: { time: match.time, venue: match.venue } });
+  }, [players, teamSize, selected, history, match.time, match.venue]);
 
   const teamOf = useMemo(() => {
     const m = {};
@@ -160,7 +166,11 @@ export default function App() {
   function advanceQueue() {
     const rest = queue.slice(1);
     setQueue(rest);
-    setDraft(rest.length ? { ...rest[0], stats: { ...rest[0].stats }, alt: [...(rest[0].alt || [])] } : null);
+    setDraft(
+      rest.length
+        ? { ...rest[0], stats: { ...rest[0].stats }, alt: [...(rest[0].alt || [])], nicknames: [...(rest[0].nicknames || [])] }
+        : null
+    );
   }
 
   function saveDraft() {
@@ -189,13 +199,56 @@ export default function App() {
       .filter((r) => !r.matchId)
       .forEach((r) => {
         nextId += 1;
-        fresh.push({ id: nextId, name: r.name, pos: r.pos || 'Any', alt: [], stats: { ...DEFAULT_STATS } });
+        fresh.push({ id: nextId, name: r.name, pos: r.pos || 'Any', alt: [], nicknames: [], stats: { ...DEFAULT_STATS } });
       });
     setPlayers((ps) => [...ps, ...fresh]);
     setSelected(Array.from(new Set([...existingIds, ...fresh.map((p) => p.id)])));
     resetBoard();
     setQueue(fresh);
-    if (fresh.length) setDraft({ ...fresh[0], stats: { ...fresh[0].stats }, alt: [] });
+    if (fresh.length) setDraft({ ...fresh[0], stats: { ...fresh[0].stats }, alt: [], nicknames: [] });
+  }
+
+  function saveResult(entry) {
+    setHistory((h) => {
+      const without = h.filter((m) => m.id !== entry.id);
+      return [...without, entry];
+    });
+    setRecording(null);
+    setPage('history');
+  }
+
+  function deleteResult(id) {
+    setHistory((h) => h.filter((m) => m.id !== id));
+  }
+
+  // A JSON import replaces the roster outright, so it always asks first.
+  function applyBackup(result, filename) {
+    if (result.error) {
+      setNotice({ title: 'Import failed', text: result.error });
+      return;
+    }
+    const extra = result.history.length ? ' and ' + result.history.length + ' recorded match(es)' : '';
+    setNotice({
+      title: 'Replace the roster?',
+      text:
+        filename +
+        ' holds ' +
+        result.players.length +
+        ' player(s)' +
+        extra +
+        '. This replaces the current ' +
+        players.length +
+        ' player(s) — export first if you want a copy.',
+      confirmLabel: 'Replace roster',
+      onConfirm: () => {
+        setPlayers(result.players);
+        setSelected([]);
+        if (result.history.length) setHistory(result.history);
+        if (result.teamSize) setTeamSize(result.teamSize);
+        resetBoard();
+        setNotice(null);
+      },
+    });
   }
 
   // Pins drag freely; a tap selects, and a tap on an opponent swaps the two.
@@ -279,6 +332,7 @@ export default function App() {
             ['balancer', 'Balancer'],
             ['stats', 'Player stats'],
             ['ladder', 'Stat ladder'],
+            ['history', 'History'],
           ]}
           value={page}
           onChange={setPage}
@@ -319,6 +373,15 @@ export default function App() {
           <Button
             variant="secondary"
             size="sm"
+            icon={<Icon name="trophy" size={15} />}
+            disabled={!built}
+            onClick={() => setRecording({})}
+          >
+            Record result
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
             icon={<Icon name="download" size={15} />}
             disabled={!built}
             onClick={() => exportBoard(teams, pos, pngRatings)}
@@ -345,16 +408,20 @@ export default function App() {
         )}
       </header>
 
-      {page === 'ladder' ? (
+      {page === 'history' ? (
+        <History history={history} onEdit={(m) => setRecording(m)} onDelete={deleteResult} />
+      ) : page === 'ladder' ? (
         <StatLadder players={players} selected={selected} onPatch={patchPlayer} />
       ) : page === 'stats' ? (
         <StatsTable
           players={players}
           selected={selected}
           onPatch={patchPlayer}
-          onEdit={(p) => setDraft({ ...p, stats: { ...p.stats }, alt: [...(p.alt || [])] })}
+          onEdit={(p) => setDraft({ ...p, stats: { ...p.stats }, alt: [...(p.alt || [])], nicknames: [...(p.nicknames || [])] })}
           onDelete={removePlayer}
-          onAdd={() => setDraft({ name: '', pos: 'Midfielder', alt: [], stats: { ...DEFAULT_STATS } })}
+          onAdd={() => setDraft({ name: '', pos: 'Midfielder', alt: [], nicknames: [], stats: { ...DEFAULT_STATS } })}
+          onExport={() => exportJSON({ players, history, teamSize })}
+          onImport={applyBackup}
         />
       ) : (
       <main className="tb-main" data-view={narrow ? view : 'all'}>
@@ -365,9 +432,9 @@ export default function App() {
             teamOf={teamOf}
             needed={needed}
             onToggle={toggle}
-            onEdit={(p) => setDraft({ ...p, stats: { ...p.stats }, alt: [...(p.alt || [])] })}
+            onEdit={(p) => setDraft({ ...p, stats: { ...p.stats }, alt: [...(p.alt || [])], nicknames: [...(p.nicknames || [])] })}
             onDelete={removePlayer}
-            onAdd={() => setDraft({ name: '', pos: 'Midfielder', alt: [], stats: { ...DEFAULT_STATS } })}
+            onAdd={() => setDraft({ name: '', pos: 'Midfielder', alt: [], nicknames: [], stats: { ...DEFAULT_STATS } })}
           />
         </section>
 
@@ -487,6 +554,10 @@ export default function App() {
           <Icon name="sliders-vertical" size={19} />
           <span>Ladder</span>
         </button>
+        <button type="button" data-on={page === 'history' ? '1' : '0'} onClick={() => setPage('history')}>
+          <Icon name="history" size={19} />
+          <span>History</span>
+        </button>
       </nav>
 
       <PlayerEditor
@@ -499,6 +570,46 @@ export default function App() {
       {importing && <ImportDialog players={players} onCancel={() => setImporting(false)} onConfirm={applyImport} />}
       {sharing && (
         <ShareDialog teams={teams} match={match} onMatchChange={setMatch} onClose={() => setSharing(false)} />
+      )}
+      {recording && (
+        <RecordResultDialog
+          teams={teams}
+          teamSize={teamSize}
+          match={match}
+          existing={recording.id ? recording : null}
+          onSave={saveResult}
+          onClose={() => setRecording(null)}
+        />
+      )}
+      {notice && (
+        <Dialog
+          open
+          title={notice.title}
+          onClose={() => setNotice(null)}
+          footer={
+            <>
+              <Button variant="secondary" size="sm" onClick={() => setNotice(null)}>
+                {notice.onConfirm ? 'Cancel' : 'Close'}
+              </Button>
+              {notice.onConfirm && (
+                <Button variant="danger" size="sm" onClick={notice.onConfirm}>
+                  {notice.confirmLabel}
+                </Button>
+              )}
+            </>
+          }
+        >
+          <div
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-sm)',
+              color: 'var(--color-text-secondary)',
+              lineHeight: 'var(--leading-normal)',
+            }}
+          >
+            {notice.text}
+          </div>
+        </Dialog>
       )}
     </div>
   );

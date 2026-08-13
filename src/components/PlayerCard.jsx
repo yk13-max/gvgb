@@ -109,6 +109,21 @@ export default function PlayerCard({ p, selected, team, onToggle, onEdit, onDele
           >
             {p.name}
           </div>
+          {(p.nicknames || []).length > 0 && (
+            <div
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: 'var(--text-2xs)',
+                color: 'var(--color-text-tertiary)',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                marginTop: 1,
+              }}
+            >
+              aka {p.nicknames.join(', ')}
+            </div>
+          )}
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
             <span
               style={{

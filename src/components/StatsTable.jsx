@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Icon, IconButton } from '../ds/index.js';
+import { parseBackup } from '../lib/backup.js';
 import { ABBR, POSITIONS, SHORT, STATS, overall, statAvg, ovrAvg } from '../lib/model.js';
 
 const RANGE_KEYS = [...STATS, 'ovr'];
@@ -44,6 +45,35 @@ function StatCell({ value, onCommit, label }) {
   );
 }
 
+// Nicknames edit as one comma-separated field. The raw text is held locally while the
+// cell has focus so a trailing comma survives being typed.
+function NickCell({ value, onCommit, label }) {
+  const [text, setText] = useState(value.join(', '));
+  const [focused, setFocused] = useState(false);
+  useEffect(() => {
+    if (!focused) setText(value.join(', '));
+  }, [value, focused]);
+  return (
+    <input
+      className="tb-cellinput"
+      aria-label={label}
+      placeholder="—"
+      value={text}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      onChange={(e) => {
+        setText(e.target.value);
+        onCommit(
+          e.target.value
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+        );
+      }}
+    />
+  );
+}
+
 function SortHead({ label, sortKey, sort, setSort, align = 'left', title }) {
   const on = sort && sort.key === sortKey;
   return (
@@ -62,9 +92,20 @@ function SortHead({ label, sortKey, sort, setSort, align = 'left', title }) {
   );
 }
 
-export default function StatsTable({ players, selected, onPatch, onEdit, onDelete, onAdd }) {
+export default function StatsTable({ players, selected, onPatch, onEdit, onDelete, onAdd, onExport, onImport }) {
   const [f, setF] = useState(EMPTY);
   const [sort, setSort] = useState(null);
+  const fileRef = useRef(null);
+
+  function pickFile(e) {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = ''; // let the same file be picked again after a cancelled import
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => onImport(parseBackup(String(reader.result)), file.name);
+    reader.onerror = () => onImport({ error: 'That file could not be read.' }, file.name);
+    reader.readAsText(file);
+  }
 
   const setRange = (key, side, v) =>
     setF((s) => ({ ...s, ranges: { ...s.ranges, [key]: { min: '', max: '', ...s.ranges[key], [side]: v } } }));
@@ -72,7 +113,7 @@ export default function StatsTable({ players, selected, onPatch, onEdit, onDelet
   const rows = useMemo(() => {
     const q = f.name.trim().toLowerCase();
     const out = players.filter((p) => {
-      if (q && !p.name.toLowerCase().includes(q)) return false;
+      if (q && ![p.name, ...(p.nicknames || [])].some((n) => n.toLowerCase().includes(q))) return false;
       if (f.pos && p.pos !== f.pos) return false;
       if (f.alt && !(p.alt || []).includes(f.alt)) return false;
       if (f.squad === 'in' && !selected.includes(p.id)) return false;
@@ -140,6 +181,24 @@ export default function StatsTable({ players, selected, onPatch, onEdit, onDelet
           <Button variant="secondary" size="sm" icon={<Icon name="plus" size={15} />} onClick={onAdd}>
             Add player
           </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={<Icon name="upload" size={15} />}
+            onClick={() => fileRef.current && fileRef.current.click()}
+          >
+            Import JSON
+          </Button>
+          <Button variant="secondary" size="sm" icon={<Icon name="file-json" size={15} />} onClick={onExport}>
+            Export JSON
+          </Button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json,.json"
+            onChange={pickFile}
+            style={{ display: 'none' }}
+          />
         </div>
       </div>
 
@@ -153,6 +212,7 @@ export default function StatsTable({ players, selected, onPatch, onEdit, onDelet
               <th className="tb-col-pos">
                 <SortHead label="Position" sortKey="pos" sort={sort} setSort={setSort} />
               </th>
+              <th className="tb-col-nick">Also known as</th>
               <th className="tb-col-alt">Also plays</th>
               {STATS.map((k) => (
                 <th key={k} className="tb-col-stat">
@@ -193,6 +253,7 @@ export default function StatsTable({ players, selected, onPatch, onEdit, onDelet
                   ))}
                 </select>
               </th>
+              <th className="tb-col-nick" />
               <th className="tb-col-alt">
                 <select
                   className="tb-filterinput"
@@ -286,6 +347,13 @@ export default function StatsTable({ players, selected, onPatch, onEdit, onDelet
                       ))}
                     </select>
                   </td>
+                  <td className="tb-col-nick">
+                    <NickCell
+                      label={'Nicknames for ' + p.name}
+                      value={p.nicknames || []}
+                      onCommit={(nicknames) => onPatch(p.id, { nicknames })}
+                    />
+                  </td>
                   <td className="tb-col-alt">
                     <div className="tb-alts">
                       {POSITIONS.filter((o) => o !== p.pos).map((o) => {
@@ -357,7 +425,7 @@ export default function StatsTable({ players, selected, onPatch, onEdit, onDelet
             })}
             {!rows.length && (
               <tr>
-                <td colSpan={12} className="tb-tblempty">
+                <td colSpan={13} className="tb-tblempty">
                   No players match these filters.
                 </td>
               </tr>
@@ -369,6 +437,7 @@ export default function StatsTable({ players, selected, onPatch, onEdit, onDelet
               <tr>
                 <td className="tb-col-name">Average of {rows.length}</td>
                 <td className="tb-col-pos" />
+                <td className="tb-col-nick" />
                 <td className="tb-col-alt" />
                 {STATS.map((k) => (
                   <td key={k} className="tb-col-stat tb-avgcell">

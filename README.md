@@ -8,17 +8,17 @@ as a real Vite + React app.
 
 ## What it does
 
-The app has three pages, switched from the header on desktop and the bottom tab bar on a phone:
-the **Balancer** (squad, board, balance readout), the **Player stats** table and the **Stat
-ladder**.
+The app has four pages, switched from the header on desktop and the bottom tab bar on a phone:
+the **Balancer** (squad, board, balance readout), the **Player stats** table, the **Stat ladder**
+and the **Match history**.
 
 ### Balancer
 
 - **Squad** — a card grid of players with eight 0–100 stats each (PAC, SHO, PAS, DEF, PHY, DRI,
   STA for stamina, GKP for goalkeeping), a primary position and any number of "can also play"
-  positions. Add, edit and delete anyone. Overall (OVR) is weighted by primary position: a
-  striker's shooting and pace count for more than their defending, and goalkeeping carries a
-  keeper's rating while staying a token weight outfield.
+  positions, plus any number of nicknames. Add, edit and delete anyone. Overall (OVR) is weighted
+  by primary position: a striker's shooting and pace count for more than their defending, and
+  goalkeeping carries a keeper's rating while staying a token weight outfield.
 - **Balance** — pick exactly `2 × team size` players (everyone else is benched) and the balancer
   splits them by overall, per-stat averages and position mix. Each side always gets a keeper —
   the best two goalkeepers, falling back to anyone who can also play there, then to the best
@@ -31,10 +31,11 @@ ladder**.
 - **Balance readout** — balance score out of 100 and the average-OVR delta, team total and
   average, stat-by-stat comparison bars, strongest/weakest callouts, and the position mix.
 - **Paste list** — paste a WhatsApp signup thread or numbered list. Numbering, timestamps,
-  links and notes like `(GK)` are stripped, names are fuzzy-matched to the saved roster
-  (correct any match from the dropdown), header lines and chatter come in pre-skipped, and
-  unknown names are created at 60 across the board with the editor walking you through them
-  one by one.
+  links and notes like `(GK)` are stripped, names are fuzzy-matched against each player's name
+  **and their nicknames** (correct any match from the dropdown), header lines and chatter come
+  in pre-skipped, and unknown names are created at 60 across the board with the editor walking
+  you through them one by one. Nicknames are what make this reliable: add whatever the group
+  actually types — "Sank", "Bobby" — and the matcher finds the right player.
 - **WhatsApp text** — chat-ready text with a live preview, copy to clipboard and a native share
   sheet where there is one:
 
@@ -59,6 +60,17 @@ ladder**.
   in the header controls whether OVR numbers appear next to the names on the exported image; it
   is on by default.
 
+### Match history
+
+**Record result** on the Balancer logs the drafted teams: the date played (typically a Friday),
+whether the match actually went ahead, the final score and the pitch. A called-off fixture can be
+logged too — the teams are kept, without a score.
+
+The history page lists every result newest first, colour-flagged by winner, with the two squads
+and buttons to edit or delete an entry. **From** and **To** dates filter the list to a range, and
+the summary above it — played, red wins, blue wins, draws, goals for and against — recomputes for
+whatever the range shows.
+
 ### Stat ladder
 
 One stat at a time, everyone on the same 0–100 scale. Click a stat to switch to it, then drag a
@@ -82,20 +94,26 @@ top.
   rating and on OVR. Filters combine, and **Clear filters** resets them.
 - **Sort any column** — click a header to sort ascending, again for descending.
 - The row's pencil opens the same full editor used elsewhere; the bin deletes.
+- **Import JSON / Export JSON** — export writes a file holding the roster, the match history and
+  the format. Import accepts that file, a bare `{"players": [...]}` object, or a plain array of
+  players; missing stats are filled at 60, colliding or missing ids are re-issued, and nameless
+  entries are dropped. Importing replaces the current roster, so it confirms first — export a
+  copy before you do.
 
 On a phone the table scrolls sideways with the player name column pinned to the left edge, and
 the header, filter and averages rows stay pinned while you scroll.
 
-The roster, format, selection and the match's kick-off time and pitch are saved to `localStorage` — there is no backend and no
-account. Clearing site data resets to the twelve sample players.
+The roster, format, selection, match history and the kick-off time and pitch are saved to
+`localStorage` — there is no backend and no account. Clearing site data resets to the twelve
+sample players, so use **Export JSON** for anything you want to keep.
 
 ## Layouts
 
 - **Desktop (>1100px)** — three columns: squad, board, balance readout.
 - **Tablet (761–1100px)** — squad and board side by side, balance readout full width below.
 - **Phone (≤760px)** — one pane at a time with a bottom tab bar (Squad / Board / Balance / Table
-  / Ladder), a sticky header whose action row scrolls horizontally, 44px touch targets, and pins
-  enlarged to 44px. Balancing jumps you straight to the Board tab.
+  / Ladder / History), a sticky header whose action row scrolls horizontally, 44px touch targets,
+  and pins enlarged to 44px. Balancing jumps you straight to the Board tab.
 
 ## Running it
 
@@ -118,10 +136,11 @@ src/
     parseList.js    WhatsApp signup-list parser and fuzzy roster matching
     whatsapp.js     teams + match details -> chat-ready text
     exportBoard.js  board -> PNG
+    backup.js       roster + history <-> JSON file
     storage.js      localStorage persistence, and back-filling stats added since a
                     roster was last saved
   components/   RosterPanel, PlayerCard, PlayerEditor, Pitch, Metrics, StatsTable,
-                StatLadder, ImportDialog, ShareDialog
+                StatLadder, History, ImportDialog, ShareDialog, RecordResultDialog
   styles/       design tokens + the shell's responsive layout
   App.jsx       state, balancing, pin drag/swap, view switching
 ```

@@ -1,3 +1,4 @@
+import { downloadBlob } from './download.js';
 import { overall } from './model.js';
 import { initials, shortName } from './names.js';
 
@@ -60,17 +61,6 @@ function drawBoard(teams, pos, showRatings) {
   return c;
 }
 
-function download(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
 export function exportBoard(teams, pos, showRatings = true) {
   const canvas = drawBoard(teams, pos, showRatings);
   const filename = 'fufa-teams.png';
@@ -80,9 +70,9 @@ export function exportBoard(teams, pos, showRatings = true) {
     // On phones a download is often a dead end — hand the image to the share sheet
     // (WhatsApp, Photos) when the browser supports it, and fall back to a download.
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      navigator.share({ files: [file], title: 'FUFA teams' }).catch(() => download(blob, filename));
+      navigator.share({ files: [file], title: 'FUFA teams' }).catch(() => downloadBlob(blob, filename));
     } else {
-      download(blob, filename);
+      downloadBlob(blob, filename);
     }
   }, 'image/png');
 }

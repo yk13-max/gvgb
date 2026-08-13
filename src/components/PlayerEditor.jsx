@@ -1,4 +1,5 @@
-import { Button, Dialog, Input, Select } from '../ds/index.js';
+import { useState } from 'react';
+import { Button, Dialog, Icon, Input, Select } from '../ds/index.js';
 import { ABBR, POSITIONS, SHORT, STATS, overall } from '../lib/model.js';
 
 function Slider({ k, value, onChange }) {
@@ -35,6 +36,76 @@ function Slider({ k, value, onChange }) {
       >
         {value}
       </span>
+    </div>
+  );
+}
+
+// Whatever the group chat calls someone. These feed the paste-list matcher, so
+// "Sank" or "Bobby" finds the right player without renaming them on the roster.
+function Nicknames({ list, onChange }) {
+  const [text, setText] = useState('');
+  const add = () => {
+    const v = text.trim();
+    if (!v || list.some((n) => n.toLowerCase() === v.toLowerCase())) return setText('');
+    onChange([...list, v]);
+    return setText('');
+  };
+  return (
+    <div>
+      <div
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: 'var(--text-xs)',
+          fontWeight: 'var(--weight-medium)',
+          color: 'var(--color-text-secondary)',
+          textTransform: 'uppercase',
+          letterSpacing: 'var(--tracking-wide)',
+          marginBottom: 6,
+        }}
+      >
+        Also known as
+      </div>
+      {list.length > 0 && (
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+          {list.map((n) => (
+            <span key={n} className="tb-nickchip">
+              {n}
+              <button type="button" aria-label={'Remove nickname ' + n} onClick={() => onChange(list.filter((x) => x !== n))}>
+                <Icon name="x" size={12} />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end' }}>
+        <Input
+          style={{ flex: 1, minWidth: 0 }}
+          placeholder="e.g. Sank"
+          aria-label="Add a nickname"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              add();
+            }
+          }}
+        />
+        <Button variant="secondary" size="sm" onClick={add} disabled={!text.trim()} style={{ minHeight: 38 }}>
+          Add
+        </Button>
+      </div>
+      <div
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: 'var(--text-2xs)',
+          color: 'var(--color-text-tertiary)',
+          lineHeight: 'var(--leading-normal)',
+          marginTop: 6,
+        }}
+      >
+        Used when matching a pasted signup list — add the names the group actually uses.
+      </div>
     </div>
   );
 }
@@ -85,6 +156,7 @@ export default function PlayerEditor({ draft, onChange, onSave, onClose, queueNo
           placeholder="e.g. Sam Okafor"
           onChange={(e) => set({ name: e.target.value })}
         />
+        <Nicknames list={draft.nicknames || []} onChange={(nicknames) => set({ nicknames })} />
         <Select
           label="Primary position"
           value={draft.pos}

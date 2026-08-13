@@ -50,24 +50,32 @@ export function parseList(raw) {
   return out;
 }
 
+function scoreAgainst(candidate, n, first) {
+  const pn = norm(candidate);
+  if (!pn) return 0;
+  const pf = pn.split(' ')[0];
+  if (pn === n) return 100;
+  if (pf === first && (n.split(' ').length === 1 || pn.split(' ').length === 1)) return 88;
+  if (pn.startsWith(n) || n.startsWith(pn)) return 80;
+  const d = lev(pn, n);
+  if (d <= 2 && Math.max(pn.length, n.length) > 4) return 74 - d * 4;
+  if (lev(pf, first) <= 1) return 66;
+  return 0;
+}
+
 // Fuzzy match a pasted name against the saved roster — "Jo" should find "Jo Reyes".
+// Nicknames are matched alongside the real name, so whatever the group calls someone
+// in the chat still lands on the right player.
 export function bestMatch(name, players) {
   const n = norm(name);
   const first = n.split(' ')[0];
   let best = null;
   let bestScore = 0;
   players.forEach((p) => {
-    const pn = norm(p.name);
-    const pf = pn.split(' ')[0];
-    let sc = 0;
-    if (pn === n) sc = 100;
-    else if (pf === first && (n.split(' ').length === 1 || pn.split(' ').length === 1)) sc = 88;
-    else if (pn.startsWith(n) || n.startsWith(pn)) sc = 80;
-    else {
-      const d = lev(pn, n);
-      if (d <= 2 && Math.max(pn.length, n.length) > 4) sc = 74 - d * 4;
-      else if (lev(pf, first) <= 1) sc = 66;
-    }
+    const sc = [p.name, ...(p.nicknames || [])].reduce(
+      (top, candidate) => Math.max(top, scoreAgainst(candidate, n, first)),
+      0
+    );
     if (sc > bestScore) {
       bestScore = sc;
       best = p;
