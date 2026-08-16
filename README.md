@@ -29,6 +29,11 @@ and the **Match history**.
   the best two goalkeepers, falling back to anyone who can also play there, then to the best
   goalkeeping rating in the pool. **Reshuffle** re-runs it for a different split of equal
   quality.
+- **Swap colours** — appears in the header only once there are teams, since there is nothing to
+  swap before that. The two sides keep exactly the players the balancer gave them and simply
+  trade bibs: red becomes blue and blue becomes red, and the pins swap ends with them so each
+  side still defends the goal it is drawn next to. The readout, the squad cards, the WhatsApp
+  text and the PNG all follow. Swapping twice puts everything back.
 - **Board** — a vertical dark tactics pitch with red and blue pins placed freeform near their
   position band. Drag a pin to reposition it; tap a pin then tap an opponent to swap the two
   between teams. **Stat labels** toggles the per-pin stat lines. Pins are labelled first name
@@ -151,9 +156,10 @@ the actions sheet on a phone) with the two halves of a backup:
   The header stays one row that never scrolls: the wordmark, a **…** button, and the one action
   worth a tap of its own — *Balance teams*, which becomes *Re-balance* once there are teams.
   Everything the desktop header spreads across its width moves into the **…** sheet, grouped and
-  stacked full width: the format toggle, Paste list and Reshuffle, WhatsApp text / Export PNG /
-  Record result, the three board-and-image switches, and Export / Import data. Anything that
-  needs teams is greyed out until there are teams, and every action is two taps from anywhere.
+  stacked full width: the format toggle, Paste list / Reshuffle / Swap team colours, WhatsApp
+  text / Export PNG / Record result, the three board-and-image switches, and Export / Import
+  data. Anything that needs teams is greyed out until there are teams, and every action is two
+  taps from anywhere.
 
 ## Running it
 

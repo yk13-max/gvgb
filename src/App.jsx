@@ -375,6 +375,20 @@ export default function App() {
     window.addEventListener('pointercancel', cancel);
   }
 
+  // Same two teams, opposite bibs. Both ends of the board swap with them, so each side
+  // still defends the goal it is drawn next to and the formation reads the same way round.
+  function swapColours() {
+    setTeams((t) => ({ red: t.blue, blue: t.red }));
+    setPos((pv) => {
+      const next = {};
+      Object.keys(pv).forEach((id) => {
+        next[id] = { x: 100 - pv[id].x, y: 100 - pv[id].y };
+      });
+      return next;
+    });
+    setSel(null);
+  }
+
   function swap(a, b) {
     const A = teams[a.team].find((p) => p.id === a.id);
     const Bp = teams[b.team].find((p) => p.id === b.id);
@@ -490,6 +504,17 @@ export default function App() {
           >
             Reshuffle
           </Button>
+          {/* Only worth offering once there are two sides to swap. */}
+          {built && (
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<Icon name="arrow-left-right" size={15} />}
+              onClick={swapColours}
+            >
+              Swap colours
+            </Button>
+          )}
           <Button variant="primary" size="sm" disabled={selected.length !== needed} onClick={() => build()}>
             {built ? 'Re-balance' : 'Balance teams'}
           </Button>
@@ -742,6 +767,16 @@ export default function App() {
                       build(s);
                     }}
                   />
+                  {built && (
+                    <MenuRow
+                      icon="arrow-left-right"
+                      label="Swap team colours"
+                      onClick={() => {
+                        setMenu(false);
+                        swapColours();
+                      }}
+                    />
+                  )}
                 </div>
 
                 <div className="tb-menu-group">
