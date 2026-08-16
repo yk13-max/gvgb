@@ -1,0 +1,1322 @@
+/* Team-balancer shell layout. Three columns on desktop, one pane at a time under 760px. */
+
+:root {
+  /* Team colors — not part of the design system, added for this surface. */
+  --team-red: oklch(52% 0.18 27);
+  --team-blue: oklch(50% 0.15 255);
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--color-bg);
+  font-family: var(--font-body);
+  color: var(--color-text-primary);
+  /* Stop iOS from auto-inflating text in the dense stat columns. */
+  -webkit-text-size-adjust: 100%;
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--color-primary-hover);
+  text-decoration: underline;
+}
+
+.tb-shell {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+}
+
+.tb-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  row-gap: 8px;
+  padding: 12px 20px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.tb-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tb-main {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(230px, 1fr) minmax(300px, 0.9fr) 272px;
+  gap: 16px;
+  padding: 16px;
+}
+
+.tb-pitch {
+  position: relative;
+  height: 100%;
+  min-height: 470px;
+  aspect-ratio: 0.68;
+  max-width: 100%;
+}
+
+.tb-data {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.tb-tabs,
+.tb-mobilebar {
+  display: none;
+}
+
+/* ---- Phone actions sheet --------------------------------------------------- */
+
+.tb-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tb-menu-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tb-menu-note {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--color-text-secondary);
+}
+
+.tb-menu-label {
+  font-family: var(--font-body);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  padding: 0 0 4px;
+}
+
+.tb-menu-row {
+  appearance: none;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 6px;
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+}
+
+.tb-menu-row:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.tb-menu-row:not(:disabled):active {
+  background: var(--color-surface-sunken);
+}
+
+.tb-menu-seg {
+  align-self: stretch;
+}
+
+.tb-menu-seg button {
+  flex: 1;
+  min-height: 40px;
+}
+
+/* Tablet: roster + board side by side, balance readout drops full width below. */
+@media (max-width: 1100px) and (min-width: 761px) {
+  .tb-main {
+    grid-template-columns: minmax(240px, 1fr) minmax(300px, 1fr);
+    grid-template-rows: minmax(540px, 1fr) auto;
+    overflow-y: auto;
+  }
+
+  .tb-aside {
+    grid-column: 1 / -1;
+    min-height: auto !important;
+    max-height: none;
+    height: auto;
+    overflow: visible !important;
+  }
+}
+
+/* Phone: single column, one pane at a time, bottom tab bar. */
+@media (max-width: 760px) {
+  .tb-head {
+    padding: 10px 12px;
+    gap: 8px;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+
+  .tb-brand span:last-child {
+    display: none;
+  }
+
+  .tb-spacer {
+    display: none;
+  }
+
+  /* The bottom tab bar already switches pages on a phone, and everything the header
+     held on a desktop moves into the actions sheet — so the header stays one row that
+     never scrolls: brand, More, and the one action worth a tap of its own. */
+  .tb-pageswitch,
+  .tb-fmt,
+  .tb-actions,
+  .tb-data {
+    display: none !important;
+  }
+
+  .tb-mobilebar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .tb-mobilebar button {
+    min-height: 44px;
+  }
+
+  /* min-* rather than width/height: the design system sets those inline, and a 32px
+     icon button is below the touch target everything else on a phone gets. */
+  .tb-mobilebar > button:first-child {
+    min-width: 44px;
+  }
+
+  .tb-main {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr);
+    gap: 0;
+    padding: 12px;
+    overflow: hidden;
+  }
+
+  .tb-main > .tb-pane {
+    grid-area: 1 / 1;
+    min-width: 0;
+  }
+
+  .tb-main[data-view='squad'] .tb-pane-board,
+  .tb-main[data-view='squad'] .tb-pane-stats,
+  .tb-main[data-view='board'] .tb-pane-squad,
+  .tb-main[data-view='board'] .tb-pane-stats,
+  .tb-main[data-view='stats'] .tb-pane-squad,
+  .tb-main[data-view='stats'] .tb-pane-board {
+    display: none !important;
+  }
+
+  .tb-pitch {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+  }
+
+  .tb-pane-board {
+    overflow-y: auto;
+    overflow-x: hidden;
+    justify-content: flex-start;
+  }
+
+  .tb-pane-board > div:first-child {
+    flex: 0 0 auto !important;
+  }
+
+  .tb-pane-squad {
+    overflow: hidden;
+  }
+
+  .tb-tabs {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    flex-shrink: 0;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .tb-tabs button {
+    appearance: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    min-height: 56px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    font-family: var(--font-body);
+    font-size: var(--text-2xs);
+    letter-spacing: var(--tracking-wide);
+    color: var(--color-text-tertiary);
+  }
+
+  .tb-tabs button[data-on='1'] {
+    color: var(--color-primary);
+    box-shadow: inset 0 2px 0 var(--color-primary);
+  }
+
+  /* Anything under 16px makes iOS Safari zoom the page when the field takes focus.
+     Overrides the components' inline font sizes, which stay as designed on desktop. */
+  input:not([type='range']),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* ---- Player stats table ---------------------------------------------------- */
+
+.tb-page-stats {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+
+.tb-tblbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 10px;
+  flex-shrink: 0;
+}
+
+/* The table is the only thing that scrolls — horizontally on narrow screens,
+   vertically within the page. */
+.tb-tblwrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.tb-tbl {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+}
+
+.tb-tbl th,
+.tb-tbl td {
+  padding: 4px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.tb-tbl thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  height: 34px;
+  background: var(--color-surface-sunken);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+/* Second header row sits directly under the first, which is a fixed 34px tall. */
+.tb-tbl thead tr.tb-tbl-filters th {
+  top: 34px;
+  height: 38px;
+  z-index: 3;
+  border-bottom: 1px solid var(--color-border-strong);
+}
+
+/* The name column stays put while the stats scroll sideways. */
+.tb-tbl .tb-col-name {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  min-width: 170px;
+  border-right: 1px solid var(--color-border);
+}
+
+/* Both header rows' name cells must outrank their own row's other cells, which the
+   `.tb-tbl thead tr.tb-tbl-filters th` rule would otherwise tie with and win on order. */
+.tb-tbl thead tr:first-child th.tb-col-name,
+.tb-tbl thead tr.tb-tbl-filters th.tb-col-name {
+  z-index: 5;
+}
+
+.tb-tbl tbody tr:hover td {
+  background: var(--color-surface-sunken);
+}
+
+.tb-col-pos {
+  min-width: 130px;
+}
+
+.tb-col-nick {
+  min-width: 150px;
+}
+
+.tb-col-alt {
+  min-width: 190px;
+}
+
+.tb-col-stat {
+  min-width: 84px;
+}
+
+.tb-col-ovr {
+  min-width: 78px;
+}
+
+/* Beats the `.tb-tbl th, .tb-tbl td` base rule, which is a class + an element. */
+.tb-tbl th.tb-col-stat,
+.tb-tbl td.tb-col-stat,
+.tb-tbl th.tb-col-ovr,
+.tb-tbl td.tb-col-ovr {
+  text-align: right;
+}
+
+/* Averages sit under inputs that carry their own 6px of padding. */
+.tb-tbl tfoot td.tb-col-stat {
+  padding-right: 14px;
+}
+
+.tb-col-squad {
+  min-width: 92px;
+}
+
+.tb-col-act {
+  min-width: 76px;
+}
+
+.tb-sort {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+}
+
+.tb-sort:hover {
+  color: var(--color-text-primary);
+}
+
+/* Editable cells read as text until you focus them. */
+.tb-cellinput {
+  width: 100%;
+  min-width: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-xs);
+  padding: 5px 6px;
+  min-height: 32px;
+}
+
+.tb-cellinput:hover {
+  border-color: var(--color-border);
+}
+
+.tb-cellinput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background: var(--color-surface);
+  box-shadow: var(--focus-ring);
+}
+
+.tb-cellnum {
+  font-family: var(--font-mono);
+  text-align: right;
+}
+
+.tb-filterinput {
+  width: 100%;
+  min-width: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-xs);
+  padding: 5px 6px;
+  min-height: 28px;
+}
+
+.tb-filterinput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
+}
+
+.tb-range {
+  display: flex;
+  gap: 4px;
+}
+
+.tb-range .tb-filterinput {
+  padding: 5px 4px;
+}
+
+.tb-alts {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.tb-altchip {
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: var(--text-2xs);
+  padding: 3px 6px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-tertiary);
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.tb-altchip[data-on='1'] {
+  border-color: var(--color-primary);
+  background: var(--color-primary-subtle);
+  color: var(--green-700);
+  font-weight: var(--weight-semibold);
+}
+
+.tb-ovrcell {
+  font-family: var(--font-mono);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+}
+
+.tb-tbl tfoot td {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background: var(--color-surface-sunken);
+  border-top: 1px solid var(--color-border-strong);
+  border-bottom: none;
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--color-text-tertiary);
+}
+
+.tb-tbl tfoot .tb-col-name {
+  z-index: 3;
+}
+
+.tb-avgcell {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: none;
+  letter-spacing: var(--tracking-normal);
+  color: var(--color-text-secondary);
+}
+
+.tb-tblempty {
+  padding: 24px 12px !important;
+  text-align: center !important;
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 760px) {
+  .tb-page-stats {
+    padding: 12px;
+  }
+
+  .tb-tblbar {
+    align-items: flex-start;
+  }
+
+  /* Touch targets, and a narrower sticky name column so the stats still get room. */
+  .tb-tbl .tb-col-name {
+    min-width: 132px;
+  }
+
+  .tb-cellinput {
+    min-height: 40px;
+  }
+
+  .tb-filterinput {
+    min-height: 36px;
+  }
+
+  .tb-altchip {
+    min-height: 32px;
+    padding: 3px 9px;
+  }
+}
+
+/* ---- Squad mini view -------------------------------------------------------- */
+
+.tb-viewtoggle {
+  display: flex;
+  gap: 2px;
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+
+.tb-viewtoggle button {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 28px;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--color-text-secondary);
+  transition: background 120ms ease;
+}
+
+.tb-viewtoggle button[data-on='1'] {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.tb-mini {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 38px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  cursor: pointer;
+  text-align: left;
+  opacity: 0.55;
+  transition: opacity 120ms ease, border-color 120ms ease;
+}
+
+.tb-mini[data-on='1'] {
+  opacity: 1;
+  box-shadow: var(--shadow-sm);
+}
+
+.tb-mini-name {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tb-mini-ovr {
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
+}
+
+@media (max-width: 760px) {
+  .tb-viewtoggle button {
+    width: 36px;
+    height: 34px;
+  }
+
+  .tb-mini {
+    min-height: 44px;
+  }
+}
+
+/* ---- Nicknames + score inputs ---------------------------------------------- */
+
+.tb-nickchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 4px 3px 9px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface-sunken);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-text-primary);
+}
+
+.tb-nickchip button {
+  appearance: none;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: var(--color-text-tertiary);
+}
+
+.tb-nickchip button:hover {
+  background: var(--color-border);
+  color: var(--color-danger);
+}
+
+.tb-scoreinput {
+  width: 100%;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  text-align: center;
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+}
+
+.tb-scoreinput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
+}
+
+/* ---- Match history --------------------------------------------------------- */
+
+.tb-histpage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+
+.tb-daterange {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tb-daterange label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--color-text-secondary);
+}
+
+.tb-daterange input {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  padding: 7px 8px;
+  min-height: 34px;
+}
+
+.tb-daterange input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
+}
+
+.tb-histsummary {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+}
+
+.tb-histlist {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 4px;
+}
+
+.tb-histrow {
+  display: grid;
+  grid-template-columns: 148px 96px 1fr 76px;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+}
+
+.tb-histrow[data-outcome='red'] {
+  border-left-color: var(--team-red);
+}
+
+.tb-histrow[data-outcome='blue'] {
+  border-left-color: var(--team-blue);
+}
+
+.tb-histrow[data-outcome='draw'] {
+  border-left-color: var(--color-accent);
+}
+
+.tb-histrow[data-outcome='off'] {
+  opacity: 0.7;
+}
+
+.tb-histdate-main {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+}
+
+.tb-histdate-sub {
+  font-family: var(--font-body);
+  font-size: var(--text-2xs);
+  color: var(--color-text-tertiary);
+}
+
+.tb-histscore {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xl);
+}
+
+.tb-histoff {
+  font-family: var(--font-body);
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--color-text-tertiary);
+}
+
+.tb-histteams {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+.tb-histteams > div {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tb-histteam-label {
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-wide);
+}
+
+.tb-histacts {
+  display: flex;
+  gap: 2px;
+  justify-content: flex-end;
+}
+
+.tb-histempty {
+  padding: 32px 16px;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  line-height: var(--leading-normal);
+}
+
+@media (max-width: 760px) {
+  .tb-histpage {
+    padding: 12px;
+  }
+
+  .tb-histsummary {
+    gap: 14px;
+    padding: 10px 12px;
+  }
+
+  /* Date and score on the top line, squads underneath, actions pinned right. Placement
+     is explicit: the full-width squad row would otherwise push the actions to a third. */
+  .tb-histrow {
+    grid-template-columns: 1fr auto 36px;
+    gap: 6px 10px;
+  }
+
+  .tb-histdate {
+    grid-area: 1 / 1;
+  }
+
+  .tb-histscore {
+    grid-area: 1 / 2;
+    justify-content: flex-end;
+  }
+
+  .tb-histacts {
+    grid-area: 1 / 3 / span 2 / 4;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: flex-start;
+  }
+
+  .tb-histteams {
+    grid-area: 2 / 1 / 3 / 3;
+  }
+}
+
+/* ---- Stat ladder ----------------------------------------------------------- */
+
+.tb-ladder {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+
+.tb-statpick {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.tb-statpick::-webkit-scrollbar {
+  display: none;
+}
+
+.tb-statpick button {
+  flex: 0 0 auto;
+  cursor: pointer;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 7px 12px;
+  min-height: 38px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.tb-statpick button[data-on='1'] {
+  border-color: var(--color-primary);
+  background: var(--color-primary-subtle);
+  color: var(--green-700);
+  font-weight: var(--weight-semibold);
+}
+
+.tb-statpick-abbr {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  opacity: 0.75;
+}
+
+.tb-plotwrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  /* Room for the axis labels on the left, and for the top and bottom chips to sit
+     centred on 100 and 0 without clipping. */
+  padding: 22px 16px 22px 44px;
+}
+
+.tb-plot {
+  position: relative;
+  flex: 1;
+  min-height: 380px;
+}
+
+.tb-tick {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.tb-tick-label {
+  position: absolute;
+  right: 100%;
+  top: -0.6em;
+  padding-right: 8px;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--color-text-tertiary);
+}
+
+.tb-avgline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed var(--color-primary);
+  opacity: 0.7;
+}
+
+.tb-avgline-label {
+  position: absolute;
+  right: 0;
+  top: -1.5em;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--color-primary);
+}
+
+.tb-ladderchip {
+  position: absolute;
+  transform: translateY(-50%);
+  width: 120px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  z-index: 2;
+}
+
+.tb-ladderchip:focus-visible {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
+}
+
+.tb-ladderchip[data-benched='1'] {
+  opacity: 0.6;
+  border-style: dashed;
+}
+
+.tb-ladderchip[data-dragging='1'] {
+  cursor: grabbing;
+  z-index: 6;
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+}
+
+.tb-ladderchip-name {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tb-ladderchip-val {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+}
+
+@media (max-width: 760px) {
+  .tb-ladder {
+    padding: 12px;
+  }
+
+  .tb-plotwrap {
+    padding: 22px 12px 22px 36px;
+  }
+
+  /* The instruction is desktop-only; the height it frees keeps the chips to fewer
+     lanes, which is what makes them fit a phone without scrolling sideways. */
+  .tb-ladderhint {
+    display: none;
+  }
+
+  /* Taller than the viewport on purpose: the extra height spreads the chips into
+     fewer columns, so the ladder scrolls up and down rather than sideways. */
+  .tb-plot {
+    min-height: 620px;
+  }
+
+  .tb-ladderchip {
+    width: 104px;
+    height: 40px;
+  }
+}
+
+/* Invisible hit ring so pins stay tappable at their drawn size. */
+.tb-pin-badge::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+}
+
+@media (max-width: 760px) {
+  .tb-pin-badge {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 15px;
+  }
+
+  .tb-pin-badge::before {
+    inset: -4px;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--slate-300);
+  border-radius: var(--radius-full);
+}
+
+/* ---- Game weeks ------------------------------------------------------------- */
+
+.tb-week {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tb-weekhead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tb-weekdate {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+  line-height: 1.1;
+}
+
+.tb-weeksub {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--color-text-tertiary);
+  margin-top: 2px;
+}
+
+.tb-awards {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tb-award {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-sunken);
+}
+
+.tb-award[data-potm='1'] {
+  border-color: var(--color-primary);
+  background: var(--color-primary-subtle);
+}
+
+.tb-award-label {
+  font-family: var(--font-body);
+  font-size: 9px;
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.tb-award[data-potm='1'] .tb-award-label {
+  color: var(--green-700);
+}
+
+.tb-award-name {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.tb-weekmatches {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Ratings snapshot */
+
+.tb-ratpanel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-sm);
+}
+
+.tb-ratnote,
+.tb-ratempty {
+  font-family: var(--font-body);
+  font-size: var(--text-2xs);
+  color: var(--color-text-tertiary);
+  margin-bottom: 4px;
+}
+
+.tb-ratrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+.tb-ratname {
+  font-family: var(--font-body);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+  min-width: 92px;
+}
+
+.tb-ratovr {
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+}
+
+.tb-ratdelta[data-dir='up'] {
+  color: var(--color-primary);
+}
+
+.tb-ratdelta[data-dir='down'] {
+  color: var(--color-danger);
+}
+
+.tb-ratdelta[data-dir='flat'] {
+  color: var(--color-text-tertiary);
+}
+
+.tb-ratgone,
+.tb-ratchanges {
+  font-family: var(--font-body);
+  font-size: var(--text-2xs);
+  color: var(--color-text-tertiary);
+}
+
+.tb-ratchanges {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .tb-ratname {
+    min-width: 76px;
+  }
+
+  .tb-ratchanges {
+    flex-basis: 100%;
+  }
+}
+
+.tb-ratrow[data-moved='0'] .tb-ratovr {
+  color: var(--color-text-secondary);
+  font-weight: var(--weight-regular);
+}
