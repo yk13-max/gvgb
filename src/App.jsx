@@ -367,16 +367,21 @@ export default function App() {
     exportJSON({ players, history, teamSize, selected, match, teams, pos });
   }
 
+  // Signed out, neither row exists: an export is every rating in one file, which is the
+  // thing view-only hides, and an import would strand the browser out of step. The Data
+  // button and the sheet's Data group go with them rather than open onto nothing.
   const dataRows = (close) => (
     <>
-      <MenuRow
-        icon="file-json"
-        label="Export all data"
-        onClick={() => {
-          close();
-          exportAll();
-        }}
-      />
+      {canEdit && (
+        <MenuRow
+          icon="file-json"
+          label="Export all data"
+          onClick={() => {
+            close();
+            exportAll();
+          }}
+        />
+      )}
       {/* Importing replaces the document. Signed out there is nowhere to put the result,
           so it would only strand this browser out of step with everyone else. */}
       {canEdit && (
@@ -644,14 +649,16 @@ export default function App() {
             <span className="tb-syncdot" />
             <span className="tb-syncword">{look.label}</span>
           </button>
-          <IconButton
-            icon={<Icon name="file-json" size={16} />}
-            aria-label="Data"
-            aria-expanded={dataMenu}
-            variant="secondary"
-            size="sm"
-            onClick={() => setDataMenu(true)}
-          />
+          {canEdit && (
+            <IconButton
+              icon={<Icon name="file-json" size={16} />}
+              aria-label="Data"
+              aria-expanded={dataMenu}
+              variant="secondary"
+              size="sm"
+              onClick={() => setDataMenu(true)}
+            />
+          )}
         </div>
         {/* Phone: one primary action plus a sheet holding the rest, so nothing in the
             header has to be scrolled sideways to be found. The sync state rides on the
@@ -1006,10 +1013,12 @@ export default function App() {
               </>
             )}
 
-            <div className="tb-menu-group">
-              <div className="tb-menu-label">Data</div>
-              {dataRows(() => setMenu(false))}
-            </div>
+            {canEdit && (
+              <div className="tb-menu-group">
+                <div className="tb-menu-label">Data</div>
+                {dataRows(() => setMenu(false))}
+              </div>
+            )}
           </div>
         </Dialog>
       )}

@@ -196,9 +196,10 @@ something for the whole group to read, so **every player value is hidden**: the 
 OVR on cards, the OVR on mini cards and pins, the balance readout (the position mix stays —
 it's a headcount, not a rating), the rating columns and averages in the stats table, the whole
 stat ladder, the ratings snapshots in history, the *Include ratings* switch on the WhatsApp
-text, and the ratings and summary strip on the board PNG. Names, positions, nicknames, the
-board, the results, the nominations and the awards table all read as normal; nothing can be
-changed and nothing is ever written. Signing in brings the numbers back in place.
+text, the ratings and summary strip on the board PNG, and the JSON export, which would carry
+them all. Names, positions, nicknames, the board, the results, the nominations and the awards
+table all read as normal; nothing can be changed and nothing is ever written. Signing in brings
+the numbers back in place.
 
 Saving is automatic about a second after you stop typing. Every write says which revision it
 was based on, so two people editing at once can't quietly overwrite each other — the second
@@ -209,8 +210,9 @@ moments after the organiser balances.
 **Data** on every page (in the actions sheet on a phone) is the manual half:
 
 - **Export all data** — writes `fufa-backup-YYYY-MM-DD.json`: the live document, plus a note of
-  when it was taken. Plain readable JSON, so it can be diffed, edited or kept in a repo. Always
-  available, signed in or not.
+  when it was taken. Plain readable JSON, so it can be diffed, edited or kept in a repo. Signed
+  in only — a backup is every rating in one file, which is the thing view-only hides, so the
+  Data button is not there at all until you sign in.
 - **Import data** — reads a file back and makes it the document. It also accepts a hand-written
   `{"players": [...]}` object or a plain array of players, for seeding a roster from somewhere
   else: missing stats are filled at 60, colliding or missing ids are re-issued, and nameless

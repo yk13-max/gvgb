@@ -193,9 +193,11 @@ export default function StatsTable({ players, selected, onPatch, onEdit, onDelet
               Import JSON
             </Button>
           )}
-          <Button variant="secondary" size="sm" icon={<Icon name="file-json" size={15} />} onClick={onExport}>
-            Export JSON
-          </Button>
+          {canEdit && (
+            <Button variant="secondary" size="sm" icon={<Icon name="file-json" size={15} />} onClick={onExport}>
+              Export JSON
+            </Button>
+          )}
           <input
             ref={fileRef}
             type="file"
