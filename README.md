@@ -144,12 +144,20 @@ numbers scroll.
 
 ### Stat ladder
 
-One stat at a time, everyone on the same 0–100 scale. Click a stat to switch to it, then drag a
-player up or down to rate them against the others — the point being that "better than Ali,
-worse than Sam" is easier to judge than a number in isolation. Arrow keys nudge the focused
-player by 1, Page keys by 10, and the dashed line marks the squad average. Benched players are
-dashed and dimmed. Chips fan into columns when a band gets crowded so nothing overlaps; on a
-phone the scale is taller than the screen and scrolls vertically.
+One stat at a time, everyone on the same 0–100 scale — the point being that "better than Ali,
+worse than Sam" is easier to judge than a number in isolation.
+
+On a desktop it is a plot: click a stat to switch to it, then drag a player up or down to rate
+them against the others. Arrow keys nudge the focused player by 1, Page keys by 10, and the
+dashed line marks the squad average. Benched players are dashed and dimmed. Chips fan into
+columns when a band gets crowded so nothing overlaps.
+
+On a phone it is a list, highest first: one row per player with a slider and a − / + pair,
+each a full 44px, and the stat chosen from a native picker. A native slider gives a thumb a
+real handle and never fights the page for the scroll gesture. The order holds still while a
+slider is held, so a row never jumps out from under a finger, and re-sorts the moment you let
+go. A green edge marks players above the squad average; a faint tick on each slider marks
+where that average sits.
 
 ### Player stats
 

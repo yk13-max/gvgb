@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Icon } from '../ds/index.js';
 import { ABBR, STATS, statAvg } from '../lib/model.js';
 import { shortName } from '../lib/names.js';
 
@@ -19,6 +20,92 @@ function assignLanes(sorted, valueOf, minGap) {
     lane[p.id] = i;
   });
   return { lane, count: Math.max(1, lastInLane.length) };
+}
+
+// The phone's ladder: the same players in the same order, as rows with a slider each.
+// A native range input gives a thumb-sized handle and never fights the page for the
+// scroll gesture, and the ± buttons land the last point a thumb cannot. The order is
+// frozen while a slider is held so a row never jumps out from under a finger; it
+// re-sorts on release, which is when the eye is ready to see where the player landed.
+function LadderList({ sorted, stat, valueOf, avg, selected, canEdit, setValue }) {
+  const [heldId, setHeldId] = useState(null);
+  const frozen = useRef(null);
+  const order = heldId != null && frozen.current ? frozen.current : sorted;
+  const rankOf = (p) => sorted.findIndex((x) => x.id === p.id) + 1;
+
+  const hold = (p) => {
+    frozen.current = sorted;
+    setHeldId(p.id);
+  };
+  const release = () => {
+    setHeldId(null);
+    frozen.current = null;
+  };
+
+  return (
+    <div className="tb-ladderlist" role="list">
+      {order.map((p) => {
+        const v = valueOf(p);
+        const inSquad = selected.includes(p.id);
+        return (
+          <div
+            key={p.id}
+            className="tb-ladderrow"
+            role="listitem"
+            data-benched={inSquad ? '0' : '1'}
+            data-held={heldId === p.id ? '1' : '0'}
+            data-above={v >= avg ? '1' : '0'}
+          >
+            <div className="tb-ladderrow-top">
+              <span className="tb-ladderrow-rank">{rankOf(p)}</span>
+              <span className="tb-ladderrow-name">{shortName(p.name)}</span>
+              <span className="tb-ladderrow-val">{v}</span>
+            </div>
+            <div className="tb-ladderrow-ctl">
+              {canEdit && (
+                <button
+                  type="button"
+                  className="tb-nudge"
+                  aria-label={'Lower ' + p.name + ' by one'}
+                  disabled={v <= 0}
+                  onClick={() => setValue(p.id, v - 1)}
+                >
+                  <Icon name="minus" size={16} />
+                </button>
+              )}
+              <input
+                type="range"
+                className="tb-slider"
+                min="0"
+                max="100"
+                step="1"
+                value={v}
+                disabled={!canEdit}
+                aria-label={p.name + ' ' + stat}
+                style={{ '--pct': v + '%', '--avg': avg + '%' }}
+                onPointerDown={() => hold(p)}
+                onPointerUp={release}
+                onPointerCancel={release}
+                onBlur={release}
+                onChange={(e) => setValue(p.id, Number(e.target.value))}
+              />
+              {canEdit && (
+                <button
+                  type="button"
+                  className="tb-nudge"
+                  aria-label={'Raise ' + p.name + ' by one'}
+                  disabled={v >= 100}
+                  onClick={() => setValue(p.id, v + 1)}
+                >
+                  <Icon name="plus" size={16} />
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 export default function StatLadder({ players, selected, onPatch, canEdit = true }) {
@@ -140,10 +227,24 @@ export default function StatLadder({ players, selected, onPatch, canEdit = true 
             lineHeight: 'var(--leading-normal)',
           }}
         >
-          Drag a player up or down to rate them against everyone else. Arrow keys nudge by 1, Page keys by 10.
+          {narrow
+            ? 'Slide a player up or down the scale. The list re-sorts when you let go.'
+            : 'Drag a player up or down to rate them against everyone else. Arrow keys nudge by 1, Page keys by 10.'}
         </div>
       </div>
 
+      {narrow ? (
+        <label className="tb-statselect">
+          <span>Stat</span>
+          <select value={stat} onChange={(e) => setStat(e.target.value)} aria-label="Stat to compare">
+            {STATS.map((k) => (
+              <option key={k} value={k}>
+                {k} ({ABBR[k]})
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : (
       <div className="tb-statpick" role="tablist" aria-label="Stat to compare">
         {STATS.map((k) => (
           <button
@@ -159,7 +260,15 @@ export default function StatLadder({ players, selected, onPatch, canEdit = true 
           </button>
         ))}
       </div>
+      )}
 
+      {narrow ? (
+        players.length ? (
+          <LadderList sorted={sorted} stat={stat} valueOf={valueOf} avg={avg} selected={selected} canEdit={canEdit} setValue={setValue} />
+        ) : (
+          <div className="tb-histempty">No players yet — add some from the Squad.</div>
+        )
+      ) : (
       <div className="tb-plotwrap">
         <div className="tb-plot" ref={plotRef} style={{ minWidth: count * laneW }}>
           {TICKS.map((t) => (
@@ -216,6 +325,7 @@ export default function StatLadder({ players, selected, onPatch, canEdit = true 
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }
