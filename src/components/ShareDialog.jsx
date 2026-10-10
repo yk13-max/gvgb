@@ -2,10 +2,10 @@ import { useMemo, useState } from 'react';
 import { Button, Dialog, Icon, Input, Switch } from '../ds/index.js';
 import { whatsappText } from '../lib/whatsapp.js';
 
-export default function ShareDialog({ teams, match, onMatchChange, onClose, canEdit = true }) {
+export default function ShareDialog({ teams, match, onMatchChange, onClose, canEdit = true, showValues = true }) {
   // Ratings stay out of the group chat unless you ask for them.
   const [showScores, setShowScores] = useState(false);
-  const text = useMemo(() => whatsappText(teams, match, showScores), [teams, match, showScores]);
+  const text = useMemo(() => whatsappText(teams, match, showValues && showScores), [teams, match, showScores, showValues]);
   const [copied, setCopied] = useState(false);
   const canShare = typeof navigator !== 'undefined' && !!navigator.share;
   const set = (patch) => onMatchChange({ ...match, ...patch });
@@ -104,12 +104,14 @@ export default function ShareDialog({ teams, match, onMatchChange, onClose, canE
             paddingTop: 12,
           }}
         >
-          <Switch
-            checked={showScores}
-            onChange={(e) => setShowScores(e.target.checked)}
-            label="Include ratings"
-            style={{ fontSize: 'var(--text-sm)' }}
-          />
+          {showValues && (
+            <Switch
+              checked={showScores}
+              onChange={(e) => setShowScores(e.target.checked)}
+              label="Include ratings"
+              style={{ fontSize: 'var(--text-sm)' }}
+            />
+          )}
         </div>
 
         <div

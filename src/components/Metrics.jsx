@@ -99,12 +99,71 @@ function TeamHead({ team, list }) {
   );
 }
 
-export default function Metrics({ teams }) {
+function PositionMix({ red, blue }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: 'var(--text-2xs)',
+          letterSpacing: 'var(--tracking-widest)',
+          textTransform: 'uppercase',
+          color: 'var(--color-text-tertiary)',
+        }}
+      >
+        Position mix
+      </div>
+      {['Goalkeeper', 'Defender', 'Midfielder', 'Striker', 'Any'].map((pos) => {
+        const r = countPos(red, pos);
+        const b = countPos(blue, pos);
+        if (!r && !b) return null;
+        return (
+          <div
+            key={pos}
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 'var(--text-xs)',
+              color: 'var(--color-text-secondary)',
+            }}
+          >
+            <span style={{ color: 'var(--team-red)' }}>{r}</span>
+            <span
+              style={{
+                fontFamily: 'var(--font-body)',
+                letterSpacing: 'var(--tracking-wide)',
+                color: 'var(--color-text-tertiary)',
+              }}
+            >
+              {SHORT[pos]}
+            </span>
+            <span style={{ color: 'var(--team-blue)' }}>{b}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export default function Metrics({ teams, showValues = true }) {
   const { red, blue } = teams;
   if (!red.length || !blue.length) {
     return (
       <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>
-        Select a squad and balance to see the split.
+        {showValues ? 'Select a squad and balance to see the split.' : 'Nobody has balanced a side yet.'}
+      </div>
+    );
+  }
+  // Every number in the readout is an average of ratings. Signed out, the one thing
+  // left that isn't is the shape of each side.
+  if (!showValues) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-normal)' }}>
+          Ratings and the balance readout are hidden until you sign in from the shared-data button.
+        </div>
+        <PositionMix red={red} blue={blue} />
       </div>
     );
   }
@@ -209,55 +268,8 @@ export default function Metrics({ teams }) {
           </div>
         ))}
       </div>
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 6,
-          borderTop: '1px solid var(--color-border)',
-          paddingTop: 12,
-        }}
-      >
-        <div
-          style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: 'var(--text-2xs)',
-            letterSpacing: 'var(--tracking-widest)',
-            textTransform: 'uppercase',
-            color: 'var(--color-text-tertiary)',
-          }}
-        >
-          Position mix
-        </div>
-        {['Goalkeeper', 'Defender', 'Midfielder', 'Striker', 'Any'].map((pos) => {
-          const r = countPos(red, pos);
-          const b = countPos(blue, pos);
-          if (!r && !b) return null;
-          return (
-            <div
-              key={pos}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                fontFamily: 'var(--font-mono)',
-                fontSize: 'var(--text-xs)',
-                color: 'var(--color-text-secondary)',
-              }}
-            >
-              <span style={{ color: 'var(--team-red)' }}>{r}</span>
-              <span
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  letterSpacing: 'var(--tracking-wide)',
-                  color: 'var(--color-text-tertiary)',
-                }}
-              >
-                {SHORT[pos]}
-              </span>
-              <span style={{ color: 'var(--team-blue)' }}>{b}</span>
-            </div>
-          );
-        })}
+      <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 12 }}>
+        <PositionMix red={red} blue={blue} />
       </div>
     </div>
   );

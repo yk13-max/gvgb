@@ -220,6 +220,10 @@ export default function App() {
   // Signed out of a hosted copy, the app is a window on someone else's data. With no
   // backend at all there is nobody to sign in as, so everything stays editable.
   const canEdit = sync.mode !== 'remote' || sync.unlocked;
+  // Ratings are the organiser's working notes, not a thing for the whole group to read.
+  // Signed out on a hosted copy they are hidden everywhere: cards, pins, the readout,
+  // the table, the ladder, the ratings snapshots in history, and both exports.
+  const showValues = canEdit;
 
   useEffect(() => {
     saveCache(doc);
@@ -567,9 +571,13 @@ export default function App() {
           >
             WhatsApp text
           </Button>
-          <Switch checked={showStats} onChange={(e) => setShowStats(e.target.checked)} label="Stat labels" />
-          <Switch checked={pngRatings} onChange={(e) => setPngRatings(e.target.checked)} label="PNG ratings" />
-          <Switch checked={pngSummary} onChange={(e) => setPngSummary(e.target.checked)} label="PNG summary" />
+          {showValues && (
+            <>
+              <Switch checked={showStats} onChange={(e) => setShowStats(e.target.checked)} label="Stat labels" />
+              <Switch checked={pngRatings} onChange={(e) => setPngRatings(e.target.checked)} label="PNG ratings" />
+              <Switch checked={pngSummary} onChange={(e) => setPngSummary(e.target.checked)} label="PNG summary" />
+            </>
+          )}
           <Button
             variant="secondary"
             size="sm"
@@ -584,7 +592,7 @@ export default function App() {
             size="sm"
             icon={<Icon name="download" size={15} />}
             disabled={!built}
-            onClick={() => exportBoard(teams, pos, { ratings: pngRatings, summary: pngSummary })}
+            onClick={() => exportBoard(teams, pos, { ratings: showValues && pngRatings, summary: showValues && pngSummary })}
           >
             Export PNG
           </Button>
@@ -685,6 +693,7 @@ export default function App() {
           weeks={history}
           players={players}
           canEdit={canEdit}
+          showValues={showValues}
           onAwards={(w) => setAwarding(w)}
           onEditMatch={(week, match) => setRecording({ week, match })}
           onDeleteMatch={deleteMatch}
@@ -693,12 +702,19 @@ export default function App() {
       ) : page === 'awards' ? (
         <Standings weeks={history} players={players} />
       ) : page === 'ladder' ? (
-        <StatLadder players={players} selected={selected} canEdit={canEdit} onPatch={patchPlayer} />
+        showValues ? (
+          <StatLadder players={players} selected={selected} canEdit={canEdit} onPatch={patchPlayer} />
+        ) : (
+          <div className="tb-page-stats">
+            <div className="tb-histempty">Ratings are hidden until you sign in from the shared-data button.</div>
+          </div>
+        )
       ) : page === 'stats' ? (
         <StatsTable
           players={players}
           selected={selected}
           canEdit={canEdit}
+          showValues={showValues}
           onPatch={patchPlayer}
           onEdit={(p) => setDraft({ ...p, stats: { ...p.stats }, alt: [...(p.alt || [])], nicknames: [...(p.nicknames || [])] })}
           onDelete={removePlayer}
@@ -715,6 +731,7 @@ export default function App() {
             teamOf={teamOf}
             needed={needed}
             canEdit={canEdit}
+            showValues={showValues}
             mini={mini}
             onMiniChange={setMini}
             onToggle={toggle}
@@ -734,7 +751,8 @@ export default function App() {
                 <Pitch
                   teams={teams}
                   pos={pos}
-                  showStats={showStats}
+                  showStats={showStats && showValues}
+                  showValues={showValues}
                   sel={sel}
                   onPinDown={canEdit ? onPinDown : null}
                   pitchRef={pitchRef}
@@ -812,7 +830,7 @@ export default function App() {
             boxShadow: 'var(--shadow-sm)',
           }}
         >
-          <Metrics teams={teams} />
+          <Metrics teams={teams} showValues={showValues} />
         </aside>
       </main>
       )}
@@ -901,27 +919,31 @@ export default function App() {
                   disabled={!built}
                   onClick={() => {
                     setMenu(false);
-                    exportBoard(teams, pos, { ratings: pngRatings, summary: pngSummary });
+                    exportBoard(teams, pos, { ratings: showValues && pngRatings, summary: showValues && pngSummary });
                   }}
                 />
-                <Switch
-                  style={SWITCH_ROW}
-                  checked={showStats}
-                  onChange={(e) => setShowStats(e.target.checked)}
-                  label="Stat labels on pins"
-                />
-                <Switch
-                  style={SWITCH_ROW}
-                  checked={pngRatings}
-                  onChange={(e) => setPngRatings(e.target.checked)}
-                  label="Ratings in the PNG"
-                />
-                <Switch
-                  style={SWITCH_ROW}
-                  checked={pngSummary}
-                  onChange={(e) => setPngSummary(e.target.checked)}
-                  label="Team stats under the PNG"
-                />
+                {showValues && (
+                  <>
+                    <Switch
+                      style={SWITCH_ROW}
+                      checked={showStats}
+                      onChange={(e) => setShowStats(e.target.checked)}
+                      label="Stat labels on pins"
+                    />
+                    <Switch
+                      style={SWITCH_ROW}
+                      checked={pngRatings}
+                      onChange={(e) => setPngRatings(e.target.checked)}
+                      label="Ratings in the PNG"
+                    />
+                    <Switch
+                      style={SWITCH_ROW}
+                      checked={pngSummary}
+                      onChange={(e) => setPngSummary(e.target.checked)}
+                      label="Team stats under the PNG"
+                    />
+                  </>
+                )}
               </div>
             )}
 
@@ -1026,6 +1048,7 @@ export default function App() {
           teams={teams}
           match={match}
           canEdit={canEdit}
+          showValues={showValues}
           onMatchChange={setMatch}
           onClose={() => setSharing(false)}
         />

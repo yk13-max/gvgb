@@ -49,7 +49,7 @@ export function StatRow({ k, v }) {
 }
 
 // Mini view: name and overall only, for scanning a long roster or picking a squad fast.
-export function MiniPlayerCard({ p, selected, team, onToggle, canEdit = true }) {
+export function MiniPlayerCard({ p, selected, team, onToggle, canEdit = true, showValues = true }) {
   const teamColor = team === 'red' ? 'var(--team-red)' : team === 'blue' ? 'var(--team-blue)' : null;
   return (
     <button
@@ -66,14 +66,16 @@ export function MiniPlayerCard({ p, selected, team, onToggle, canEdit = true }) 
       }}
     >
       <span className="tb-mini-name">{p.name}</span>
-      <span className="tb-mini-ovr" style={{ color: selected && teamColor ? teamColor : 'var(--color-text-primary)' }}>
-        {overall(p)}
-      </span>
+      {showValues && (
+        <span className="tb-mini-ovr" style={{ color: selected && teamColor ? teamColor : 'var(--color-text-primary)' }}>
+          {overall(p)}
+        </span>
+      )}
     </button>
   );
 }
 
-export default function PlayerCard({ p, selected, team, onToggle, onEdit, onDelete, canEdit = true }) {
+export default function PlayerCard({ p, selected, team, onToggle, onEdit, onDelete, canEdit = true, showValues = true }) {
   const ovr = overall(p);
   const teamColor = team === 'red' ? 'var(--team-red)' : team === 'blue' ? 'var(--team-blue)' : null;
   return (
@@ -181,6 +183,7 @@ export default function PlayerCard({ p, selected, team, onToggle, onEdit, onDele
             ))}
           </div>
         </div>
+        {showValues && (
         <div style={{ textAlign: 'right' }}>
           <div
             style={{
@@ -204,12 +207,15 @@ export default function PlayerCard({ p, selected, team, onToggle, onEdit, onDele
             OVR
           </div>
         </div>
+        )}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px' }}>
-        {STATS.map((k) => (
-          <StatRow key={k} k={k} v={Number(p.stats[k]) || 0} />
-        ))}
-      </div>
+      {showValues && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px' }}>
+          {STATS.map((k) => (
+            <StatRow key={k} k={k} v={Number(p.stats[k]) || 0} />
+          ))}
+        </div>
+      )}
       <div
         style={{
           display: 'flex',

@@ -1,7 +1,7 @@
 import { ABBR, STATS, overall } from '../lib/model.js';
 import { initials, shortName } from '../lib/names.js';
 
-function Pin({ p, team, x, y, showStats, selected, onPointerDown }) {
+function Pin({ p, team, x, y, showStats, showValues, selected, onPointerDown }) {
   const col = team === 'red' ? 'var(--team-red)' : 'var(--team-blue)';
   // Without a handler the board is somebody else's to arrange: pins still read, but they
   // do not pick up, and the cursor says so.
@@ -68,9 +68,11 @@ function Pin({ p, team, x, y, showStats, selected, onPointerDown }) {
         >
           {shortName(p.name)}
         </span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-2xs)', color: 'var(--color-accent)' }}>
-          {overall(p)}
-        </span>
+        {showValues && (
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-2xs)', color: 'var(--color-accent)' }}>
+            {overall(p)}
+          </span>
+        )}
       </div>
       {showStats && (
         <div
@@ -102,7 +104,7 @@ function Pin({ p, team, x, y, showStats, selected, onPointerDown }) {
   );
 }
 
-export default function Pitch({ teams, pos, showStats, sel, onPinDown, pitchRef }) {
+export default function Pitch({ teams, pos, showStats, showValues = true, sel, onPinDown, pitchRef }) {
   const line = '1.5px solid oklch(100% 0 0 / 0.28)';
   return (
     <div
@@ -157,6 +159,7 @@ export default function Pitch({ teams, pos, showStats, sel, onPinDown, pitchRef 
               x={c.x}
               y={c.y}
               showStats={showStats}
+              showValues={showValues}
               selected={sel && sel.id === p.id}
               onPointerDown={onPinDown}
             />

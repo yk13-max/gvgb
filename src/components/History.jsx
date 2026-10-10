@@ -92,7 +92,7 @@ function RatingsPanel({ week, players }) {
   );
 }
 
-function WeekCard({ week, players, onAwards, onEditMatch, onDeleteMatch, onDeleteWeek, canEdit }) {
+function WeekCard({ week, players, onAwards, onEditMatch, onDeleteMatch, onDeleteWeek, canEdit, showValues }) {
   const [open, setOpen] = useState(false);
   const t = tally([week]);
   const named = weekPlayerIds(week);
@@ -137,14 +137,16 @@ function WeekCard({ week, players, onAwards, onEditMatch, onDeleteMatch, onDelet
               {anyAward ? 'Nominations' : 'Nominate'}
             </Button>
           )}
-          <IconButton
-            icon={<Icon name={open ? 'chevron-up' : 'chevron-down'} size={15} />}
-            aria-label={(open ? 'Hide' : 'Show') + ' ratings for ' + formatDate(week.date)}
-            aria-expanded={open}
-            variant="ghost"
-            size="sm"
-            onClick={() => setOpen((v) => !v)}
-          />
+          {showValues && (
+            <IconButton
+              icon={<Icon name={open ? 'chevron-up' : 'chevron-down'} size={15} />}
+              aria-label={(open ? 'Hide' : 'Show') + ' ratings for ' + formatDate(week.date)}
+              aria-expanded={open}
+              variant="ghost"
+              size="sm"
+              onClick={() => setOpen((v) => !v)}
+            />
+          )}
           {canEdit && (
             <IconButton
               icon={<Icon name="trash-2" size={14} />}
@@ -257,12 +259,12 @@ function WeekCard({ week, players, onAwards, onEditMatch, onDeleteMatch, onDelet
         })}
       </div>
 
-      {open && <RatingsPanel week={week} players={players} />}
+      {open && showValues && <RatingsPanel week={week} players={players} />}
     </div>
   );
 }
 
-export default function History({ weeks, players, onAwards, onEditMatch, onDeleteMatch, onDeleteWeek, canEdit = true }) {
+export default function History({ weeks, players, onAwards, onEditMatch, onDeleteMatch, onDeleteWeek, canEdit = true, showValues = true }) {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
 
@@ -343,6 +345,7 @@ export default function History({ weeks, players, onAwards, onEditMatch, onDelet
             week={w}
             players={players}
             canEdit={canEdit}
+            showValues={showValues}
             onAwards={onAwards}
             onEditMatch={onEditMatch}
             onDeleteMatch={onDeleteMatch}

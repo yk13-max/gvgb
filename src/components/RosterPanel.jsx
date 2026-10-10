@@ -14,6 +14,7 @@ export default function RosterPanel({
   mini,
   onMiniChange,
   canEdit = true,
+  showValues = true,
 }) {
   const inCount = selected.length;
   const ok = inCount === needed;
@@ -118,6 +119,7 @@ export default function RosterPanel({
               selected={selected.includes(p.id)}
               team={teamOf[p.id]}
               canEdit={canEdit}
+              showValues={showValues}
               onToggle={onToggle}
             />
           ) : (
@@ -127,6 +129,7 @@ export default function RosterPanel({
               selected={selected.includes(p.id)}
               team={teamOf[p.id]}
               canEdit={canEdit}
+              showValues={showValues}
               onToggle={onToggle}
               onEdit={onEdit}
               onDelete={onDelete}

@@ -189,8 +189,14 @@ stand, and opens the shared-data dialog:
 | **On this device** | no shared store behind this copy; it runs on `localStorage` alone |
 
 Signing in with the shared password unlocks editing on that device and is remembered until you
-sign out. Signed out, the app is a window: cards, the board, the table, the ladder and the
-history all read normally, but nothing can be changed and nothing is ever written.
+sign out. Signed out, the app is a window — and ratings are the organiser's working notes, not
+something for the whole group to read, so **every player value is hidden**: the stat rows and
+OVR on cards, the OVR on mini cards and pins, the balance readout (the position mix stays —
+it's a headcount, not a rating), the rating columns and averages in the stats table, the whole
+stat ladder, the ratings snapshots in history, the *Include ratings* switch on the WhatsApp
+text, and the ratings and summary strip on the board PNG. Names, positions, nicknames, the
+board, the results, the nominations and the awards table all read as normal; nothing can be
+changed and nothing is ever written. Signing in brings the numbers back in place.
 
 Saving is automatic about a second after you stop typing. Every write says which revision it
 was based on, so two people editing at once can't quietly overwrite each other — the second

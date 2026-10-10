@@ -95,7 +95,7 @@ function SortHead({ label, sortKey, sort, setSort, align = 'left', title }) {
   );
 }
 
-export default function StatsTable({ players, selected, onPatch, onEdit, onDelete, onAdd, onExport, onImport, canEdit = true }) {
+export default function StatsTable({ players, selected, onPatch, onEdit, onDelete, onAdd, onExport, onImport, canEdit = true, showValues = true }) {
   const [f, setF] = useState(EMPTY);
   const [sort, setSort] = useState(null);
   const fileRef = useRef(null);
@@ -218,14 +218,17 @@ export default function StatsTable({ players, selected, onPatch, onEdit, onDelet
               </th>
               <th className="tb-col-nick">Also known as</th>
               <th className="tb-col-alt">Also plays</th>
-              {STATS.map((k) => (
-                <th key={k} className="tb-col-stat">
-                  <SortHead label={ABBR[k]} sortKey={k} sort={sort} setSort={setSort} align="right" title={'Sort by ' + k} />
+              {showValues &&
+                STATS.map((k) => (
+                  <th key={k} className="tb-col-stat">
+                    <SortHead label={ABBR[k]} sortKey={k} sort={sort} setSort={setSort} align="right" title={'Sort by ' + k} />
+                  </th>
+                ))}
+              {showValues && (
+                <th className="tb-col-ovr">
+                  <SortHead label="OVR" sortKey="ovr" sort={sort} setSort={setSort} align="right" title="Sort by overall" />
                 </th>
-              ))}
-              <th className="tb-col-ovr">
-                <SortHead label="OVR" sortKey="ovr" sort={sort} setSort={setSort} align="right" title="Sort by overall" />
-              </th>
+              )}
               <th className="tb-col-squad">
                 <SortHead label="Squad" sortKey="squad" sort={sort} setSort={setSort} />
               </th>
@@ -273,7 +276,8 @@ export default function StatsTable({ players, selected, onPatch, onEdit, onDelet
                   ))}
                 </select>
               </th>
-              {RANGE_KEYS.map((k) => (
+              {showValues &&
+                RANGE_KEYS.map((k) => (
                 <th key={k} className={k === 'ovr' ? 'tb-col-ovr' : 'tb-col-stat'}>
                   <div className="tb-range">
                     <input
@@ -386,17 +390,18 @@ export default function StatsTable({ players, selected, onPatch, onEdit, onDelet
                       })}
                     </div>
                   </td>
-                  {STATS.map((k) => (
-                    <td key={k} className="tb-col-stat">
-                      <StatCell
-                        canEdit={canEdit}
-                        label={k + ' of ' + p.name}
-                        value={p.stats[k] === '' ? '' : Number(p.stats[k]) || 0}
-                        onCommit={(v) => onPatch(p.id, { stats: { ...p.stats, [k]: v } })}
-                      />
-                    </td>
-                  ))}
-                  <td className="tb-col-ovr tb-ovrcell">{overall(p)}</td>
+                  {showValues &&
+                    STATS.map((k) => (
+                      <td key={k} className="tb-col-stat">
+                        <StatCell
+                          canEdit={canEdit}
+                          label={k + ' of ' + p.name}
+                          value={p.stats[k] === '' ? '' : Number(p.stats[k]) || 0}
+                          onCommit={(v) => onPatch(p.id, { stats: { ...p.stats, [k]: v } })}
+                        />
+                      </td>
+                    ))}
+                  {showValues && <td className="tb-col-ovr tb-ovrcell">{overall(p)}</td>}
                   <td className="tb-col-squad">
                     <span
                       style={{
@@ -437,26 +442,27 @@ export default function StatsTable({ players, selected, onPatch, onEdit, onDelet
             })}
             {!rows.length && (
               <tr>
-                <td colSpan={13} className="tb-tblempty">
+                <td colSpan={showValues ? 13 + STATS.length - 10 : 6} className="tb-tblempty">
                   No players match these filters.
                 </td>
               </tr>
             )}
           </tbody>
 
-          {rows.length > 0 && (
+          {rows.length > 0 && showValues && (
             <tfoot>
               <tr>
                 <td className="tb-col-name">Average of {rows.length}</td>
                 <td className="tb-col-pos" />
                 <td className="tb-col-nick" />
                 <td className="tb-col-alt" />
-                {STATS.map((k) => (
-                  <td key={k} className="tb-col-stat tb-avgcell">
-                    {statAvg(rows, k).toFixed(1)}
-                  </td>
-                ))}
-                <td className="tb-col-ovr tb-avgcell">{ovrAvg(rows).toFixed(1)}</td>
+                {showValues &&
+                  STATS.map((k) => (
+                    <td key={k} className="tb-col-stat tb-avgcell">
+                      {statAvg(rows, k).toFixed(1)}
+                    </td>
+                  ))}
+                {showValues && <td className="tb-col-ovr tb-avgcell">{ovrAvg(rows).toFixed(1)}</td>}
                 <td className="tb-col-squad" />
                 <td className="tb-col-act" />
               </tr>
