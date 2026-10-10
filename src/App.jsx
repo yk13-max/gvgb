@@ -322,10 +322,14 @@ export default function App() {
     if (fresh.length) setDraft({ ...fresh[0], stats: { ...fresh[0].stats }, alt: [], nicknames: [] });
   }
 
-  // A match belongs to the week matching its date; recording one creates that week
-  // and snapshots what every player who turned out was rated at the time.
+  // A match belongs to the week matching its date; recording one creates that week and
+  // snapshots what every player who turned out was rated at the time. A session is often
+  // several games with the same sides, so they arrive as a list and fold in one at a time.
   function saveResult(entry) {
-    const next = putMatch(history, { ...entry, players });
+    const next = entry.matches.reduce(
+      (weeks, m) => putMatch(weeks, { date: entry.date, venue: entry.venue, teamSize: entry.teamSize, match: m, players }),
+      history
+    );
     setHistory(next);
     setRecording(null);
     setPage('history');

@@ -87,12 +87,23 @@ and the **Match history**.
 History is organised by **game week** — one session, typically a Friday, holding however many
 matches you played that night.
 
-- **Record result** on the Balancer logs the drafted teams against a date. If a week already
-  exists for that date the match joins it ("match 2 of this session"); otherwise the week is
-  created. The date on a match is what decides its week, so editing a match's date moves it
-  between weeks, and a week with no matches left disappears.
-- **Nominations** — after the first match of a week is recorded, the app asks for **best
-  attacker**, **best midfielder**, **best defender** and the **overall POTM**. Only players who
+- **Record result** on the Balancer logs the drafted teams against a date. A session is
+  usually several games with the same two sides, so the dialog takes a **list** of scores:
+  **Add another match** gives you another RED–BLUE row, the title and button count up
+  ("Save 3 matches"), and the note says which matches of the session they will be. If a week
+  already exists for that date they join it — record two now and three later and the session
+  reads 1–5. **Match was played** off records the night as called off instead, teams kept and
+  no score. Editing is always one match: the one you opened.
+- The date on a match is what decides its week, so editing a match's date moves it between
+  weeks, and a week with no matches left disappears.
+- **Share** on a week draws the night as a PNG and hands it to the phone's share sheet, or
+  downloads it on a desktop. It carries the date and pitch, every score with the winner
+  marked, the night's goals and wins, the four nominations with the POTM picked out in gold,
+  and everyone who turned out. It is the one image to drop in the group chat afterwards, and
+  it needs no password — anyone looking at the history can share it.
+- **Nominations** — after a week's first result is recorded, the app asks for **best
+  attacker**, **best midfielder**, **best defender** and the **overall POTM**. Recording five
+  matches at once asks once, not five times. Only players who
   turned out that week can be nominated, and nobody is filtered out by position — the lists are
   just ordered so the obvious candidates come first. Skip and come back to it from the week's
   Nominations button; editing a score later won't re-open the prompt.
@@ -220,6 +231,7 @@ src/
     parseList.js    WhatsApp signup-list parser and fuzzy roster matching
     whatsapp.js     teams + match details -> chat-ready text
     exportBoard.js  board -> PNG
+    exportWeek.js   a game week -> a results PNG with the nominations on it
     doc.js          the shared document: building it, and reading one back
     backup.js       that document <-> a .json file
     remote.js       talking to /api/data

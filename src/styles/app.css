@@ -465,6 +465,13 @@ a:hover {
   textarea {
     font-size: 16px !important;
   }
+
+  /* Score boxes are the exception: the rule above shrinks them to a 33px target, and a
+     session can stack several of them. Anything at or over 16px keeps iOS from zooming. */
+  .tb-scoreinput {
+    font-size: 22px !important;
+    min-height: 48px;
+  }
 }
 
 /* ---- Player stats table ---------------------------------------------------- */
@@ -902,6 +909,23 @@ a:hover {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: var(--focus-ring);
+}
+
+/* One row per match of the session. */
+.tb-scorerow {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.tb-scorerow-n {
+  flex-shrink: 0;
+  width: 20px;
+  padding-bottom: 12px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  text-align: right;
 }
 
 /* ---- Match history --------------------------------------------------------- */

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Button, Icon, IconButton } from '../ds/index.js';
 import { ABBR, SHORT } from '../lib/model.js';
 import { shortName } from '../lib/names.js';
+import { exportWeek } from '../lib/exportWeek.js';
 import { AWARDS, outcome, ratingDiff, tally, weekPlayerIds } from '../lib/weeks.js';
 import { formatDate } from '../lib/whatsapp.js';
 
@@ -113,6 +114,15 @@ function WeekCard({ week, players, onAwards, onEditMatch, onDeleteMatch, onDelet
           </div>
         </div>
         <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+          {/* Sharing is read-only, so it is there whether or not you can edit. */}
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={<Icon name="share-2" size={15} />}
+            onClick={() => exportWeek(week)}
+          >
+            Share
+          </Button>
           {(canEdit || anyAward) && (
             <Button
               variant="secondary"
