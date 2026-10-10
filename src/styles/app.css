@@ -1561,3 +1561,247 @@ a:hover {
   color: var(--color-text-secondary);
   font-weight: var(--weight-regular);
 }
+
+/* ---- Awards table ------------------------------------------------------------ */
+
+.tb-league {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+}
+
+.tb-league th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 10px 12px;
+  background: var(--color-surface-sunken);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.tb-league td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.tb-league-rank {
+  width: 36px;
+  font-family: var(--font-mono);
+  color: var(--color-text-tertiary);
+}
+
+.tb-league-name {
+  min-width: 160px;
+}
+
+.tb-league-name span:first-child {
+  font-weight: var(--weight-semibold);
+}
+
+td.tb-league-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+td.tb-league-name > svg {
+  margin-left: auto;
+}
+
+/* The rank-in-cell and the short name exist for the phone; the desktop has room. */
+.tb-league-rankinline,
+.tb-league-short {
+  display: none;
+}
+
+.tb-league-n,
+th.tb-league-n {
+  text-align: right;
+  font-family: var(--font-mono);
+  width: 64px;
+}
+
+.tb-league-total {
+  font-weight: var(--weight-bold);
+  background: var(--color-primary-subtle);
+}
+
+th.tb-league-total {
+  color: var(--green-700);
+}
+
+/* POTM is the one that counts for the whole night, so its column reads apart. */
+th.tb-league-n[data-potm='1'] {
+  color: var(--amber-700, #a16207);
+}
+
+td.tb-league-n[data-potm='1']:not([data-zero='1']) {
+  color: var(--amber-700, #a16207);
+  font-weight: var(--weight-bold);
+}
+
+td[data-zero='1'] {
+  color: var(--color-text-tertiary);
+}
+
+.tb-league-row {
+  cursor: pointer;
+}
+
+.tb-league-row:hover td,
+.tb-league-row:focus-visible td {
+  background: var(--color-surface-sunken);
+}
+
+.tb-league-row[data-open='1'] td {
+  border-bottom-color: transparent;
+}
+
+.tb-league-row[data-zero='1'] .tb-league-name span:first-child {
+  font-weight: var(--weight-regular);
+  color: var(--color-text-secondary);
+}
+
+.tb-league-detailrow td {
+  padding: 0 12px 12px;
+  background: var(--color-surface);
+}
+
+.tb-league-detail {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+}
+
+.tb-league-detail-head {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+}
+
+.tb-league-nights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tb-league-night {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--color-text-secondary);
+}
+
+.tb-league-night[data-won='1'] {
+  border-color: var(--color-primary);
+  color: var(--color-text-primary);
+}
+
+.tb-league-chip {
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
+  background: var(--color-primary-subtle);
+  color: var(--green-700);
+  font-family: var(--font-body);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  font-size: 9px;
+}
+
+.tb-league-chip[data-potm='1'] {
+  background: var(--color-warning-subtle);
+  color: var(--amber-700, #a16207);
+}
+
+@media (max-width: 760px) {
+  .tb-league th,
+  .tb-league td {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  /* Eight columns at phone width: the rank folds into the name cell, the name goes to
+     first-name-plus-initial, and that one cell pins to the left so the numbers can
+     scroll under it on the narrowest phones. */
+  .tb-league-rank {
+    display: none;
+  }
+
+  .tb-league-rankinline {
+    display: inline;
+    width: 16px;
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+  }
+
+  .tb-league-full {
+    display: none;
+  }
+
+  .tb-league-short {
+    display: inline;
+    white-space: nowrap;
+  }
+
+  .tb-league-name,
+  th.tb-league-name {
+    min-width: 0;
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--color-surface);
+  }
+
+  th.tb-league-name {
+    z-index: 3;
+    background: var(--color-surface-sunken);
+  }
+
+  .tb-league-row:hover td.tb-league-name,
+  .tb-league-row[data-open='1'] td.tb-league-name {
+    background: var(--color-surface-sunken);
+  }
+
+  .tb-league-n,
+  th.tb-league-n {
+    width: auto;
+    padding-left: 5px;
+    padding-right: 5px;
+    font-size: var(--text-xs);
+  }
+
+  .tb-league-detailrow td {
+    position: sticky;
+    left: 0;
+  }
+
+  /* Seven tabs now; labels this short still clear 44px each on a 320px phone. */
+  .tb-tabs {
+    grid-template-columns: repeat(7, 1fr);
+  }
+
+  .tb-tabs button {
+    font-size: 9px;
+    letter-spacing: 0;
+  }
+}

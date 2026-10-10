@@ -10,6 +10,12 @@ export function shortName(name) {
   return parts[0] + ' ' + parts[1][0].toUpperCase();
 }
 
+// A–Z by name, for anywhere a list of players is read rather than ranked. Case and
+// accents are ignored so "Ólafur" sits with the Os and "dave" with the Ds.
+export function byName(a, b) {
+  return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+}
+
 export function initials(name) {
   return name
     .split(' ')

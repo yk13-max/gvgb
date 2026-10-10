@@ -1,4 +1,5 @@
 import { STATS, overall } from './model.js';
+import { byName } from './names.js';
 
 // A game week is one session: a date, and the one or more matches played on it.
 // Awards are nominated per week, and each week keeps a snapshot of the ratings its
@@ -163,7 +164,7 @@ export function lineups(w) {
     const key = sig(m.red) + '|' + sig(m.blue);
     let g = groups.find((x) => x.key === key);
     if (!g) {
-      g = { key, red: m.red || [], blue: m.blue || [], matches: [] };
+      g = { key, red: (m.red || []).slice().sort(byName), blue: (m.blue || []).slice().sort(byName), matches: [] };
       groups.push(g);
     }
     g.matches.push(i + 1);

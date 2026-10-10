@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Icon, IconButton } from '../ds/index.js';
 import { readBackupFile } from '../lib/backup.js';
 import { ABBR, POSITIONS, SHORT, STATS, overall, statAvg, ovrAvg } from '../lib/model.js';
+import { byName } from '../lib/names.js';
 
 const RANGE_KEYS = [...STATS, 'ovr'];
 
@@ -125,7 +126,8 @@ export default function StatsTable({ players, selected, onPatch, onEdit, onDelet
         return true;
       });
     });
-    if (!sort) return out;
+    // Untouched, the table reads A–Z; a header click takes over from there.
+    if (!sort) return out.slice().sort(byName);
     const dir = sort.dir === 'asc' ? 1 : -1;
     return out.slice().sort((a, b) => {
       let d;

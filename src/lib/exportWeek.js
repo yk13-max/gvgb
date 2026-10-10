@@ -26,9 +26,24 @@ const COL = {
   brand: '#4b9e5f',
 };
 
-const DISPLAY = '"Barlow Condensed",sans-serif';
-const BODY = 'Inter,sans-serif';
-const MONO = '"JetBrains Mono",monospace';
+// One face — the app's own body font — for everything. The condensed display face read
+// as stretched at phone sizes, and a monospace fallback, if the web font had not been
+// fetched in time, read worse. Numbers are centred on fixed positions, so they do not
+// need a monospace to line up.
+const FONT = 'Inter,sans-serif';
+const DISPLAY = FONT;
+const BODY = FONT;
+const MONO = FONT;
+
+// Canvas only uses a web font that has already been fetched; otherwise it silently
+// substitutes. Ask for every weight the image uses before drawing a pixel, and give up
+// waiting after a moment so a slow font server can never block a share.
+const WEIGHTS = [400, 500, 600, 700];
+function fontsReady() {
+  if (!document.fonts || !document.fonts.load) return Promise.resolve();
+  const loads = WEIGHTS.map((w) => document.fonts.load(w + ' 16px Inter').catch(() => null));
+  return Promise.race([Promise.all(loads), new Promise((r) => setTimeout(r, 1500))]);
+}
 
 // Measuring and drawing read the same numbers, so the canvas is exactly as tall as what
 // goes on it. Getting these out of step is how an image ends up with a band of dead
@@ -169,13 +184,13 @@ function draw(week) {
       g.fillText('BLUE', mid + 54, y + 33);
 
       g.textAlign = 'center';
-      g.font = 'bold 26px ' + MONO;
+      g.font = 'bold 28px ' + MONO;
       g.fillStyle = o === 'red' ? COL.red : COL.text;
       g.fillText(String(m.redScore), mid - 26, y + 36);
       g.fillStyle = COL.faint;
       g.font = '400 18px ' + MONO;
       g.fillText('–', mid, y + 34);
-      g.font = 'bold 26px ' + MONO;
+      g.font = 'bold 28px ' + MONO;
       g.fillStyle = o === 'blue' ? COL.blue : COL.text;
       g.fillText(String(m.blueScore), mid + 26, y + 36);
     }
@@ -261,7 +276,8 @@ function draw(week) {
   return c;
 }
 
-export function exportWeek(week) {
+export async function exportWeek(week) {
+  await fontsReady();
   const canvas = draw(week);
   const name = 'fufa-results-' + (week.date || 'week') + '.png';
   canvas.toBlob((blob) => {

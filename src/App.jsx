@@ -9,6 +9,7 @@ import RecordResultDialog from './components/RecordResultDialog.jsx';
 import RosterPanel from './components/RosterPanel.jsx';
 import WeekAwardsDialog from './components/WeekAwardsDialog.jsx';
 import ShareDialog from './components/ShareDialog.jsx';
+import Standings from './components/Standings.jsx';
 import StatLadder from './components/StatLadder.jsx';
 import StatsTable from './components/StatsTable.jsx';
 import SyncDialog, { syncLook } from './components/SyncDialog.jsx';
@@ -528,6 +529,7 @@ export default function App() {
             ['stats', 'Player stats'],
             ['ladder', 'Stat ladder'],
             ['history', 'History'],
+            ['awards', 'Awards'],
           ]}
           value={page}
           onChange={setPage}
@@ -688,6 +690,8 @@ export default function App() {
           onDeleteMatch={deleteMatch}
           onDeleteWeek={deleteWeek}
         />
+      ) : page === 'awards' ? (
+        <Standings weeks={history} players={players} />
       ) : page === 'ladder' ? (
         <StatLadder players={players} selected={selected} canEdit={canEdit} onPatch={patchPlayer} />
       ) : page === 'stats' ? (
@@ -843,6 +847,10 @@ export default function App() {
         <button type="button" data-on={page === 'history' ? '1' : '0'} onClick={() => setPage('history')}>
           <Icon name="history" size={19} />
           <span>History</span>
+        </button>
+        <button type="button" data-on={page === 'awards' ? '1' : '0'} onClick={() => setPage('awards')}>
+          <Icon name="trophy" size={19} />
+          <span>Awards</span>
         </button>
       </nav>
 

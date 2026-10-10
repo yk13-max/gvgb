@@ -14,9 +14,10 @@ falls back to this-browser-only storage with no loss of function.
 
 ## What it does
 
-The app has four pages, switched from the header on desktop and the bottom tab bar on a phone:
-the **Balancer** (squad, board, balance readout), the **Player stats** table, the **Stat ladder**
-and the **Match history**.
+The app has five pages, switched from the header on desktop and the bottom tab bar on a phone:
+the **Balancer** (squad, board, balance readout), the **Player stats** table, the **Stat ladder**,
+the **Match history** and the **Awards** table. Wherever players are listed rather than ranked —
+the squad, the stats table before you sort it, the line-ups — they read A–Z.
 
 ### Balancer
 
@@ -107,7 +108,8 @@ matches you played that night.
   and the line-ups — stated once per distinct pair of sides, labelled with the matches they
   played. It is laid out at phone width in phone-sized type and rendered at 3×, so in a
   chat it reads at the size the phone's own screens use rather than as a shrunken desktop
-  page. It is the one image to drop in the group chat afterwards, and it needs no
+  page. It is set entirely in Inter, the app's own body face, which is fetched before a
+  pixel is drawn — canvas quietly substitutes a system font for one it has not loaded yet. It is the one image to drop in the group chat afterwards, and it needs no
   password — anyone looking at the history can share it.
 - **Nominations** — after a week's first result is recorded, the app asks for **best
   attacker**, **best midfielder**, **best defender** and the **overall POTM**. Recording five
@@ -124,6 +126,19 @@ matches you played that night.
 
 A history saved before weeks existed migrates automatically: flat matches sharing a date are
 grouped into one week.
+
+### Awards
+
+The season as a league table: one row per player, a column for each award — best attacker,
+midfielder, defender and the overall POTM — a total, and the number of nights played. Most
+awards first, POTM breaking ties since it is the one that counts for the whole night, then
+nights played, then A–Z; equal rows share a rank. Everyone on the roster is in it, so a new
+signing sits at the bottom on zero until they play, and someone no longer on the roster keeps
+their row under the name the week recorded them by.
+
+Tap a player and the row opens to show every night they turned out, newest first, with any
+award won that night pinned to its date. On a phone the name column stays put while the
+numbers scroll.
 
 ### Stat ladder
 

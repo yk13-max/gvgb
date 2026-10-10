@@ -1,5 +1,6 @@
 import { Button, Icon } from '../ds/index.js';
 import PlayerCard, { MiniPlayerCard } from './PlayerCard.jsx';
+import { byName } from '../lib/names.js';
 
 export default function RosterPanel({
   players,
@@ -106,7 +107,10 @@ export default function RosterPanel({
           alignContent: 'start',
         }}
       >
-        {players.map((p) =>
+        {players
+          .slice()
+          .sort(byName)
+          .map((p) =>
           mini ? (
             <MiniPlayerCard
               key={p.id}

@@ -133,7 +133,17 @@ function drawBoard(teams, pos, showRatings, showSummary) {
   return c;
 }
 
-export function exportBoard(teams, pos, { ratings = true, summary = false } = {}) {
+// Canvas silently substitutes a web font that has not been fetched yet. Ask for the
+// faces the board uses first; stop waiting after a moment rather than block the share.
+function fontsReady() {
+  if (!document.fonts || !document.fonts.load) return Promise.resolve();
+  const want = ['bold 15px "Barlow Condensed"', '600 12px Inter', 'bold 30px "JetBrains Mono"', '500 15px "JetBrains Mono"'];
+  const loads = want.map((f) => document.fonts.load(f).catch(() => null));
+  return Promise.race([Promise.all(loads), new Promise((r) => setTimeout(r, 1500))]);
+}
+
+export async function exportBoard(teams, pos, { ratings = true, summary = false } = {}) {
+  await fontsReady();
   const canvas = drawBoard(teams, pos, ratings, summary);
   const filename = 'fufa-teams.png';
   canvas.toBlob((blob) => {
