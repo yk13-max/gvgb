@@ -96,11 +96,17 @@ matches you played that night.
   no score. Editing is always one match: the one you opened.
 - The date on a match is what decides its week, so editing a match's date moves it between
   weeks, and a week with no matches left disappears.
+- **Line-ups once, not per match.** A session is usually several games between the same two
+  sides. When any line-up repeats, the week card states each distinct line-up once — "All 3
+  matches", "Matches 1, 2, 4", "Match 3" — and the match rows below keep to the scores. A
+  week where every match had different sides keeps the sides beside each score, as before.
+  Swapped colours count as a different line-up, since the scores are red's and blue's.
 - **Share** on a week draws the night as a PNG and hands it to the phone's share sheet, or
   downloads it on a desktop. It carries the date and pitch, every score with the winner
   marked, the night's goals and wins, the four nominations with the POTM picked out in gold,
-  and everyone who turned out. It is the one image to drop in the group chat afterwards, and
-  it needs no password — anyone looking at the history can share it.
+  and the line-ups — stated once per distinct pair of sides, labelled with the matches they
+  played. It is the one image to drop in the group chat afterwards, and it needs no
+  password — anyone looking at the history can share it.
 - **Nominations** — after a week's first result is recorded, the app asks for **best
   attacker**, **best midfielder**, **best defender** and the **overall POTM**. Recording five
   matches at once asks once, not five times. Only players who

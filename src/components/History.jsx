@@ -3,7 +3,7 @@ import { Button, Icon, IconButton } from '../ds/index.js';
 import { ABBR, SHORT } from '../lib/model.js';
 import { shortName } from '../lib/names.js';
 import { exportWeek } from '../lib/exportWeek.js';
-import { AWARDS, outcome, ratingDiff, tally, weekPlayerIds } from '../lib/weeks.js';
+import { AWARDS, lineupLabel, lineups, outcome, ratingDiff, tally, weekPlayerIds } from '../lib/weeks.js';
 import { formatDate } from '../lib/whatsapp.js';
 
 function Stat({ label, value, color }) {
@@ -101,6 +101,10 @@ function WeekCard({ week, players, onAwards, onEditMatch, onDeleteMatch, onDelet
     return p ? shortName(p.name) : week.ratings[id] ? shortName(week.ratings[id].name) : '—';
   };
   const anyAward = AWARDS.some(([k]) => week.awards && week.awards[k] != null);
+  // When the same two sides played more than once, say so once and keep the rows to
+  // the scores. A week where every match had different sides reads better as it was.
+  const groups = lineups(week);
+  const repeated = groups.length < week.matches.length;
 
   return (
     <div className="tb-week">
@@ -164,11 +168,33 @@ function WeekCard({ week, players, onAwards, onEditMatch, onDeleteMatch, onDelet
         </div>
       )}
 
+      {repeated && (
+        <div className="tb-lineups">
+          {groups.map((g) => (
+            <div key={g.key} className="tb-lineup">
+              <div className="tb-lineup-label">{lineupLabel(g, week.matches.length)}</div>
+              <div>
+                <span className="tb-histteam-label" style={{ color: 'var(--team-red)' }}>
+                  RED
+                </span>{' '}
+                {g.red.map((p) => shortName(p.name)).join(', ')}
+              </div>
+              <div>
+                <span className="tb-histteam-label" style={{ color: 'var(--team-blue)' }}>
+                  BLUE
+                </span>{' '}
+                {g.blue.map((p) => shortName(p.name)).join(', ')}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="tb-weekmatches">
         {week.matches.map((m, i) => {
           const o = outcome(m);
           return (
-            <div key={m.id} className="tb-histrow" data-outcome={o}>
+            <div key={m.id} className="tb-histrow" data-outcome={o} data-compact={repeated ? '1' : '0'}>
               <div className="tb-histdate">
                 <div className="tb-histdate-main">Match {i + 1}</div>
                 <div className="tb-histdate-sub">
@@ -192,20 +218,22 @@ function WeekCard({ week, players, onAwards, onEditMatch, onDeleteMatch, onDelet
                   </>
                 )}
               </div>
-              <div className="tb-histteams">
-                <div>
-                  <span className="tb-histteam-label" style={{ color: 'var(--team-red)' }}>
-                    RED
-                  </span>{' '}
-                  {m.red.map((p) => shortName(p.name)).join(', ')}
+              {!repeated && (
+                <div className="tb-histteams">
+                  <div>
+                    <span className="tb-histteam-label" style={{ color: 'var(--team-red)' }}>
+                      RED
+                    </span>{' '}
+                    {m.red.map((p) => shortName(p.name)).join(', ')}
+                  </div>
+                  <div>
+                    <span className="tb-histteam-label" style={{ color: 'var(--team-blue)' }}>
+                      BLUE
+                    </span>{' '}
+                    {m.blue.map((p) => shortName(p.name)).join(', ')}
+                  </div>
                 </div>
-                <div>
-                  <span className="tb-histteam-label" style={{ color: 'var(--team-blue)' }}>
-                    BLUE
-                  </span>{' '}
-                  {m.blue.map((p) => shortName(p.name)).join(', ')}
-                </div>
-              </div>
+              )}
               <div className="tb-histacts" style={{ visibility: canEdit ? 'visible' : 'hidden' }} aria-hidden={!canEdit}>
                 <IconButton
                   icon={<Icon name="pencil" size={14} />}

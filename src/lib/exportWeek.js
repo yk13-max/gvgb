@@ -1,6 +1,6 @@
 import { downloadBlob } from './download.js';
 import { shortName } from './names.js';
-import { AWARDS, outcome, tally, weekPlayerIds } from './weeks.js';
+import { AWARDS, lineupLabel, lineups, outcome, tally, weekPlayerIds } from './weeks.js';
 import { formatDate } from './whatsapp.js';
 
 // A night's results as one image: the scores, who was nominated, and who turned out.
@@ -34,6 +34,9 @@ const NIGHT_H = 92;
 const AWARD_H = 42;
 const LINE_H = 24;
 const GAP = 12;
+const SIDE_LABEL_W = 56; // room for "RED" / "BLUE" before the names
+const GROUP_LABEL_H = 22; // "All 3 matches" above a line-up
+const GROUP_GAP = 14;
 
 function wrap(g, text, maxWidth) {
   const words = String(text).split(' ');
@@ -76,15 +79,24 @@ function draw(week) {
   const { t, squad, awards, nameOf } = layout(week);
   const measure = document.createElement('canvas').getContext('2d');
 
-  // --- measure the two blocks whose height depends on the content ---
+  // --- measure the block whose height depends on the names in it ---
+  // The sides, stated once per distinct pair. Five games between the same ten names is
+  // one entry, not five; the match rows above carry the scores.
+  const names = (list) => list.map((p) => shortName(p.name)).join(', ');
   measure.font = '400 15px ' + BODY;
-  const squadLines = wrap(measure, squad.map((p) => shortName(p.name)).join(' · '), W - PAD * 2);
+  const sideW = W - PAD * 2 - SIDE_LABEL_W;
+  const groups = lineups(week).map((g) => ({
+    label: lineupLabel(g, week.matches.length),
+    red: wrap(measure, names(g.red), sideW),
+    blue: wrap(measure, names(g.blue), sideW),
+  }));
+  const groupH = (g) => GROUP_LABEL_H + (g.red.length + g.blue.length) * LINE_H + GROUP_GAP;
 
   const matchesH = LABEL_H + week.matches.length * MATCH_H + GAP;
   const nightH = t.played > 0 ? NIGHT_H : 0;
   const awardsH = awards.length ? LABEL_H + awards.length * AWARD_H + GAP : 0;
-  const squadH = squad.length ? LABEL_H + squadLines.length * LINE_H : 0;
-  const H = HEAD_H + matchesH + nightH + awardsH + squadH + PAD;
+  const sidesH = groups.length ? LABEL_H + groups.reduce((sum, g) => sum + groupH(g), 0) - GROUP_GAP : 0;
+  const H = HEAD_H + matchesH + nightH + awardsH + sidesH + PAD;
 
   const c = document.createElement('canvas');
   c.width = W;
@@ -215,15 +227,31 @@ function draw(week) {
     y += GAP;
   }
 
-  // --- who turned out ---
-  if (squad.length) {
-    y = sectionLabel(g, 'Who played', y);
-    g.textAlign = 'left';
-    g.font = '400 15px ' + BODY;
-    g.fillStyle = COL.muted;
-    squadLines.forEach((line) => {
-      g.fillText(line, PAD, y + 16);
-      y += LINE_H;
+  // --- the sides ---
+  if (groups.length) {
+    y = sectionLabel(g, groups.length === 1 ? 'Line-up' : 'Line-ups', y);
+    groups.forEach((grp, gi) => {
+      g.textAlign = 'left';
+      g.font = '600 11px ' + BODY;
+      g.fillStyle = COL.faint;
+      g.fillText(grp.label.toUpperCase(), PAD, y + 12);
+      y += GROUP_LABEL_H;
+      [
+        ['RED', COL.red, grp.red],
+        ['BLUE', COL.blue, grp.blue],
+      ].forEach(([side, color, lines]) => {
+        g.textAlign = 'left';
+        g.font = 'bold 15px ' + DISPLAY;
+        g.fillStyle = color;
+        g.fillText(side, PAD, y + 16);
+        g.font = '400 15px ' + BODY;
+        g.fillStyle = COL.text;
+        lines.forEach((line) => {
+          g.fillText(line, PAD + SIDE_LABEL_W, y + 16);
+          y += LINE_H;
+        });
+      });
+      if (gi < groups.length - 1) y += GROUP_GAP;
     });
   }
 

@@ -147,6 +147,39 @@ export function putMatch(weeks, { date, venue, teamSize, match, players }) {
     .sort((a, b) => (a.date < b.date ? 1 : -1));
 }
 
+// The distinct pairs of sides a week was played with, and which matches each pair
+// played. A session is usually several games between the same two sides, so a reader
+// wants the line-up stated once and the scores listed under it, not the same ten
+// names repeated beside every result. Swapped colours count as a different line-up —
+// the scores are red's and blue's, so which names wore which matters.
+export function lineups(w) {
+  const sig = (list) =>
+    (list || [])
+      .map((p) => p.id)
+      .sort((a, b) => a - b)
+      .join(',');
+  const groups = [];
+  (w.matches || []).forEach((m, i) => {
+    const key = sig(m.red) + '|' + sig(m.blue);
+    let g = groups.find((x) => x.key === key);
+    if (!g) {
+      g = { key, red: m.red || [], blue: m.blue || [], matches: [] };
+      groups.push(g);
+    }
+    g.matches.push(i + 1);
+  });
+  return groups;
+}
+
+// "All 3 matches", "Matches 1–2", "Matches 1, 3", "Match 2".
+export function lineupLabel(group, total) {
+  const n = group.matches;
+  if (total > 1 && n.length === total) return 'All ' + total + ' matches';
+  if (n.length === 1) return 'Match ' + n[0];
+  const run = n.every((v, i) => i === 0 || v === n[i - 1] + 1);
+  return 'Matches ' + (run ? n[0] + '–' + n[n.length - 1] : n.join(', '));
+}
+
 export function outcome(m) {
   if (!m.played) return 'off';
   if (m.redScore == null || m.blueScore == null) return 'noscore';
