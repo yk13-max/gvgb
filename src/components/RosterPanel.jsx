@@ -1,5 +1,6 @@
 import { Button, Icon } from '../ds/index.js';
 import PlayerCard, { MiniPlayerCard } from './PlayerCard.jsx';
+import { overall } from '../lib/model.js';
 import { byName } from '../lib/names.js';
 
 export default function RosterPanel({
@@ -14,14 +15,21 @@ export default function RosterPanel({
   needed,
   mini,
   onMiniChange,
+  sort = 'name',
+  onSortChange,
   canEdit = true,
   showValues = true,
 }) {
+  // Signed out there are no scores to sort by, and the order of a hidden number is the
+  // number by another name — so the squad reads A–Z whatever the preference says.
+  const order = showValues ? sort : 'name';
+  const byScore = (a, b) => overall(b) - overall(a) || byName(a, b);
   const inCount = selected.length;
   const ok = inCount === needed;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, height: '100%' }}>
       <div
+        className="tb-squadhead"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -53,7 +61,27 @@ export default function RosterPanel({
             {inCount}/{needed} selected · {players.length - inCount} benched
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        <div className="tb-squadctl" style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          {showValues && (
+            <div className="tb-viewtoggle" role="group" aria-label="Squad order">
+              {[
+                ['name', 'arrow-down-a-z', 'Sort by name'],
+                ['ovr', 'arrow-down-1-0', 'Sort by score'],
+              ].map(([v, ic, label]) => (
+                <button
+                  key={v}
+                  type="button"
+                  data-on={order === v ? '1' : '0'}
+                  aria-pressed={order === v}
+                  aria-label={label}
+                  title={label}
+                  onClick={() => onSortChange && onSortChange(v)}
+                >
+                  <Icon name={ic} size={15} />
+                </button>
+              ))}
+            </div>
+          )}
           <div className="tb-viewtoggle" role="group" aria-label="Squad view">
             {[
               [false, 'layout-grid', 'Card view'],
@@ -124,7 +152,7 @@ export default function RosterPanel({
       <div className="tb-grid" data-mini={mini ? '1' : '0'}>
         {players
           .slice()
-          .sort(byName)
+          .sort(order === 'ovr' ? byScore : byName)
           .map((p) =>
           mini ? (
             <MiniPlayerCard

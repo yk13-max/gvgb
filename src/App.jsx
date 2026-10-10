@@ -159,6 +159,7 @@ export default function App() {
   // The squad view is a preference belonging to this browser, not to the group — toggling
   // it on a phone has no business changing what everyone else is looking at.
   const [mini, setMini] = useState(() => loadPrefs().mini);
+  const [squadSort, setSquadSort] = useState(() => loadPrefs().sort);
   const [history, setHistory] = useState(start.history);
   const [recording, setRecording] = useState(null); // null | {} for a new match | { week, match } to edit
   const [awarding, setAwarding] = useState(null); // the week whose nominations are open
@@ -231,8 +232,8 @@ export default function App() {
   }, [doc, sync.push]);
 
   useEffect(() => {
-    savePrefs({ mini });
-  }, [mini]);
+    savePrefs({ mini, sort: squadSort });
+  }, [mini, squadSort]);
 
   const teamOf = useMemo(() => {
     const m = {};
@@ -741,6 +742,8 @@ export default function App() {
             showValues={showValues}
             mini={mini}
             onMiniChange={setMini}
+            sort={squadSort}
+            onSortChange={setSquadSort}
             onToggle={toggle}
             onEdit={(p) => setDraft({ ...p, stats: { ...p.stats }, alt: [...(p.alt || [])], nicknames: [...(p.nicknames || [])] })}
             onDelete={removePlayer}

@@ -28,8 +28,9 @@ the squad, the stats table before you sort it, the line-ups — they read A–Z.
   positioning count for more than their defending, vision is weighted towards the players who
   create, and goalkeeping carries a keeper's rating while staying a token weight outfield.
 
-  The **card / mini** toggle beside *Add player* switches the grid between full cards and a mini
-  view of name and overall only — denser for picking a squad from a long roster or scanning
+  The squad reads A–Z by default; the **A–Z / 1–0** toggle switches it to overall, high to low —
+  remembered per device, and only there when you can see the scores. The **card / mini** toggle
+  beside it switches the grid between full cards and a mini view of name and overall only — denser for picking a squad from a long roster or scanning
   ratings at a glance. On a phone the mini view runs four to a row, names shortened to first
   name plus initial with the overall under them, each tile still a full 44px tap. Tapping
   still selects and benches; the choice is remembered.

@@ -881,6 +881,23 @@ a:hover {
     padding-right: 0;
   }
 
+  /* Four controls no longer fit beside the title on a phone, and a group that will not
+     shrink was squeezing the subtitle into four lines and pushing Add player off the edge.
+     The controls take a row of their own under the title instead. */
+  .tb-squadhead {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .tb-squadctl {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .tb-squadctl .tb-addbtn {
+    margin-left: auto;
+  }
+
   /* The squad header's buttons: the same 44px as everything else on a phone. The clear
      button keeps its icon and its accessible name and loses its printed label; below
      360px, where three worded controls cannot share a line, so does Add player. */

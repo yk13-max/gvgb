@@ -30,9 +30,9 @@ export function saveCache(doc) {
 export function loadPrefs() {
   try {
     const d = JSON.parse(localStorage.getItem(PREFS) || '{}');
-    return { mini: !!d.mini };
+    return { mini: !!d.mini, sort: d.sort === 'ovr' ? 'ovr' : 'name' };
   } catch {
-    return { mini: false };
+    return { mini: false, sort: 'name' };
   }
 }
 

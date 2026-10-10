@@ -1,4 +1,6 @@
 import {
+  ArrowDown10,
+  ArrowDownAZ,
   ArrowLeftRight,
   BarChart2,
   Check,
@@ -40,6 +42,8 @@ import {
 // swapped <i data-lucide> nodes in place; here the icons are imported so nothing
 // mutates DOM React owns, and the bundle only carries the glyphs actually used.
 const registry = {
+  'arrow-down-1-0': ArrowDown10,
+  'arrow-down-a-z': ArrowDownAZ,
   'arrow-left-right': ArrowLeftRight,
   'bar-chart-2': BarChart2,
   check: Check,
