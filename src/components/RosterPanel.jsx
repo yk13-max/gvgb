@@ -10,6 +10,7 @@ export default function RosterPanel({
   onEdit,
   onDelete,
   onAdd,
+  onClear,
   needed,
   mini,
   onMiniChange,
@@ -72,9 +73,33 @@ export default function RosterPanel({
             ))}
           </div>
           {canEdit && (
-            <Button size="sm" variant="secondary" icon={<Icon name="plus" size={15} />} onClick={onAdd}>
-              Add player
-            </Button>
+            <>
+              {/* Benches everyone in one go — the quick way to start a new night's pick
+                  from a clean sheet. Disabled rather than hidden when the bench is already
+                  full, so it stays where the hand expects it. */}
+              <Button
+                size="sm"
+                variant="secondary"
+                className="tb-clearbtn"
+                icon={<Icon name="x" size={15} />}
+                aria-label="Deselect all"
+                title="Bench everyone"
+                disabled={inCount === 0}
+                onClick={onClear}
+              >
+                <span>Deselect all</span>
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                className="tb-addbtn"
+                icon={<Icon name="plus" size={15} />}
+                aria-label="Add player"
+                onClick={onAdd}
+              >
+                <span>Add player</span>
+              </Button>
+            </>
           )}
         </div>
       </div>

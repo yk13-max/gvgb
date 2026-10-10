@@ -881,6 +881,24 @@ a:hover {
     padding-right: 0;
   }
 
+  /* The squad header's buttons: the same 44px as everything else on a phone. The clear
+     button keeps its icon and its accessible name and loses its printed label; below
+     360px, where three worded controls cannot share a line, so does Add player. */
+  .tb-clearbtn,
+  .tb-addbtn {
+    min-height: 44px;
+  }
+
+  .tb-clearbtn {
+    min-width: 44px;
+    padding-left: 9px !important;
+    padding-right: 9px !important;
+  }
+
+  .tb-clearbtn > span {
+    display: none;
+  }
+
   .tb-mini {
     flex-direction: column;
     justify-content: center;
@@ -907,6 +925,18 @@ a:hover {
   .tb-mini-ovr {
     font-size: var(--text-sm);
     line-height: 1;
+  }
+}
+
+@media (max-width: 360px) {
+  .tb-addbtn {
+    min-width: 44px;
+    padding-left: 9px !important;
+    padding-right: 9px !important;
+  }
+
+  .tb-addbtn > span {
+    display: none;
   }
 }
 

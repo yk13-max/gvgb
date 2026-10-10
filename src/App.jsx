@@ -745,6 +745,10 @@ export default function App() {
             onEdit={(p) => setDraft({ ...p, stats: { ...p.stats }, alt: [...(p.alt || [])], nicknames: [...(p.nicknames || [])] })}
             onDelete={removePlayer}
             onAdd={() => setDraft({ name: '', pos: 'Midfielder', alt: [], nicknames: [], stats: { ...DEFAULT_STATS } })}
+            onClear={() => {
+              setSelected([]);
+              resetBoard();
+            }}
           />
         </section>
 
