@@ -30,11 +30,16 @@ function assignLanes(sorted, valueOf, minGap) {
 function LadderList({ sorted, stat, valueOf, avg, selected, canEdit, setValue }) {
   const [heldId, setHeldId] = useState(null);
   const frozen = useRef(null);
-  const order = heldId != null && frozen.current ? frozen.current : sorted;
+  // What is frozen is the order, as ids — never the player objects. A row has to keep
+  // rendering the live value while its slider is held, or the number would stick and
+  // the controlled slider would snap back under the thumb on every move.
+  const byId = useMemo(() => new Map(sorted.map((p) => [p.id, p])), [sorted]);
+  const order =
+    heldId != null && frozen.current ? frozen.current.map((id) => byId.get(id)).filter(Boolean) : sorted;
   const rankOf = (p) => sorted.findIndex((x) => x.id === p.id) + 1;
 
   const hold = (p) => {
-    frozen.current = sorted;
+    frozen.current = sorted.map((x) => x.id);
     setHeldId(p.id);
   };
   const release = () => {
