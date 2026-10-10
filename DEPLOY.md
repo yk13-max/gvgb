@@ -83,3 +83,14 @@ The store is the source of truth, but it is not the only copy:
 To move hosts entirely: export, deploy somewhere new, import, done. The only thing tied to
 Netlify is the function in `netlify/functions/data.js`, which is about eighty lines of
 GET/PUT around a key-value store.
+
+## If the API 404s
+
+`netlify/functions/data.js` ends with `export const config = { path: '/api/data' }`, which
+is what puts the function on that path. A function with a custom path is **not** also
+served at `/.netlify/functions/data`, so do not add a `netlify.toml` redirect pointing
+there — it will 404, and a `force = true` one will not even fall through to the app.
+
+The client knows both spellings and uses whichever answers, so the app survives either
+arrangement. If `/api/data` returns Netlify's "Page not found" rather than JSON or the
+app's own HTML, a redirect like that is the first thing to look for.

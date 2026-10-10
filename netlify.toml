@@ -5,13 +5,11 @@
 [functions]
   node_bundler = "esbuild"
 
-# The function declares this path itself, but spelling it out here means the rule order
-# is visible rather than inferred — the API is matched before the catch-all below.
-[[redirects]]
-  from = "/api/data"
-  to = "/.netlify/functions/data"
-  status = 200
-  force = true
+# No rule for /api/data on purpose. The function claims that path itself (see the
+# `config` export in netlify/functions/data.js), and a function with a custom path is
+# not also served at /.netlify/functions/<name> — a redirect pointing there 404s, and a
+# forced one never falls through. The client knows both spellings and uses whichever
+# answers, so this stays a routing preference rather than a single point of failure.
 
 # A single-page app: everything else renders index.html.
 [[redirects]]
