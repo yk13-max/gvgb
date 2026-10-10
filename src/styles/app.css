@@ -806,6 +806,26 @@ a:hover {
   box-shadow: var(--shadow-sm);
 }
 
+.tb-grid {
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(205px, 1fr));
+  gap: 10px;
+  padding-right: 4px;
+  padding-bottom: 4px;
+  align-content: start;
+}
+
+.tb-grid[data-mini='1'] {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px;
+}
+
+.tb-mini-short {
+  display: none;
+}
+
 .tb-mini {
   display: flex;
   align-items: center;
@@ -852,8 +872,41 @@ a:hover {
     height: 34px;
   }
 
+  /* A tile that is just a name earns four to a row on a phone. The name goes to first
+     name plus initial, the overall drops under it, and the row of four still clears the
+     44px touch target. */
+  .tb-grid[data-mini='1'] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    padding-right: 0;
+  }
+
   .tb-mini {
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
     min-height: 44px;
+    padding: 6px 4px;
+    text-align: center;
+  }
+
+  .tb-mini-name {
+    flex: none;
+    width: 100%;
+    font-size: var(--text-xs);
+  }
+
+  .tb-mini-full {
+    display: none;
+  }
+
+  .tb-mini-short {
+    display: inline;
+  }
+
+  .tb-mini-ovr {
+    font-size: var(--text-sm);
+    line-height: 1;
   }
 }
 

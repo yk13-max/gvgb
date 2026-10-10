@@ -30,7 +30,9 @@ the squad, the stats table before you sort it, the line-ups — they read A–Z.
 
   The **card / mini** toggle beside *Add player* switches the grid between full cards and a mini
   view of name and overall only — denser for picking a squad from a long roster or scanning
-  ratings at a glance. Tapping still selects and benches; the choice is remembered.
+  ratings at a glance. On a phone the mini view runs four to a row, names shortened to first
+  name plus initial with the overall under them, each tile still a full 44px tap. Tapping
+  still selects and benches; the choice is remembered.
 - **Balance** — pick exactly `2 × team size` players (everyone else is benched) and the balancer
   splits them by overall, per-stat averages and position mix. Each side always gets a keeper —
   the best two goalkeepers, falling back to anyone who can also play there, then to the best

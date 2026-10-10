@@ -1,6 +1,6 @@
 import { Icon, IconButton } from '../ds/index.js';
 import { ABBR, SHORT, STATS, overall } from '../lib/model.js';
-import { initials } from '../lib/names.js';
+import { initials, shortName } from '../lib/names.js';
 
 export function StatRow({ k, v }) {
   return (
@@ -65,7 +65,10 @@ export function MiniPlayerCard({ p, selected, team, onToggle, canEdit = true, sh
         cursor: canEdit ? 'pointer' : 'default',
       }}
     >
-      <span className="tb-mini-name">{p.name}</span>
+      <span className="tb-mini-name">
+        <span className="tb-mini-full">{p.name}</span>
+        <span className="tb-mini-short">{shortName(p.name)}</span>
+      </span>
       {showValues && (
         <span className="tb-mini-ovr" style={{ color: selected && teamColor ? teamColor : 'var(--color-text-primary)' }}>
           {overall(p)}

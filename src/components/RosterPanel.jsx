@@ -96,18 +96,7 @@ export default function RosterPanel({
             : 'Select ' + (needed - inCount) + ' more for even sides.'}
         </div>
       )}
-      <div
-        style={{
-          overflowY: 'auto',
-          overflowX: 'hidden',
-          display: 'grid',
-          gridTemplateColumns: mini ? 'repeat(auto-fill,minmax(150px,1fr))' : 'repeat(auto-fill,minmax(205px,1fr))',
-          gap: mini ? 6 : 10,
-          paddingRight: 4,
-          paddingBottom: 4,
-          alignContent: 'start',
-        }}
-      >
+      <div className="tb-grid" data-mini={mini ? '1' : '0'}>
         {players
           .slice()
           .sort(byName)
