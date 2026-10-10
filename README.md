@@ -105,7 +105,9 @@ matches you played that night.
   downloads it on a desktop. It carries the date and pitch, every score with the winner
   marked, the night's goals and wins, the four nominations with the POTM picked out in gold,
   and the line-ups — stated once per distinct pair of sides, labelled with the matches they
-  played. It is the one image to drop in the group chat afterwards, and it needs no
+  played. It is laid out at phone width in phone-sized type and rendered at 3×, so in a
+  chat it reads at the size the phone's own screens use rather than as a shrunken desktop
+  page. It is the one image to drop in the group chat afterwards, and it needs no
   password — anyone looking at the history can share it.
 - **Nominations** — after a week's first result is recorded, the app asks for **best
   attacker**, **best midfielder**, **best defender** and the **overall POTM**. Recording five
