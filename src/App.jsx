@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Dialog, Icon, IconButton, Switch } from './ds/index.js';
 import History from './components/History.jsx';
 import ImportDialog from './components/ImportDialog.jsx';
@@ -11,11 +11,14 @@ import WeekAwardsDialog from './components/WeekAwardsDialog.jsx';
 import ShareDialog from './components/ShareDialog.jsx';
 import StatLadder from './components/StatLadder.jsx';
 import StatsTable from './components/StatsTable.jsx';
+import SyncDialog, { syncLook } from './components/SyncDialog.jsx';
 import { exportJSON, readBackupFile } from './lib/backup.js';
+import { buildDoc, parseDoc } from './lib/doc.js';
 import { exportBoard } from './lib/exportBoard.js';
 import { DEFAULT_STATS, balance, layout, relax } from './lib/model.js';
 import { samplePlayers } from './lib/samplePlayers.js';
-import { loadSaved, save } from './lib/storage.js';
+import { loadCache, loadPrefs, saveCache, savePrefs } from './lib/storage.js';
+import { useSync } from './lib/useSync.js';
 import { putMatch } from './lib/weeks.js';
 
 const NARROW = '(max-width:760px)';
@@ -27,8 +30,31 @@ function todayISO() {
   return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
 }
 
+// One document in, one set of app state out — used both when a document arrives from the
+// server and when working out what this app *would* save, so the two can never drift and
+// read as an edit nobody made.
+function stateFromDoc(parsed) {
+  const today = todayISO();
+  const m = parsed.match || {};
+  return {
+    players: parsed.players,
+    history: parsed.history,
+    teamSize: parsed.teamSize || 5,
+    selected: parsed.selected || [],
+    // A fixture whose date has already been and gone rolls forward to today, so last
+    // week's date can never be pasted into the chat by accident.
+    match: {
+      date: m.date && m.date >= today ? m.date : today,
+      time: m.time || '19:30',
+      venue: m.venue || '',
+    },
+    teams: { red: parsed.board.red, blue: parsed.board.blue },
+    pos: parsed.board.pos,
+  };
+}
+
 // Header pill switch — used for the page and for the match format.
-function Segmented({ options, value, onChange, className }) {
+function Segmented({ options, value, onChange, className, disabled }) {
   return (
     <div
       className={className}
@@ -39,6 +65,7 @@ function Segmented({ options, value, onChange, className }) {
         borderRadius: 'var(--radius-sm)',
         padding: 2,
         flexShrink: 0,
+        opacity: disabled ? 0.55 : 1,
       }}
     >
       {options.map(([v, label]) => {
@@ -48,9 +75,10 @@ function Segmented({ options, value, onChange, className }) {
             key={v}
             type="button"
             aria-pressed={on}
+            disabled={disabled}
             onClick={() => onChange(v)}
             style={{
-              cursor: 'pointer',
+              cursor: disabled ? 'not-allowed' : 'pointer',
               border: 'none',
               borderRadius: 'var(--radius-xs)',
               padding: '6px 12px',
@@ -93,24 +121,31 @@ function MenuRow({ icon, label, disabled, onClick }) {
 }
 
 export default function App() {
-  const saved = useMemo(loadSaved, []);
-  const [players, setPlayers] = useState(saved ? saved.players : samplePlayers);
-  const [teamSize, setTeamSize] = useState(saved && saved.teamSize ? saved.teamSize : 5);
-  const [selected, setSelected] = useState(
-    saved && saved.selected ? saved.selected : samplePlayers.slice(0, 10).map((p) => p.id)
-  );
-  const [teams, setTeams] = useState({ red: [], blue: [] });
-  const [pos, setPos] = useState({});
+  // The cache is only what we last saw: something to render while /api/data answers, and
+  // the whole story when there is no backend to answer.
+  const start = useMemo(() => {
+    const cached = loadCache();
+    return stateFromDoc(
+      cached || {
+        players: samplePlayers,
+        history: [],
+        teamSize: 5,
+        selected: samplePlayers.slice(0, 10).map((p) => p.id),
+        match: null,
+        board: { red: [], blue: [], pos: {} },
+      }
+    );
+  }, []);
+
+  const [players, setPlayers] = useState(start.players);
+  const [teamSize, setTeamSize] = useState(start.teamSize);
+  const [selected, setSelected] = useState(start.selected);
+  const [teams, setTeams] = useState(start.teams);
+  const [pos, setPos] = useState(start.pos);
   const [showStats, setShowStats] = useState(false);
   const [pngRatings, setPngRatings] = useState(true);
   const [pngSummary, setPngSummary] = useState(false);
-  // Kick-off time and pitch carry over between sessions; the date always starts at today
-  // so last week's fixture can never be pasted by accident.
-  const [match, setMatch] = useState(() => ({
-    date: todayISO(),
-    time: (saved && saved.match && saved.match.time) || '19:30',
-    venue: (saved && saved.match && saved.match.venue) || '',
-  }));
+  const [match, setMatch] = useState(start.match);
   const [sel, setSel] = useState(null);
   const [draft, setDraft] = useState(null);
   const [seed, setSeed] = useState(0);
@@ -120,13 +155,16 @@ export default function App() {
   const [narrow, setNarrow] = useState(isNarrow);
   const [view, setView] = useState('squad');
   const [page, setPage] = useState('balancer');
-  const [mini, setMini] = useState(() => !!(saved && saved.mini));
-  const [history, setHistory] = useState(() => (saved && Array.isArray(saved.history) ? saved.history : []));
+  // The squad view is a preference belonging to this browser, not to the group — toggling
+  // it on a phone has no business changing what everyone else is looking at.
+  const [mini, setMini] = useState(() => loadPrefs().mini);
+  const [history, setHistory] = useState(start.history);
   const [recording, setRecording] = useState(null); // null | {} for a new match | { week, match } to edit
   const [awarding, setAwarding] = useState(null); // the week whose nominations are open
   const [notice, setNotice] = useState(null);
   const [menu, setMenu] = useState(false); // the phone's actions sheet
   const [dataMenu, setDataMenu] = useState(false);
+  const [syncOpen, setSyncOpen] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia(NARROW);
@@ -140,9 +178,56 @@ export default function App() {
   const fileRef = useRef(null);
   const needed = teamSize * 2;
 
+  // Everything the group shares, as one value. Anything not in here — the squad view, the
+  // PNG switches, which page you are on — belongs to this browser alone.
+  const doc = useMemo(
+    () => buildDoc({ players, history, teamSize, selected, match, teams, pos }),
+    [players, history, teamSize, selected, match, teams, pos]
+  );
+
+  const applyDoc = useCallback((parsed) => {
+    const s = stateFromDoc(parsed);
+    setPlayers(s.players);
+    setHistory(s.history);
+    setTeamSize(s.teamSize);
+    setSelected(s.selected);
+    setMatch(s.match);
+    setTeams(s.teams);
+    setPos(s.pos);
+    setSel(null);
+    setDraft(null);
+    setQueue([]);
+  }, []);
+
+  const sync = useSync({
+    onAdopt: useCallback(
+      (raw) => {
+        const parsed = parseDoc(raw);
+        if (!parsed.error) applyDoc(parsed);
+      },
+      [applyDoc]
+    ),
+    // What this app would save for a document it has just been handed. The server's bytes
+    // and ours differ in harmless ways — key order, a rolled-forward date — and comparing
+    // raw text would make every load look like an unsaved edit.
+    canonical: useCallback((raw) => {
+      const parsed = parseDoc(raw);
+      return parsed.error ? null : JSON.stringify(buildDoc(stateFromDoc(parsed)));
+    }, []),
+  });
+
+  // Signed out of a hosted copy, the app is a window on someone else's data. With no
+  // backend at all there is nobody to sign in as, so everything stays editable.
+  const canEdit = sync.mode !== 'remote' || sync.unlocked;
+
   useEffect(() => {
-    save({ players, teamSize, selected, history, mini, match: { time: match.time, venue: match.venue } });
-  }, [players, teamSize, selected, history, mini, match.time, match.venue]);
+    saveCache(doc);
+    sync.push(doc);
+  }, [doc, sync.push]);
+
+  useEffect(() => {
+    savePrefs({ mini });
+  }, [mini]);
 
   const teamOf = useMemo(() => {
     const m = {};
@@ -267,9 +352,10 @@ export default function App() {
     setHistory((h) => h.filter((w) => w.id !== weekId));
   }
 
-  // Everything the app keeps, written to one file.
+  // The shared document, written to a file. Byte for byte what the server holds, plus a
+  // note of when it was taken.
   function exportAll() {
-    exportJSON({ players, history, teamSize, selected, mini, match });
+    exportJSON({ players, history, teamSize, selected, match, teams, pos });
   }
 
   const dataRows = (close) => (
@@ -282,14 +368,18 @@ export default function App() {
           exportAll();
         }}
       />
-      <MenuRow
-        icon="upload"
-        label="Import data"
-        onClick={() => {
-          close();
-          if (fileRef.current) fileRef.current.click();
-        }}
-      />
+      {/* Importing replaces the document. Signed out there is nowhere to put the result,
+          so it would only strand this browser out of step with everyone else. */}
+      {canEdit && (
+        <MenuRow
+          icon="upload"
+          label="Import data"
+          onClick={() => {
+            close();
+            if (fileRef.current) fileRef.current.click();
+          }}
+        />
+      )}
     </>
   );
 
@@ -325,15 +415,12 @@ export default function App() {
         ' — export first if you want a copy.',
       confirmLabel: 'Replace data',
       onConfirm: () => {
-        setPlayers(result.players);
-        // A backup carries its own squad selection; a bare player list doesn't, and
-        // ids from elsewhere would select the wrong people, so that starts empty.
-        setSelected(result.selected || []);
-        if (weeks) setHistory(result.history);
-        if (result.teamSize) setTeamSize(result.teamSize);
+        // Loading a file is the same operation as a document arriving from the server, so
+        // it goes through the same door. A bare player list brings no selection or board
+        // with it, and ids from elsewhere would pick the wrong people — those start empty.
+        applyDoc(result);
+        // Written by older files, when the squad view was still part of the document.
         if (result.mini != null) setMini(result.mini);
-        if (result.match) setMatch((m) => ({ ...m, time: result.match.time || m.time, venue: result.match.venue }));
-        resetBoard();
         setNotice(null);
       },
     });
@@ -400,6 +487,8 @@ export default function App() {
     setSel(null);
   }
 
+  const look = syncLook(sync);
+
   return (
     <div className="tb-shell">
       <header className="tb-head">
@@ -444,6 +533,7 @@ export default function App() {
             className="tb-fmt"
             options={[5, 6].map((n) => [n, n + '-a-side'])}
             value={teamSize}
+            disabled={!canEdit}
             onChange={(n) => {
               setTeamSize(n);
               resetBoard();
@@ -457,6 +547,7 @@ export default function App() {
             variant="secondary"
             size="sm"
             icon={<Icon name="clipboard-list" size={15} />}
+            disabled={!canEdit}
             onClick={() => setImporting(true)}
           >
             Paste list
@@ -477,7 +568,7 @@ export default function App() {
             variant="secondary"
             size="sm"
             icon={<Icon name="trophy" size={15} />}
-            disabled={!built}
+            disabled={!built || !canEdit}
             onClick={() => setRecording({})}
           >
             Record result
@@ -495,7 +586,7 @@ export default function App() {
             variant="secondary"
             size="sm"
             icon={<Icon name="shuffle" size={15} />}
-            disabled={!built}
+            disabled={!built || !canEdit}
             onClick={() => {
               const s = seed + 1;
               setSeed(s);
@@ -505,7 +596,7 @@ export default function App() {
             Reshuffle
           </Button>
           {/* Only worth offering once there are two sides to swap. */}
-          {built && (
+          {built && canEdit && (
             <Button
               variant="secondary"
               size="sm"
@@ -515,14 +606,30 @@ export default function App() {
               Swap colours
             </Button>
           )}
-          <Button variant="primary" size="sm" disabled={selected.length !== needed} onClick={() => build()}>
+          <Button
+            variant="primary"
+            size="sm"
+            disabled={selected.length !== needed || !canEdit}
+            onClick={() => build()}
+          >
             {built ? 'Re-balance' : 'Balance teams'}
           </Button>
         </div>
         )}
-        {/* Backup lives on every page, but as one button — the balancer's header is
-            already the widest thing here. */}
+        {/* Where the data stands, and backup — on every page, but kept to two buttons:
+            the balancer's header is already the widest thing here. */}
         <div className="tb-data">
+          <button
+            type="button"
+            className="tb-syncchip"
+            data-tone={look.tone}
+            aria-label={'Shared data: ' + look.title}
+            title={look.title}
+            onClick={() => setSyncOpen(true)}
+          >
+            <span className="tb-syncdot" />
+            <span className="tb-syncword">{look.label}</span>
+          </button>
           <IconButton
             icon={<Icon name="file-json" size={16} />}
             aria-label="Data"
@@ -533,18 +640,27 @@ export default function App() {
           />
         </div>
         {/* Phone: one primary action plus a sheet holding the rest, so nothing in the
-            header has to be scrolled sideways to be found. */}
+            header has to be scrolled sideways to be found. The sync state rides on the
+            More button as a dot rather than taking a slot of its own. */}
         <div className="tb-mobilebar">
-          <IconButton
-            icon={<Icon name="more-horizontal" size={19} />}
-            aria-label="More actions"
-            aria-expanded={menu}
-            variant="secondary"
-            size="sm"
-            onClick={() => setMenu(true)}
-          />
+          <span className="tb-morewrap">
+            <IconButton
+              icon={<Icon name="more-horizontal" size={19} />}
+              aria-label={'More actions — ' + look.title}
+              aria-expanded={menu}
+              variant="secondary"
+              size="sm"
+              onClick={() => setMenu(true)}
+            />
+            <span className="tb-syncdot tb-morebadge" data-tone={look.tone} />
+          </span>
           {page === 'balancer' && (
-            <Button variant="primary" size="sm" disabled={selected.length !== needed} onClick={() => build()}>
+            <Button
+              variant="primary"
+              size="sm"
+              disabled={selected.length !== needed || !canEdit}
+              onClick={() => build()}
+            >
               {built ? 'Re-balance' : 'Balance teams'}
             </Button>
           )}
@@ -562,17 +678,19 @@ export default function App() {
         <History
           weeks={history}
           players={players}
+          canEdit={canEdit}
           onAwards={(w) => setAwarding(w)}
           onEditMatch={(week, match) => setRecording({ week, match })}
           onDeleteMatch={deleteMatch}
           onDeleteWeek={deleteWeek}
         />
       ) : page === 'ladder' ? (
-        <StatLadder players={players} selected={selected} onPatch={patchPlayer} />
+        <StatLadder players={players} selected={selected} canEdit={canEdit} onPatch={patchPlayer} />
       ) : page === 'stats' ? (
         <StatsTable
           players={players}
           selected={selected}
+          canEdit={canEdit}
           onPatch={patchPlayer}
           onEdit={(p) => setDraft({ ...p, stats: { ...p.stats }, alt: [...(p.alt || [])], nicknames: [...(p.nicknames || [])] })}
           onDelete={removePlayer}
@@ -588,6 +706,7 @@ export default function App() {
             selected={selected}
             teamOf={teamOf}
             needed={needed}
+            canEdit={canEdit}
             mini={mini}
             onMiniChange={setMini}
             onToggle={toggle}
@@ -609,7 +728,7 @@ export default function App() {
                   pos={pos}
                   showStats={showStats}
                   sel={sel}
-                  onPinDown={onPinDown}
+                  onPinDown={canEdit ? onPinDown : null}
                   pitchRef={pitchRef}
                 />
               </div>
@@ -622,9 +741,11 @@ export default function App() {
                   textAlign: 'center',
                 }}
               >
-                {sel
-                  ? 'Tap an opposing player to swap · drag to reposition'
-                  : 'Drag pins to reposition · tap a pin then tap an opponent to swap'}
+                {!canEdit
+                  ? 'Sign in from the shared-data button to move players around'
+                  : sel
+                    ? 'Tap an opposing player to swap · drag to reposition'
+                    : 'Drag pins to reposition · tap a pin then tap an opponent to swap'}
               </div>
             </>
           ) : (
@@ -662,7 +783,9 @@ export default function App() {
                   lineHeight: 'var(--leading-normal)',
                 }}
               >
-                Pick {needed} players — everyone else sits on the bench — then balance to fill the board.
+                {canEdit
+                  ? 'Pick ' + needed + ' players — everyone else sits on the bench — then balance to fill the board.'
+                  : 'Nobody has balanced a side yet. The board fills in here as soon as somebody does.'}
               </div>
             </div>
           )}
@@ -731,7 +854,66 @@ export default function App() {
           }
         >
           <div className="tb-menu">
+            <div className="tb-menu-group">
+              <div className="tb-menu-label">Shared data</div>
+              <button
+                type="button"
+                className="tb-menu-row tb-menu-sync"
+                data-tone={look.tone}
+                onClick={() => {
+                  setMenu(false);
+                  setSyncOpen(true);
+                }}
+              >
+                <span className="tb-syncdot" data-tone={look.tone} />
+                <span>{look.label}</span>
+                <span className="tb-menu-aside">{look.title}</span>
+              </button>
+            </div>
+
             {page === 'balancer' && (
+              <div className="tb-menu-group">
+                <div className="tb-menu-label">Share</div>
+                <MenuRow
+                  icon="message-circle"
+                  label="WhatsApp text"
+                  disabled={!built}
+                  onClick={() => {
+                    setMenu(false);
+                    setSharing(true);
+                  }}
+                />
+                <MenuRow
+                  icon="download"
+                  label="Export PNG"
+                  disabled={!built}
+                  onClick={() => {
+                    setMenu(false);
+                    exportBoard(teams, pos, { ratings: pngRatings, summary: pngSummary });
+                  }}
+                />
+                <Switch
+                  style={SWITCH_ROW}
+                  checked={showStats}
+                  onChange={(e) => setShowStats(e.target.checked)}
+                  label="Stat labels on pins"
+                />
+                <Switch
+                  style={SWITCH_ROW}
+                  checked={pngRatings}
+                  onChange={(e) => setPngRatings(e.target.checked)}
+                  label="Ratings in the PNG"
+                />
+                <Switch
+                  style={SWITCH_ROW}
+                  checked={pngSummary}
+                  onChange={(e) => setPngSummary(e.target.checked)}
+                  label="Team stats under the PNG"
+                />
+              </div>
+            )}
+
+            {page === 'balancer' && canEdit && (
               <>
                 <div className="tb-menu-group">
                   <div className="tb-menu-label">Format</div>
@@ -777,28 +959,6 @@ export default function App() {
                       }}
                     />
                   )}
-                </div>
-
-                <div className="tb-menu-group">
-                  <div className="tb-menu-label">Share &amp; record</div>
-                  <MenuRow
-                    icon="message-circle"
-                    label="WhatsApp text"
-                    disabled={!built}
-                    onClick={() => {
-                      setMenu(false);
-                      setSharing(true);
-                    }}
-                  />
-                  <MenuRow
-                    icon="download"
-                    label="Export PNG"
-                    disabled={!built}
-                    onClick={() => {
-                      setMenu(false);
-                      exportBoard(teams, pos, { ratings: pngRatings, summary: pngSummary });
-                    }}
-                  />
                   <MenuRow
                     icon="trophy"
                     label="Record result"
@@ -807,28 +967,6 @@ export default function App() {
                       setMenu(false);
                       setRecording({});
                     }}
-                  />
-                </div>
-
-                <div className="tb-menu-group">
-                  <div className="tb-menu-label">Board &amp; image</div>
-                  <Switch
-                    style={SWITCH_ROW}
-                    checked={showStats}
-                    onChange={(e) => setShowStats(e.target.checked)}
-                    label="Stat labels on pins"
-                  />
-                  <Switch
-                    style={SWITCH_ROW}
-                    checked={pngRatings}
-                    onChange={(e) => setPngRatings(e.target.checked)}
-                    label="Ratings in the PNG"
-                  />
-                  <Switch
-                    style={SWITCH_ROW}
-                    checked={pngSummary}
-                    onChange={(e) => setPngSummary(e.target.checked)}
-                    label="Team stats under the PNG"
                   />
                 </div>
               </>
@@ -872,7 +1010,13 @@ export default function App() {
       />
       {importing && <ImportDialog players={players} onCancel={() => setImporting(false)} onConfirm={applyImport} />}
       {sharing && (
-        <ShareDialog teams={teams} match={match} onMatchChange={setMatch} onClose={() => setSharing(false)} />
+        <ShareDialog
+          teams={teams}
+          match={match}
+          canEdit={canEdit}
+          onMatchChange={setMatch}
+          onClose={() => setSharing(false)}
+        />
       )}
       {recording && (
         <RecordResultDialog
@@ -897,10 +1041,13 @@ export default function App() {
       {awarding && (
         <WeekAwardsDialog
           week={history.find((w) => w.id === awarding.id) || awarding}
+          canEdit={canEdit}
           onSave={saveAwards}
           onClose={() => setAwarding(null)}
         />
       )}
+      {syncOpen && <SyncDialog sync={sync} onClose={() => setSyncOpen(false)} />}
+
       {notice && (
         <Dialog
           open

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Button, Dialog, Icon, Input, Switch } from '../ds/index.js';
 import { whatsappText } from '../lib/whatsapp.js';
 
-export default function ShareDialog({ teams, match, onMatchChange, onClose }) {
+export default function ShareDialog({ teams, match, onMatchChange, onClose, canEdit = true }) {
   // Ratings stay out of the group chat unless you ask for them.
   const [showScores, setShowScores] = useState(false);
   const text = useMemo(() => whatsappText(teams, match, showScores), [teams, match, showScores]);
@@ -72,6 +72,7 @@ export default function ShareDialog({ teams, match, onMatchChange, onClose }) {
           <Input
             label="Date"
             type="date"
+            readOnly={!canEdit}
             style={{ flex: 1, minWidth: 0 }}
             value={match.date}
             onChange={(e) => set({ date: e.target.value })}
@@ -79,6 +80,7 @@ export default function ShareDialog({ teams, match, onMatchChange, onClose }) {
           <Input
             label="Kick-off"
             type="time"
+            readOnly={!canEdit}
             style={{ flex: 1, minWidth: 0 }}
             value={match.time}
             onChange={(e) => set({ time: e.target.value })}
@@ -86,6 +88,7 @@ export default function ShareDialog({ teams, match, onMatchChange, onClose }) {
         </div>
         <Input
           label="Pitch"
+          readOnly={!canEdit}
           placeholder="e.g. Tolworth Pitch 8"
           value={match.venue}
           onChange={(e) => set({ venue: e.target.value })}

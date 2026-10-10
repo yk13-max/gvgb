@@ -5,7 +5,7 @@ import { shortName } from '../lib/names.js';
 import { AWARDS, EMPTY_AWARDS, weekPlayerIds } from '../lib/weeks.js';
 import { formatDate } from '../lib/whatsapp.js';
 
-export default function WeekAwardsDialog({ week, onSave, onClose }) {
+export default function WeekAwardsDialog({ week, onSave, onClose, canEdit = true }) {
   const [awards, setAwards] = useState({ ...EMPTY_AWARDS, ...(week.awards || {}) });
 
   // Only players who turned out that week can be nominated. Nobody is filtered by
@@ -34,11 +34,13 @@ export default function WeekAwardsDialog({ week, onSave, onClose }) {
       footer={
         <>
           <Button variant="secondary" size="sm" onClick={onClose}>
-            Skip
+            {canEdit ? 'Skip' : 'Close'}
           </Button>
-          <Button variant="primary" size="sm" onClick={() => onSave(week.id, awards)}>
-            Save nominations
-          </Button>
+          {canEdit && (
+            <Button variant="primary" size="sm" onClick={() => onSave(week.id, awards)}>
+              Save nominations
+            </Button>
+          )}
         </>
       }
     >

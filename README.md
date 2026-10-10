@@ -6,6 +6,12 @@ teams and laying them out on a tactics board. Works on desktop and on a phone.
 Built from the Claude Design handoff bundle (`Team Balancer.html` + the FUFA design system)
 as a real Vite + React app.
 
+One JSON document holds everything, and the copy on the server is the one that counts:
+anyone with the link sees the same roster, the same ratings and the same drafted teams, and
+anyone with the shared password can change them. See [DEPLOY.md](DEPLOY.md) for hosting it
+on Netlify. Run without that backend — `npm run dev`, or `dist/` on any static host — and it
+falls back to this-browser-only storage with no loss of function.
+
 ## What it does
 
 The app has four pages, switched from the header on desktop and the bottom tab bar on a phone:
@@ -37,7 +43,9 @@ and the **Match history**.
 - **Board** — a vertical dark tactics pitch with red and blue pins placed freeform near their
   position band. Drag a pin to reposition it; tap a pin then tap an opponent to swap the two
   between teams. **Stat labels** toggles the per-pin stat lines. Pins are labelled first name
-  plus second initial ("Sam O"), so two players sharing a first name still read apart.
+  plus second initial ("Sam O"), so two players sharing a first name still read apart. The board
+  is part of the shared document: it survives a reload, and everyone with the link is looking at
+  the same one.
 - **Balance readout** — balance score out of 100 and the average-OVR delta, team total and
   average, stat-by-stat comparison bars, strongest/weakest callouts, and the position mix.
 - **Paste list** — paste a WhatsApp signup thread or numbered list. Numbering, timestamps,
@@ -129,21 +137,47 @@ the header, filter and averages rows stay pinned while you scroll.
 
 ### Data
 
-The roster, format, selection, squad view, game weeks and the kick-off time and pitch are saved to
-`localStorage` — there is no backend and no account. Clearing site data, switching browser or
-picking up a new phone loses the lot, so the header carries a **Data** button on every page (in
-the actions sheet on a phone) with the two halves of a backup:
+There is one document, and it holds the lot: every player with their nicknames and ten ratings,
+every game week with its matches, nominations and ratings snapshots, the current squad, the
+format, the fixture details and the drafted board. The same shape lives in three places — the
+hosted store, this browser's cache, and any file you export — so they can't drift apart.
 
-- **Export all data** — writes `fufa-backup-YYYY-MM-DD.json`, holding everything above: every
-  player with their nicknames and ten ratings, every game week with its matches, nominations and
-  ratings snapshots, and the format, squad selection, squad view and kick-off details. It is
-  plain readable JSON, so it can be diffed, edited or kept in a repo.
-- **Import data** — reads that file back and restores the app to exactly the state it was
-  exported in. It also accepts a hand-written `{"players": [...]}` object or a plain array of
-  players, for seeding a roster from somewhere else: missing stats are filled at 60, colliding or
-  missing ids are re-issued, and nameless entries are dropped. Player ids survive a full backup
-  intact, which is what keeps the squad selection and every recorded week pointing at the right
-  people. Importing replaces what's there, so it says what the file holds and confirms first.
+**The status chip** in the header (a row in the actions sheet on a phone) says where things
+stand, and opens the shared-data dialog:
+
+| | |
+| --- | --- |
+| **Saved** | everything is on the server |
+| **Unsaved** / **Saving** | a change is on its way up |
+| **View only** | signed out: showing the group's data, nothing editable |
+| **Offline** | changes are queued and go up when the connection returns |
+| **Clash** | somebody else saved first — pick which copy to keep |
+| **On this device** | no shared store behind this copy; it runs on `localStorage` alone |
+
+Signing in with the shared password unlocks editing on that device and is remembered until you
+sign out. Signed out, the app is a window: cards, the board, the table, the ladder and the
+history all read normally, but nothing can be changed and nothing is ever written.
+
+Saving is automatic about a second after you stop typing. Every write says which revision it
+was based on, so two people editing at once can't quietly overwrite each other — the second
+one is told, shown what is actually stored, and asked which to keep. Tabs re-check every 20
+seconds and whenever they come back to the foreground, so a viewer's board updates itself
+moments after the organiser balances.
+
+**Data** on every page (in the actions sheet on a phone) is the manual half:
+
+- **Export all data** — writes `fufa-backup-YYYY-MM-DD.json`: the live document, plus a note of
+  when it was taken. Plain readable JSON, so it can be diffed, edited or kept in a repo. Always
+  available, signed in or not.
+- **Import data** — reads a file back and makes it the document. It also accepts a hand-written
+  `{"players": [...]}` object or a plain array of players, for seeding a roster from somewhere
+  else: missing stats are filled at 60, colliding or missing ids are re-issued, and nameless
+  entries are dropped. Player ids survive a full backup intact, which is what keeps the squad
+  selection, the board and every recorded week pointing at the right people. It replaces what's
+  there, so it says what the file holds and confirms first.
+
+The squad **view** (card or mini) and the three PNG switches belong to the browser, not the
+group — flicking to mini view on a phone doesn't change what anyone else is looking at.
 
 ## Layouts
 
@@ -153,8 +187,9 @@ the actions sheet on a phone) with the two halves of a backup:
   / Ladder / History), 44px touch targets, and pins enlarged to 44px. Balancing jumps you
   straight to the Board tab.
 
-  The header stays one row that never scrolls: the wordmark, a **…** button, and the one action
-  worth a tap of its own — *Balance teams*, which becomes *Re-balance* once there are teams.
+  The header stays one row that never scrolls: the wordmark, a **…** button carrying the
+  shared-data dot, and the one action worth a tap of its own — *Balance teams*, which becomes
+  *Re-balance* once there are teams.
   Everything the desktop header spreads across its width moves into the **…** sheet, grouped and
   stacked full width: the format toggle, Paste list / Reshuffle / Swap team colours, WhatsApp
   text / Export PNG / Record result, the three board-and-image switches, and Export / Import
@@ -165,12 +200,15 @@ the actions sheet on a phone) with the two halves of a backup:
 
 ```bash
 npm install
-npm run dev      # dev server, also reachable from a phone on the same network
+npm run serve    # netlify dev: the app and the shared-data function together
+npm run dev      # Vite alone — no function, so this-browser-only storage
 npm run build    # production build into dist/
-npm run preview  # serve the production build
+npm run preview  # serve the production build, again with no function
 ```
 
-`dist/` is a static bundle — it can be served from anywhere, including a subpath.
+`npm run serve` needs a `TB_PASSWORD` in a `.env` file at the repo root to let you sign in;
+see [DEPLOY.md](DEPLOY.md). `dist/` is a static bundle and still works served from anywhere,
+including a subpath — without the function beside it the app keeps its data locally.
 
 ## Layout of the code
 
@@ -182,7 +220,10 @@ src/
     parseList.js    WhatsApp signup-list parser and fuzzy roster matching
     whatsapp.js     teams + match details -> chat-ready text
     exportBoard.js  board -> PNG
-    backup.js       the whole app state <-> one JSON file
+    doc.js          the shared document: building it, and reading one back
+    backup.js       that document <-> a .json file
+    remote.js       talking to /api/data
+    useSync.js      load, debounced save, revision checks, polling, conflicts
     weeks.js        game weeks: grouping matches by date, award slots, ratings
                     snapshots and their diffs, and migrating pre-week history
     storage.js      localStorage persistence, and back-filling stats added since a
@@ -192,6 +233,10 @@ src/
                 WeekAwardsDialog
   styles/       design tokens + the shell's responsive layout
   App.jsx       state, balancing, pin drag/swap, view switching, the phone actions sheet
+netlify/
+  functions/
+    data.js     GET/PUT the document, password-checked, stored in Netlify Blobs
+netlify.toml  build, the /api/data route and the SPA fallback
 ```
 
 Design tokens (color, type, spacing, radius, shadow) come from the FUFA design system and are

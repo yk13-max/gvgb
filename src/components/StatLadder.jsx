@@ -21,7 +21,7 @@ function assignLanes(sorted, valueOf, minGap) {
   return { lane, count: Math.max(1, lastInLane.length) };
 }
 
-export default function StatLadder({ players, selected, onPatch }) {
+export default function StatLadder({ players, selected, onPatch, canEdit = true }) {
   const [stat, setStat] = useState(STATS[0]);
   const [dragId, setDragId] = useState(null);
   const [plotH, setPlotH] = useState(420);
@@ -66,12 +66,14 @@ export default function StatLadder({ players, selected, onPatch }) {
   const avg = players.length ? statAvg(players, stat) : 0;
 
   function setValue(id, v) {
+    if (!canEdit) return;
     const p = players.find((x) => x.id === id);
     if (!p) return;
     onPatch(id, { stats: { ...p.stats, [stat]: Math.max(0, Math.min(100, Math.round(v))) } });
   }
 
   function onChipDown(e, p) {
+    if (!canEdit) return;
     e.preventDefault();
     e.currentTarget.focus();
     frozenLane.current = { [p.id]: lane[p.id] };
@@ -179,8 +181,9 @@ export default function StatLadder({ players, selected, onPatch }) {
                 className="tb-ladderchip"
                 data-dragging={dragId === p.id ? '1' : '0'}
                 data-benched={inSquad ? '0' : '1'}
-                role="slider"
-                tabIndex={0}
+                role={canEdit ? 'slider' : 'img'}
+                tabIndex={canEdit ? 0 : -1}
+                data-locked={canEdit ? '0' : '1'}
                 aria-label={p.name + ' ' + stat}
                 aria-valuemin={0}
                 aria-valuemax={100}

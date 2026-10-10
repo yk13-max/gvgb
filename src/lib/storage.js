@@ -1,43 +1,45 @@
-import { DEFAULT_STAT, STATS } from './model.js';
-import { toWeeks } from './weeks.js';
+import { parseDoc } from './doc.js';
 
-// Roster and format persist locally — there is no backend.
-const STORE = 'fufa.tb.v1';
+// A copy of the document as we last saw it, so the app opens with something on screen
+// before /api/data answers — and still works on a pitch with no signal.
+const CACHE = 'fufa.tb.v1';
+// Settings that belong to this browser rather than to the group: they never sync.
+const PREFS = 'fufa.tb.prefs';
 
-// Rosters saved before a stat or field existed have no value for it. Fill the gaps rather
-// than letting `overall()` read undefined as zero and quietly tank everyone's rating.
-export function normalizePlayer(p) {
-  const stats = {};
-  STATS.forEach((k) => {
-    const v = Number(p && p.stats ? p.stats[k] : undefined);
-    stats[k] = Number.isFinite(v) ? v : DEFAULT_STAT;
-  });
-  const nicknames = Array.isArray(p && p.nicknames)
-    ? p.nicknames.map((n) => String(n).trim()).filter(Boolean)
-    : [];
-  return { ...p, alt: Array.isArray(p && p.alt) ? p.alt : [], nicknames, stats };
-}
+export { normalizePlayer } from './model.js';
 
-export function loadSaved() {
+export function loadCache() {
   try {
-    const raw = localStorage.getItem(STORE);
+    const raw = localStorage.getItem(CACHE);
     if (!raw) return null;
-    const d = JSON.parse(raw);
-    if (!d || !Array.isArray(d.players)) return null;
-    return {
-      ...d,
-      players: d.players.map(normalizePlayer),
-      history: toWeeks(d.history),
-    };
+    const parsed = parseDoc(JSON.parse(raw));
+    return parsed.error ? null : parsed;
   } catch {
     return null;
   }
 }
 
-export function save(state) {
+export function saveCache(doc) {
   try {
-    localStorage.setItem(STORE, JSON.stringify(state));
+    localStorage.setItem(CACHE, JSON.stringify(doc));
   } catch {
-    // Private-mode Safari and full quotas both throw here; the app works without persistence.
+    // Private-mode Safari and full quotas both throw here; the app works without a cache.
+  }
+}
+
+export function loadPrefs() {
+  try {
+    const d = JSON.parse(localStorage.getItem(PREFS) || '{}');
+    return { mini: !!d.mini };
+  } catch {
+    return { mini: false };
+  }
+}
+
+export function savePrefs(prefs) {
+  try {
+    localStorage.setItem(PREFS, JSON.stringify(prefs));
+  } catch {
+    // Same as above — a lost preference is not worth breaking a render over.
   }
 }

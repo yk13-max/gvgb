@@ -49,7 +49,7 @@ export function StatRow({ k, v }) {
 }
 
 // Mini view: name and overall only, for scanning a long roster or picking a squad fast.
-export function MiniPlayerCard({ p, selected, team, onToggle }) {
+export function MiniPlayerCard({ p, selected, team, onToggle, canEdit = true }) {
   const teamColor = team === 'red' ? 'var(--team-red)' : team === 'blue' ? 'var(--team-blue)' : null;
   return (
     <button
@@ -58,8 +58,12 @@ export function MiniPlayerCard({ p, selected, team, onToggle }) {
       data-on={selected ? '1' : '0'}
       aria-pressed={selected}
       title={p.name + (selected ? (team ? ' — ' + team + ' team' : ' — in squad') : ' — benched')}
-      onClick={() => onToggle(p.id)}
-      style={{ borderColor: selected ? teamColor || 'var(--color-primary)' : 'var(--color-border)' }}
+      disabled={!canEdit}
+      onClick={() => canEdit && onToggle(p.id)}
+      style={{
+        borderColor: selected ? teamColor || 'var(--color-primary)' : 'var(--color-border)',
+        cursor: canEdit ? 'pointer' : 'default',
+      }}
     >
       <span className="tb-mini-name">{p.name}</span>
       <span className="tb-mini-ovr" style={{ color: selected && teamColor ? teamColor : 'var(--color-text-primary)' }}>
@@ -69,23 +73,23 @@ export function MiniPlayerCard({ p, selected, team, onToggle }) {
   );
 }
 
-export default function PlayerCard({ p, selected, team, onToggle, onEdit, onDelete }) {
+export default function PlayerCard({ p, selected, team, onToggle, onEdit, onDelete, canEdit = true }) {
   const ovr = overall(p);
   const teamColor = team === 'red' ? 'var(--team-red)' : team === 'blue' ? 'var(--team-blue)' : null;
   return (
     <div
-      onClick={() => onToggle(p.id)}
-      role="button"
-      tabIndex={0}
-      aria-pressed={selected}
+      onClick={canEdit ? () => onToggle(p.id) : undefined}
+      role={canEdit ? 'button' : undefined}
+      tabIndex={canEdit ? 0 : undefined}
+      aria-pressed={canEdit ? selected : undefined}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
+        if (canEdit && (e.key === 'Enter' || e.key === ' ')) {
           e.preventDefault();
           onToggle(p.id);
         }
       }}
       style={{
-        cursor: 'pointer',
+        cursor: canEdit ? 'pointer' : 'default',
         background: 'var(--color-surface)',
         border: '1px solid ' + (selected ? teamColor || 'var(--color-primary)' : 'var(--color-border)'),
         borderRadius: 'var(--radius-md)',
@@ -228,9 +232,10 @@ export default function PlayerCard({ p, selected, team, onToggle, onEdit, onDele
         >
           {selected ? (team ? team + ' team' : 'in squad') : 'benched'}
         </span>
-        <div style={{ display: 'flex', gap: 4 }}>
+        <div style={{ display: 'flex', gap: 4, visibility: canEdit ? 'visible' : 'hidden' }} aria-hidden={!canEdit}>
           <IconButton
             icon={<Icon name="pencil" size={14} />}
+            tabIndex={canEdit ? 0 : -1}
             aria-label={'Edit ' + p.name}
             variant="ghost"
             onClick={(e) => {

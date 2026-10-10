@@ -12,6 +12,7 @@ export default function RosterPanel({
   needed,
   mini,
   onMiniChange,
+  canEdit = true,
 }) {
   const inCount = selected.length;
   const ok = inCount === needed;
@@ -68,12 +69,14 @@ export default function RosterPanel({
               </button>
             ))}
           </div>
-          <Button size="sm" variant="secondary" icon={<Icon name="plus" size={15} />} onClick={onAdd}>
-            Add player
-          </Button>
+          {canEdit && (
+            <Button size="sm" variant="secondary" icon={<Icon name="plus" size={15} />} onClick={onAdd}>
+              Add player
+            </Button>
+          )}
         </div>
       </div>
-      {!ok && (
+      {!ok && canEdit && (
         <div
           style={{
             fontFamily: 'var(--font-body)',
@@ -110,6 +113,7 @@ export default function RosterPanel({
               p={p}
               selected={selected.includes(p.id)}
               team={teamOf[p.id]}
+              canEdit={canEdit}
               onToggle={onToggle}
             />
           ) : (
@@ -118,6 +122,7 @@ export default function RosterPanel({
               p={p}
               selected={selected.includes(p.id)}
               team={teamOf[p.id]}
+              canEdit={canEdit}
               onToggle={onToggle}
               onEdit={onEdit}
               onDelete={onDelete}

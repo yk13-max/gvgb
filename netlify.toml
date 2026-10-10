@@ -1,0 +1,26 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[functions]
+  node_bundler = "esbuild"
+
+# The function declares this path itself, but spelling it out here means the rule order
+# is visible rather than inferred — the API is matched before the catch-all below.
+[[redirects]]
+  from = "/api/data"
+  to = "/.netlify/functions/data"
+  status = 200
+  force = true
+
+# A single-page app: everything else renders index.html.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# The document is never cached — a stale copy would look like someone else's save.
+[[headers]]
+  for = "/api/data"
+  [headers.values]
+    Cache-Control = "no-store"

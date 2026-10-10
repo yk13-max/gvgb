@@ -3,9 +3,12 @@ import { initials, shortName } from '../lib/names.js';
 
 function Pin({ p, team, x, y, showStats, selected, onPointerDown }) {
   const col = team === 'red' ? 'var(--team-red)' : 'var(--team-blue)';
+  // Without a handler the board is somebody else's to arrange: pins still read, but they
+  // do not pick up, and the cursor says so.
+  const fixed = !onPointerDown;
   return (
     <div
-      onPointerDown={(e) => onPointerDown(e, p, team)}
+      onPointerDown={fixed ? undefined : (e) => onPointerDown(e, p, team)}
       style={{
         position: 'absolute',
         left: x + '%',
@@ -15,8 +18,8 @@ function Pin({ p, team, x, y, showStats, selected, onPointerDown }) {
         flexDirection: 'column',
         alignItems: 'center',
         gap: 3,
-        cursor: 'grab',
-        touchAction: 'none',
+        cursor: fixed ? 'default' : 'grab',
+        touchAction: fixed ? 'auto' : 'none',
         userSelect: 'none',
         zIndex: selected ? 5 : 2,
       }}

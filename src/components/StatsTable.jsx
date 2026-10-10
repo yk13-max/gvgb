@@ -21,10 +21,11 @@ function valueOf(p, key) {
 
 // A stat cell keeps its own text while being typed so the field can be cleared and
 // retyped; the roster only ever stores a clamped number.
-function StatCell({ value, onCommit, label }) {
+function StatCell({ value, onCommit, label, canEdit }) {
   return (
     <input
       className="tb-cellinput tb-cellnum"
+      readOnly={!canEdit}
       type="number"
       min="0"
       max="100"
@@ -47,7 +48,7 @@ function StatCell({ value, onCommit, label }) {
 
 // Nicknames edit as one comma-separated field. The raw text is held locally while the
 // cell has focus so a trailing comma survives being typed.
-function NickCell({ value, onCommit, label }) {
+function NickCell({ value, onCommit, label, canEdit }) {
   const [text, setText] = useState(value.join(', '));
   const [focused, setFocused] = useState(false);
   useEffect(() => {
@@ -56,6 +57,7 @@ function NickCell({ value, onCommit, label }) {
   return (
     <input
       className="tb-cellinput"
+      readOnly={!canEdit}
       aria-label={label}
       placeholder="—"
       value={text}
@@ -92,7 +94,7 @@ function SortHead({ label, sortKey, sort, setSort, align = 'left', title }) {
   );
 }
 
-export default function StatsTable({ players, selected, onPatch, onEdit, onDelete, onAdd, onExport, onImport }) {
+export default function StatsTable({ players, selected, onPatch, onEdit, onDelete, onAdd, onExport, onImport, canEdit = true }) {
   const [f, setF] = useState(EMPTY);
   const [sort, setSort] = useState(null);
   const fileRef = useRef(null);
@@ -160,8 +162,8 @@ export default function StatsTable({ players, selected, onPatch, onEdit, onDelet
               marginTop: 2,
             }}
           >
-            {filtered ? rows.length + '/' + players.length + ' shown' : players.length + ' players'} · edit any cell to
-            update the roster
+            {filtered ? rows.length + '/' + players.length + ' shown' : players.length + ' players'}
+            {canEdit ? ' · edit any cell to update the roster' : ' · read only until you sign in'}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -174,17 +176,21 @@ export default function StatsTable({ players, selected, onPatch, onEdit, onDelet
           >
             Clear filters
           </Button>
-          <Button variant="secondary" size="sm" icon={<Icon name="plus" size={15} />} onClick={onAdd}>
-            Add player
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            icon={<Icon name="upload" size={15} />}
-            onClick={() => fileRef.current && fileRef.current.click()}
-          >
-            Import JSON
-          </Button>
+          {canEdit && (
+            <Button variant="secondary" size="sm" icon={<Icon name="plus" size={15} />} onClick={onAdd}>
+              Add player
+            </Button>
+          )}
+          {canEdit && (
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<Icon name="upload" size={15} />}
+              onClick={() => fileRef.current && fileRef.current.click()}
+            >
+              Import JSON
+            </Button>
+          )}
           <Button variant="secondary" size="sm" icon={<Icon name="file-json" size={15} />} onClick={onExport}>
             Export JSON
           </Button>
@@ -319,6 +325,7 @@ export default function StatsTable({ players, selected, onPatch, onEdit, onDelet
                   <td className="tb-col-name">
                     <input
                       className="tb-cellinput"
+                      readOnly={!canEdit}
                       aria-label={'Name of ' + p.name}
                       value={p.name}
                       onChange={(e) => onPatch(p.id, { name: e.target.value })}
@@ -327,6 +334,7 @@ export default function StatsTable({ players, selected, onPatch, onEdit, onDelet
                   <td className="tb-col-pos">
                     <select
                       className="tb-cellinput"
+                      disabled={!canEdit}
                       aria-label={'Primary position of ' + p.name}
                       value={p.pos}
                       onChange={(e) =>
@@ -345,6 +353,7 @@ export default function StatsTable({ players, selected, onPatch, onEdit, onDelet
                   </td>
                   <td className="tb-col-nick">
                     <NickCell
+                      canEdit={canEdit}
                       label={'Nicknames for ' + p.name}
                       value={p.nicknames || []}
                       onCommit={(nicknames) => onPatch(p.id, { nicknames })}
@@ -361,6 +370,7 @@ export default function StatsTable({ players, selected, onPatch, onEdit, onDelet
                             className="tb-altchip"
                             data-on={on ? '1' : '0'}
                             aria-pressed={on}
+                            disabled={!canEdit}
                             title={(on ? 'Remove' : 'Add') + ' ' + o}
                             onClick={() =>
                               onPatch(p.id, {
@@ -377,6 +387,7 @@ export default function StatsTable({ players, selected, onPatch, onEdit, onDelet
                   {STATS.map((k) => (
                     <td key={k} className="tb-col-stat">
                       <StatCell
+                        canEdit={canEdit}
                         label={k + ' of ' + p.name}
                         value={p.stats[k] === '' ? '' : Number(p.stats[k]) || 0}
                         onCommit={(v) => onPatch(p.id, { stats: { ...p.stats, [k]: v } })}
@@ -399,7 +410,10 @@ export default function StatsTable({ players, selected, onPatch, onEdit, onDelet
                     </span>
                   </td>
                   <td className="tb-col-act">
-                    <div style={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                    <div
+                      style={{ display: 'flex', gap: 2, justifyContent: 'flex-end', visibility: canEdit ? 'visible' : 'hidden' }}
+                      aria-hidden={!canEdit}
+                    >
                       <IconButton
                         icon={<Icon name="pencil" size={14} />}
                         aria-label={'Open ' + p.name + ' in the editor'}

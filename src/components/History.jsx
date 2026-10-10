@@ -91,7 +91,7 @@ function RatingsPanel({ week, players }) {
   );
 }
 
-function WeekCard({ week, players, onAwards, onEditMatch, onDeleteMatch, onDeleteWeek }) {
+function WeekCard({ week, players, onAwards, onEditMatch, onDeleteMatch, onDeleteWeek, canEdit }) {
   const [open, setOpen] = useState(false);
   const t = tally([week]);
   const named = weekPlayerIds(week);
@@ -113,14 +113,16 @@ function WeekCard({ week, players, onAwards, onEditMatch, onDeleteMatch, onDelet
           </div>
         </div>
         <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-          <Button
-            variant="secondary"
-            size="sm"
-            icon={<Icon name="trophy" size={15} />}
-            onClick={() => onAwards(week)}
-          >
-            {anyAward ? 'Nominations' : 'Nominate'}
-          </Button>
+          {(canEdit || anyAward) && (
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<Icon name="trophy" size={15} />}
+              onClick={() => onAwards(week)}
+            >
+              {anyAward ? 'Nominations' : 'Nominate'}
+            </Button>
+          )}
           <IconButton
             icon={<Icon name={open ? 'chevron-up' : 'chevron-down'} size={15} />}
             aria-label={(open ? 'Hide' : 'Show') + ' ratings for ' + formatDate(week.date)}
@@ -129,13 +131,15 @@ function WeekCard({ week, players, onAwards, onEditMatch, onDeleteMatch, onDelet
             size="sm"
             onClick={() => setOpen((v) => !v)}
           />
-          <IconButton
-            icon={<Icon name="trash-2" size={14} />}
-            aria-label={'Delete week ' + formatDate(week.date)}
-            variant="ghost"
-            size="sm"
-            onClick={() => onDeleteWeek(week.id)}
-          />
+          {canEdit && (
+            <IconButton
+              icon={<Icon name="trash-2" size={14} />}
+              aria-label={'Delete week ' + formatDate(week.date)}
+              variant="ghost"
+              size="sm"
+              onClick={() => onDeleteWeek(week.id)}
+            />
+          )}
         </div>
       </div>
 
@@ -192,12 +196,13 @@ function WeekCard({ week, players, onAwards, onEditMatch, onDeleteMatch, onDelet
                   {m.blue.map((p) => shortName(p.name)).join(', ')}
                 </div>
               </div>
-              <div className="tb-histacts">
+              <div className="tb-histacts" style={{ visibility: canEdit ? 'visible' : 'hidden' }} aria-hidden={!canEdit}>
                 <IconButton
                   icon={<Icon name="pencil" size={14} />}
                   aria-label={'Edit match ' + (i + 1) + ' on ' + formatDate(week.date)}
                   variant="ghost"
                   size="sm"
+                  tabIndex={canEdit ? 0 : -1}
                   onClick={() => onEditMatch(week, m)}
                 />
                 <IconButton
@@ -205,6 +210,7 @@ function WeekCard({ week, players, onAwards, onEditMatch, onDeleteMatch, onDelet
                   aria-label={'Delete match ' + (i + 1) + ' on ' + formatDate(week.date)}
                   variant="ghost"
                   size="sm"
+                  tabIndex={canEdit ? 0 : -1}
                   onClick={() => onDeleteMatch(week.id, m.id)}
                 />
               </div>
@@ -218,7 +224,7 @@ function WeekCard({ week, players, onAwards, onEditMatch, onDeleteMatch, onDelet
   );
 }
 
-export default function History({ weeks, players, onAwards, onEditMatch, onDeleteMatch, onDeleteWeek }) {
+export default function History({ weeks, players, onAwards, onEditMatch, onDeleteMatch, onDeleteWeek, canEdit = true }) {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
 
@@ -298,6 +304,7 @@ export default function History({ weeks, players, onAwards, onEditMatch, onDelet
             key={w.id}
             week={w}
             players={players}
+            canEdit={canEdit}
             onAwards={onAwards}
             onEditMatch={onEditMatch}
             onDeleteMatch={onDeleteMatch}
@@ -309,7 +316,9 @@ export default function History({ weeks, players, onAwards, onEditMatch, onDelet
           <div className="tb-histempty">
             {weeks.length
               ? 'No weeks in that date range.'
-              : 'Nothing recorded yet. Balance a squad, then use Record result on the Balancer to log the score.'}
+              : canEdit
+                ? 'Nothing recorded yet. Balance a squad, then use Record result on the Balancer to log the score.'
+                : 'Nothing recorded yet.'}
           </div>
         )}
       </div>

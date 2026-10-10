@@ -46,6 +46,20 @@ export const DEFAULT_STAT = 60;
 
 export const DEFAULT_STATS = STATS.reduce((o, k) => ({ ...o, [k]: DEFAULT_STAT }), {});
 
+// A player saved before a stat or field existed has no value for it. Fill the gaps rather
+// than letting `overall()` read undefined as zero and quietly tank everyone's rating.
+export function normalizePlayer(p) {
+  const stats = {};
+  STATS.forEach((k) => {
+    const v = Number(p && p.stats ? p.stats[k] : undefined);
+    stats[k] = Number.isFinite(v) ? v : DEFAULT_STAT;
+  });
+  const nicknames = Array.isArray(p && p.nicknames)
+    ? p.nicknames.map((n) => String(n).trim()).filter(Boolean)
+    : [];
+  return { ...p, alt: Array.isArray(p && p.alt) ? p.alt : [], nicknames, stats };
+}
+
 export function overall(p) {
   const w = WEIGHTS[p.pos] || WEIGHTS.Any;
   return Math.round(STATS.reduce((s, k) => s + (Number(p.stats[k]) || 0) * w[k], 0));
