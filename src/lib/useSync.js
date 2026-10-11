@@ -2,6 +2,26 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { checkPassword, getRecord, putRecord, savedPassword, storePassword } from './remote.js';
 
 const SAVE_DELAY = 1200; // let a burst of typing settle before writing
+const MODE_KEY = 'fufa.tb.mode';
+
+// Which kind of copy this device was on last time: a hosted one, or a static one with no
+// function behind it. Read before the first request so the first paint can already act
+// like the answer that is about to arrive, instead of guessing wrong and then flinching.
+function rememberedMode() {
+  try {
+    const m = localStorage.getItem(MODE_KEY);
+    return m === 'local' || m === 'remote' ? m : null;
+  } catch {
+    return null;
+  }
+}
+function rememberMode(m) {
+  try {
+    localStorage.setItem(MODE_KEY, m);
+  } catch {
+    // Nothing to do; the next load will probe and get the same answer.
+  }
+}
 const POLL_MS = 20000;
 const RETRY_MS = [1000, 3000, 8000];
 
@@ -15,6 +35,7 @@ const RETRY_MS = [1000, 3000, 8000];
 export function useSync({ onAdopt, canonical }) {
   const [state, setState] = useState(() => ({
     mode: 'loading', // loading | local (no backend) | remote
+    assume: rememberedMode(), // what 'loading' will most likely turn out to be
     online: true,
     unlocked: !!savedPassword(),
     saving: false,
@@ -141,6 +162,7 @@ export function useSync({ onAdopt, canonical }) {
         if (!alive.current) return;
         if (r.kind === 'record') {
           mode.current = 'remote';
+          rememberMode('remote');
           take(r);
           // Anything typed while the request was in flight still needs saving.
           if (pw.current && want.current !== sent.current) schedule();
@@ -150,6 +172,7 @@ export function useSync({ onAdopt, canonical }) {
           // No function answering: this is a plain static build, so the app runs on its
           // own with localStorage, exactly as it did before it was hosted.
           mode.current = 'local';
+          rememberMode('local');
           patch({ mode: 'local', online: true });
           return;
         }

@@ -220,7 +220,14 @@ export default function App() {
 
   // Signed out of a hosted copy, the app is a window on someone else's data. With no
   // backend at all there is nobody to sign in as, so everything stays editable.
-  const canEdit = sync.mode !== 'remote' || sync.unlocked;
+  //
+  // Before the first answer from /api/data the mode is still 'loading'. Treating that as
+  // editable painted every rating from the cache and then snatched it away when the
+  // answer came — a flash of the very numbers a viewer is not meant to see. So until the
+  // backend has spoken, nothing is editable or visible unless this device already holds
+  // the password, or last found itself on a copy with no backend at all.
+  const noBackend = sync.mode === 'local' || (sync.mode === 'loading' && sync.assume === 'local');
+  const canEdit = sync.unlocked || noBackend;
   // Ratings are the organiser's working notes, not a thing for the whole group to read.
   // Signed out on a hosted copy they are hidden everywhere: cards, pins, the readout,
   // the table, the ladder, the ratings snapshots in history, and both exports.
