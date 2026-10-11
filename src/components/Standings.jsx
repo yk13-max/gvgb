@@ -19,11 +19,10 @@ const GROUPS = [
     ],
   },
   {
+    // Nights turned out lives in the opened row instead — in the table it was one more
+    // number next to the one that matters.
     label: 'Played',
-    cols: [
-      { key: 'nights', full: 'Nights', short: 'N', title: 'Nights turned out' },
-      { key: 'games', full: 'Games', short: 'G', title: 'Matches played' },
-    ],
+    cols: [{ key: 'games', full: 'Games', short: 'G', title: 'Matches played' }],
   },
   {
     label: 'Results',

@@ -138,7 +138,8 @@ PCT, ties sharing a number, anyone without a result yet at the bottom. Every mat
 a winner: there are no draws, and a level score cannot be saved. One row per player,
 grouped headers over three sets of columns —
 **Nominations** (best attacker, midfielder, defender, the overall POTM, and a total), **Played**
-(nights turned out, and matches played — a called-off night counts as a night and no match),
+(matches played — a called-off night counts for nobody; nights turned out show in the opened
+row),
 and **Results** (won and lost, counted from the side each player was on in every scored match,
 and **PCT** — the win ratio the way the NBA prints it, wins over wins plus losses to three
 places, `0.268`; a dash until there is a result to count). Tap any header to sort by it — numbers biggest-first, names A–Z, again to flip — and
