@@ -104,8 +104,14 @@ export default function Standings({ weeks, players }) {
                   {abbr}
                 </th>
               ))}
-              <th className="tb-league-n tb-league-total">Total</th>
-              <th className="tb-league-n">Played</th>
+              <th className="tb-league-n tb-league-total" title="Awards in total">
+                <span className="tb-league-hfull">Total</span>
+                <span className="tb-league-hshort">Tot</span>
+              </th>
+              <th className="tb-league-n" title="Nights played">
+                <span className="tb-league-hfull">Played</span>
+                <span className="tb-league-hshort">GP</span>
+              </th>
               <th className="tb-league-n tb-league-rec" title="Matches won – drawn – lost">
                 W–D–L
               </th>

@@ -1740,6 +1740,10 @@ th.tb-league-n {
   white-space: nowrap;
 }
 
+.tb-league-hshort {
+  display: none;
+}
+
 th.tb-league-total {
   color: var(--green-700);
 }
@@ -1892,6 +1896,15 @@ td[data-zero='1'] {
     padding-left: 5px;
     padding-right: 5px;
     font-size: var(--text-xs);
+  }
+
+  /* Two long headers were what pushed the record column off a 390px screen. */
+  .tb-league-hfull {
+    display: none;
+  }
+
+  .tb-league-hshort {
+    display: inline;
   }
 
   .tb-league-detailrow td {
