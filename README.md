@@ -133,10 +133,13 @@ grouped into one week.
 
 ### Awards
 
-The season as a league table: one row per player, a column for each award — best attacker,
-midfielder, defender and the overall POTM — a total, the number of nights played, and a W–D–L
-record counted from the side each player was on in every scored match. Results are not
-ratings, so viewers see all of it. Most
+The season as a league table: one row per player, grouped headers over three sets of columns —
+**Nominations** (best attacker, midfielder, defender, the overall POTM, and a total), **Played**
+(nights turned out, and matches played — a called-off night counts as a night and no match),
+and **Results** (won, drawn, lost, counted from the side each player was on in every scored
+match). Tap any header to sort by it — numbers biggest-first, names A–Z, again to flip — and
+the `#` stays the league position so a player's rank travels with them whatever the order.
+Results are not ratings, so viewers see all of it. Most
 awards first, POTM breaking ties since it is the one that counts for the whole night, then
 nights played, then A–Z; equal rows share a rank. Everyone on the roster is in it, so a new
 signing sits at the bottom on zero until they play, and someone no longer on the roster keeps
@@ -237,7 +240,8 @@ group — flicking to mini view on a phone doesn't change what anyone else is lo
 
 ## Layouts
 
-- **Desktop (>1100px)** — three columns: squad, board, balance readout.
+- **Desktop (>1100px)** — three columns: squad, board, balance readout. The whole app is capped
+  at 1480px and centred, so an ultra-wide monitor gets gutters rather than a stretched spread.
 - **Tablet (761–1100px)** — squad and board side by side, balance readout full width below.
 - **Phone (≤760px)** — one pane at a time with a bottom tab bar (Squad / Board / Balance / Table
   / Ladder / History), 44px touch targets, and pins enlarged to 44px. Balancing jumps you

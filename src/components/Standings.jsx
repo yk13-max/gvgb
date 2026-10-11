@@ -4,17 +4,43 @@ import { shortName } from '../lib/names.js';
 import { standings } from '../lib/standings.js';
 import { formatDate } from '../lib/whatsapp.js';
 
-const COLS = [
-  ['attacker', 'ATT', 'Best attacker'],
-  ['midfielder', 'MID', 'Best midfielder'],
-  ['defender', 'DEF', 'Best defender'],
-  ['potm', 'POTM', 'Overall POTM'],
+// Every column after the name, grouped the way the header groups them. `dir` is the
+// direction a first click sorts in: numbers biggest-first, since that is the question
+// being asked of them.
+const GROUPS = [
+  {
+    label: 'Nominations',
+    cols: [
+      { key: 'attacker', full: 'ATT', short: 'ATT', title: 'Best attacker' },
+      { key: 'midfielder', full: 'MID', short: 'MID', title: 'Best midfielder' },
+      { key: 'defender', full: 'DEF', short: 'DEF', title: 'Best defender' },
+      { key: 'potm', full: 'POTM', short: 'POTM', title: 'Overall POTM', potm: true },
+      { key: 'total', full: 'Total', short: 'Tot', title: 'Nominations in total', total: true },
+    ],
+  },
+  {
+    label: 'Played',
+    cols: [
+      { key: 'nights', full: 'Nights', short: 'N', title: 'Nights turned out' },
+      { key: 'games', full: 'Games', short: 'G', title: 'Matches played' },
+    ],
+  },
+  {
+    label: 'Results',
+    cols: [
+      { key: 'won', full: 'W', short: 'W', title: 'Won' },
+      { key: 'drawn', full: 'D', short: 'D', title: 'Drawn' },
+      { key: 'lost', full: 'L', short: 'L', title: 'Lost' },
+    ],
+  },
 ];
+const COLS = GROUPS.flatMap((g) => g.cols);
+
+const valueOf = (r, key) => (key === 'nights' ? r.played.length : key === 'name' ? r.name : r[key]);
 
 // What the season adds up to for one player, shown under their row.
 function Detail({ r }) {
   const nights = r.played.length;
-  const games = r.won + r.drawn + r.lost;
   return (
     <div className="tb-league-detail">
       <div className="tb-league-detail-head">
@@ -24,8 +50,8 @@ function Detail({ r }) {
             nights +
             ' night' +
             (nights === 1 ? '' : 's') +
-            (games ? ' · ' + games + ' match' + (games === 1 ? '' : 'es') + ': ' + r.won + ' won, ' + r.drawn + ' drawn, ' + r.lost + ' lost' : '') +
-            (r.total ? ' · ' + r.total + ' award' + (r.total === 1 ? '' : 's') : ' · no awards yet')}
+            (r.games ? ' · ' + r.games + ' match' + (r.games === 1 ? '' : 'es') + ': ' + r.won + ' won, ' + r.drawn + ' drawn, ' + r.lost + ' lost' : '') +
+            (r.total ? ' · ' + r.total + ' nomination' + (r.total === 1 ? '' : 's') : ' · no nominations yet')}
       </div>
       {nights > 0 && (
         <div className="tb-league-nights">
@@ -48,22 +74,60 @@ function Detail({ r }) {
   );
 }
 
-export default function Standings({ weeks, players }) {
-  const rows = useMemo(() => standings(weeks, players), [weeks, players]);
-  const [open, setOpen] = useState(null);
-  const anyAward = rows.some((r) => r.total > 0);
+function SortHead({ col, sort, onSort, className, children }) {
+  const on = sort.key === col.key;
+  return (
+    <th className={className} title={col.title} aria-sort={on ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+      <button type="button" className="tb-league-sort" onClick={() => onSort(col.key)}>
+        {children}
+        {on && <Icon name={sort.dir === 'asc' ? 'chevron-up' : 'chevron-down'} size={12} />}
+      </button>
+    </th>
+  );
+}
 
-  // Ranks share a number when the totals that decide them tie.
-  let rank = 0;
-  let prev = null;
-  const ranked = rows.map((r, i) => {
-    const key = r.total + ':' + r.potm;
-    if (key !== prev) {
-      rank = i + 1;
-      prev = key;
-    }
-    return { ...r, rank };
-  });
+export default function Standings({ weeks, players }) {
+  const ranked = useMemo(() => {
+    // The league order: most nominations first, POTM breaking ties. Ranks share a
+    // number when the totals that decide them tie, and the number stays with the
+    // player whatever column the table is later sorted by.
+    const rows = standings(weeks, players);
+    let rank = 0;
+    let prev = null;
+    return rows.map((r, i) => {
+      const key = r.total + ':' + r.potm;
+      if (key !== prev) {
+        rank = i + 1;
+        prev = key;
+      }
+      return { ...r, rank, order: i };
+    });
+  }, [weeks, players]);
+
+  const [sort, setSort] = useState({ key: 'rank', dir: 'asc' });
+  const [open, setOpen] = useState(null);
+
+  function onSort(key) {
+    setSort((s) => {
+      if (s.key === key) return { key, dir: s.dir === 'asc' ? 'desc' : 'asc' };
+      // First click: names A–Z and rank 1 first; every other number biggest first.
+      return { key, dir: key === 'name' || key === 'rank' ? 'asc' : 'desc' };
+    });
+  }
+
+  const rows = useMemo(() => {
+    if (sort.key === 'rank') return sort.dir === 'asc' ? ranked : ranked.slice().reverse();
+    const dir = sort.dir === 'asc' ? 1 : -1;
+    return ranked.slice().sort((a, b) => {
+      const av = valueOf(a, sort.key);
+      const bv = valueOf(b, sort.key);
+      const d = typeof av === 'string' ? av.localeCompare(bv, undefined, { sensitivity: 'base' }) : av - bv;
+      // Ties fall back to the league order, so a column of equals still reads as a table.
+      return d * dir || a.order - b.order;
+    });
+  }, [ranked, sort]);
+
+  const anyAward = ranked.some((r) => r.total > 0);
 
   return (
     <div className="tb-page-stats">
@@ -88,7 +152,7 @@ export default function Standings({ weeks, players }) {
               marginTop: 2,
             }}
           >
-            {weeks.length} week{weeks.length === 1 ? '' : 's'} · tap a player for the nights they played
+            {weeks.length} week{weeks.length === 1 ? '' : 's'} · tap a header to sort, a player for their nights
           </div>
         </div>
       </div>
@@ -96,29 +160,38 @@ export default function Standings({ weeks, players }) {
       <div className="tb-tblwrap">
         <table className="tb-league">
           <thead>
-            <tr>
-              <th className="tb-league-rank">#</th>
-              <th className="tb-league-name">Player</th>
-              {COLS.map(([k, abbr, full]) => (
-                <th key={k} className="tb-league-n" title={full} data-potm={k === 'potm' ? '1' : '0'}>
-                  {abbr}
+            <tr className="tb-league-grouprow">
+              <th className="tb-league-rank" />
+              <th className="tb-league-name" />
+              {GROUPS.map((g) => (
+                <th key={g.label} className="tb-league-group" colSpan={g.cols.length} scope="colgroup">
+                  {g.label}
                 </th>
               ))}
-              <th className="tb-league-n tb-league-total" title="Awards in total">
-                <span className="tb-league-hfull">Total</span>
-                <span className="tb-league-hshort">Tot</span>
-              </th>
-              <th className="tb-league-n" title="Nights played">
-                <span className="tb-league-hfull">Played</span>
-                <span className="tb-league-hshort">GP</span>
-              </th>
-              <th className="tb-league-n tb-league-rec" title="Matches won – drawn – lost">
-                W–D–L
-              </th>
+            </tr>
+            <tr className="tb-league-colrow">
+              <SortHead col={{ key: 'rank', title: 'League position' }} sort={sort} onSort={onSort} className="tb-league-rank">
+                #
+              </SortHead>
+              <SortHead col={{ key: 'name', title: 'Sort by name' }} sort={sort} onSort={onSort} className="tb-league-name">
+                Player
+              </SortHead>
+              {COLS.map((c) => (
+                <SortHead
+                  key={c.key}
+                  col={c}
+                  sort={sort}
+                  onSort={onSort}
+                  className={'tb-league-n' + (c.total ? ' tb-league-total' : '') + (c.potm ? ' tb-league-potm' : '')}
+                >
+                  <span className="tb-league-hfull">{c.full}</span>
+                  <span className="tb-league-hshort">{c.short}</span>
+                </SortHead>
+              ))}
             </tr>
           </thead>
           <tbody>
-            {ranked.map((r) => {
+            {rows.map((r) => {
               const isOpen = open === r.id;
               return [
                 <tr
@@ -142,24 +215,28 @@ export default function Standings({ weeks, players }) {
                     <span className="tb-league-rankinline">{r.rank}</span>
                     <span className="tb-league-full">{r.name}</span>
                     <span className="tb-league-short">{shortName(r.name)}</span>
-                    <Icon name={isOpen ? 'chevron-up' : 'chevron-down'} size={13} />
+                    <span className="tb-league-chev">
+                      <Icon name={isOpen ? 'chevron-up' : 'chevron-down'} size={13} />
+                    </span>
                   </td>
-                  {COLS.map(([k]) => (
-                    <td key={k} className="tb-league-n" data-potm={k === 'potm' ? '1' : '0'} data-zero={r[k] === 0 ? '1' : '0'}>
-                      {r[k]}
-                    </td>
-                  ))}
-                  <td className="tb-league-n tb-league-total">{r.total}</td>
-                  <td className="tb-league-n" data-zero={r.played.length === 0 ? '1' : '0'}>
-                    {r.played.length}
-                  </td>
-                  <td className="tb-league-n tb-league-rec" data-zero={r.won + r.drawn + r.lost === 0 ? '1' : '0'}>
-                    {r.won}–{r.drawn}–{r.lost}
-                  </td>
+                  {COLS.map((c) => {
+                    const v = valueOf(r, c.key);
+                    return (
+                      <td
+                        key={c.key}
+                        className={'tb-league-n' + (c.total ? ' tb-league-total' : '')}
+                        data-potm={c.potm ? '1' : '0'}
+                        data-zero={v === 0 ? '1' : '0'}
+                        data-sorted={sort.key === c.key ? '1' : '0'}
+                      >
+                        {v}
+                      </td>
+                    );
+                  })}
                 </tr>,
                 isOpen && (
                   <tr key={r.id + '-d'} className="tb-league-detailrow">
-                    <td colSpan={COLS.length + 5}>
+                    <td colSpan={COLS.length + 2}>
                       <Detail r={r} />
                     </td>
                   </tr>
@@ -171,7 +248,7 @@ export default function Standings({ weeks, players }) {
         {!anyAward && (
           <div className="tb-histempty" style={{ margin: 12 }}>
             {weeks.length
-              ? 'No nominations saved yet. Open a week in History and use Nominate.'
+              ? 'No nominations saved yet. Open a week on Scores and use Nominate.'
               : 'Nothing to count yet. Record a result, then nominate the night’s best.'}
           </div>
         )}

@@ -21,7 +21,8 @@ export function standings(weeks, players) {
         total: 0,
         played: [], // dates, newest first
         wins: [], // { date, award, label }, newest first
-        won: 0, // matches, from the side the player was on
+        games: 0, // matches actually played, scored or not
+        won: 0, // from the side the player was on
         drawn: 0,
         lost: 0,
       });
@@ -38,16 +39,19 @@ export function standings(weeks, players) {
     // matches count for nobody.
     (w.matches || []).forEach((m) => {
       const o = outcome(m);
-      if (o !== 'red' && o !== 'blue' && o !== 'draw') return;
+      if (o === 'off') return;
       [
         ['red', m.red],
         ['blue', m.blue],
       ].forEach(([side, list]) => {
         (list || []).forEach((p) => {
           const r = row(p.id, p.name);
+          r.games += 1;
           if (o === 'draw') r.drawn += 1;
-          else if (o === side) r.won += 1;
-          else r.lost += 1;
+          else if (o === 'red' || o === 'blue') {
+            if (o === side) r.won += 1;
+            else r.lost += 1;
+          }
         });
       });
     });

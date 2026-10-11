@@ -35,6 +35,22 @@ a:hover {
   display: flex;
   flex-direction: column;
   background: var(--color-bg);
+  /* A page's width, not a monitor's. On an ultra-wide the three columns were stretched
+     across the whole screen; capped and centred they read like any site would. */
+  width: 100%;
+  max-width: 1480px;
+  margin: 0 auto;
+}
+
+@media (min-width: 1481px) {
+  body {
+    background: var(--color-surface-sunken);
+  }
+
+  .tb-shell {
+    border-left: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-border);
+  }
 }
 
 .tb-head {
@@ -1714,8 +1730,9 @@ td.tb-league-name {
   gap: 8px;
 }
 
-td.tb-league-name > svg {
+.tb-league-chev {
   margin-left: auto;
+  display: inline-flex;
 }
 
 /* The rank-in-cell and the short name exist for the phone; the desktop has room. */
@@ -1736,12 +1753,61 @@ th.tb-league-n {
   background: var(--color-primary-subtle);
 }
 
-.tb-league-rec {
-  white-space: nowrap;
-}
-
 .tb-league-hshort {
   display: none;
+}
+
+/* Two header rows, both pinned: the group row at the top, the column row under it. */
+.tb-league-grouprow th {
+  height: 26px;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+  font-size: 9px;
+  letter-spacing: var(--tracking-widest);
+  color: var(--color-text-secondary);
+  text-align: center;
+  background: var(--color-surface-sunken);
+}
+
+.tb-league-group {
+  border-left: 1px solid var(--color-border);
+}
+
+.tb-league-colrow th {
+  top: 26px;
+}
+
+.tb-league-sort {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: inherit;
+  gap: 3px;
+  cursor: pointer;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+}
+
+th.tb-league-n .tb-league-sort {
+  justify-content: flex-end;
+}
+
+.tb-league th[aria-sort='ascending'],
+.tb-league th[aria-sort='descending'] {
+  color: var(--color-text-primary);
+}
+
+td.tb-league-n[data-sorted='1'] {
+  background: var(--color-surface-sunken);
 }
 
 th.tb-league-total {
@@ -1749,7 +1815,7 @@ th.tb-league-total {
 }
 
 /* POTM is the one that counts for the whole night, so its column reads apart. */
-th.tb-league-n[data-potm='1'] {
+th.tb-league-potm {
   color: var(--amber-700, #a16207);
 }
 
@@ -1890,12 +1956,18 @@ td[data-zero='1'] {
     background: var(--color-surface-sunken);
   }
 
+  /* Eleven columns on a 390px screen: a little less air per number, and the row's
+     chevron goes — the row is still a button, and aria-expanded still says so. */
   .tb-league-n,
   th.tb-league-n {
     width: auto;
-    padding-left: 5px;
-    padding-right: 5px;
+    padding-left: 4px;
+    padding-right: 4px;
     font-size: var(--text-xs);
+  }
+
+  .tb-league-chev {
+    display: none;
   }
 
   /* Two long headers were what pushed the record column off a 390px screen. */
