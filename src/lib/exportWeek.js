@@ -204,7 +204,6 @@ function draw(week) {
       [t.goalsRed + '–' + t.goalsBlue, 'GOALS R–B'],
       [String(t.red), 'RED WINS'],
       [String(t.blue), 'BLUE WINS'],
-      [String(t.draw), 'DRAWS'],
     ];
     const cw = (W - PAD * 2) / cells.length;
     cells.forEach(([value, label], i) => {

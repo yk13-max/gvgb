@@ -11,9 +11,9 @@ const GROUPS = [
   {
     label: 'Nominations',
     cols: [
-      { key: 'attacker', full: 'ATT', short: 'ATT', title: 'Best attacker' },
-      { key: 'midfielder', full: 'MID', short: 'MID', title: 'Best midfielder' },
-      { key: 'defender', full: 'DEF', short: 'DEF', title: 'Best defender' },
+      { key: 'attacker', full: 'ATT', short: 'A', title: 'Best attacker' },
+      { key: 'midfielder', full: 'MID', short: 'M', title: 'Best midfielder' },
+      { key: 'defender', full: 'DEF', short: 'D', title: 'Best defender' },
       { key: 'potm', full: 'POTM', short: 'POTM', title: 'Overall POTM', potm: true },
       { key: 'total', full: 'Total', short: 'Tot', title: 'Nominations in total', total: true },
     ],
@@ -29,14 +29,15 @@ const GROUPS = [
     label: 'Results',
     cols: [
       { key: 'won', full: 'W', short: 'W', title: 'Won' },
-      { key: 'drawn', full: 'D', short: 'D', title: 'Drawn' },
       { key: 'lost', full: 'L', short: 'L', title: 'Lost' },
+      { key: 'pct', full: 'PCT', short: 'PCT', title: 'Win ratio: wins over wins plus losses', pct: true },
     ],
   },
 ];
 const COLS = GROUPS.flatMap((g) => g.cols);
 
 const valueOf = (r, key) => (key === 'nights' ? r.played.length : key === 'name' ? r.name : r[key]);
+const fmt = (key, v) => (key === 'pct' ? (v == null ? '–' : v.toFixed(3)) : v);
 
 // What the season adds up to for one player, shown under their row.
 function Detail({ r }) {
@@ -50,7 +51,8 @@ function Detail({ r }) {
             nights +
             ' night' +
             (nights === 1 ? '' : 's') +
-            (r.games ? ' · ' + r.games + ' match' + (r.games === 1 ? '' : 'es') + ': ' + r.won + ' won, ' + r.drawn + ' drawn, ' + r.lost + ' lost' : '') +
+            (r.games ? ' · ' + r.games + ' match' + (r.games === 1 ? '' : 'es') + ': ' + r.won + ' won, ' + r.lost + ' lost' : '') +
+            (r.pct != null ? ' · win ratio ' + r.pct.toFixed(3) : '') +
             (r.total ? ' · ' + r.total + ' nomination' + (r.total === 1 ? '' : 's') : ' · no nominations yet')}
       </div>
       {nights > 0 && (
@@ -86,16 +88,15 @@ function SortHead({ col, sort, onSort, className, children }) {
   );
 }
 
-export default function Standings({ weeks, players }) {
+export default function Standings({ weeks, players, seasonBar, seasonLabel }) {
   const ranked = useMemo(() => {
-    // The league order: most nominations first, POTM breaking ties. Ranks share a
-    // number when the totals that decide them tie, and the number stays with the
-    // player whatever column the table is later sorted by.
+    // The league order is by win ratio. Ranks share a number when the ratio ties, and
+    // the number stays with the player whatever column the table is later sorted by.
     const rows = standings(weeks, players);
     let rank = 0;
     let prev = null;
     return rows.map((r, i) => {
-      const key = r.total + ':' + r.potm;
+      const key = r.pct == null ? 'none' : r.pct.toFixed(3);
       if (key !== prev) {
         rank = i + 1;
         prev = key;
@@ -121,6 +122,9 @@ export default function Standings({ weeks, players }) {
     return ranked.slice().sort((a, b) => {
       const av = valueOf(a, sort.key);
       const bv = valueOf(b, sort.key);
+      // No number at all (a win ratio with nothing decided yet) sits at the bottom whichever
+      // way the column is sorted; it is not a value, so it is not above or below one.
+      if (av == null || bv == null) return av == null && bv == null ? a.order - b.order : av == null ? 1 : -1;
       const d = typeof av === 'string' ? av.localeCompare(bv, undefined, { sensitivity: 'base' }) : av - bv;
       // Ties fall back to the league order, so a column of equals still reads as a table.
       return d * dir || a.order - b.order;
@@ -142,7 +146,7 @@ export default function Standings({ weeks, players }) {
               lineHeight: 1.1,
             }}
           >
-            Awards table
+            League table{seasonLabel ? ' · ' + seasonLabel : ''}
           </div>
           <div
             style={{
@@ -155,6 +159,7 @@ export default function Standings({ weeks, players }) {
             {weeks.length} week{weeks.length === 1 ? '' : 's'} · tap a header to sort, a player for their nights
           </div>
         </div>
+        {seasonBar}
       </div>
 
       <div className="tb-tblwrap">
@@ -170,7 +175,7 @@ export default function Standings({ weeks, players }) {
               ))}
             </tr>
             <tr className="tb-league-colrow">
-              <SortHead col={{ key: 'rank', title: 'League position' }} sort={sort} onSort={onSort} className="tb-league-rank">
+              <SortHead col={{ key: 'rank', title: 'Position, by win ratio' }} sort={sort} onSort={onSort} className="tb-league-rank">
                 #
               </SortHead>
               <SortHead col={{ key: 'name', title: 'Sort by name' }} sort={sort} onSort={onSort} className="tb-league-name">
@@ -226,10 +231,10 @@ export default function Standings({ weeks, players }) {
                         key={c.key}
                         className={'tb-league-n' + (c.total ? ' tb-league-total' : '')}
                         data-potm={c.potm ? '1' : '0'}
-                        data-zero={v === 0 ? '1' : '0'}
+                        data-zero={v === 0 || v == null ? '1' : '0'}
                         data-sorted={sort.key === c.key ? '1' : '0'}
                       >
-                        {v}
+                        {fmt(c.key, v)}
                       </td>
                     );
                   })}
@@ -248,7 +253,7 @@ export default function Standings({ weeks, players }) {
         {!anyAward && (
           <div className="tb-histempty" style={{ margin: 12 }}>
             {weeks.length
-              ? 'No nominations saved yet. Open a week on Scores and use Nominate.'
+              ? 'No nominations saved yet. Open a week on Results and use Nominate.'
               : 'Nothing to count yet. Record a result, then nominate the night’s best.'}
           </div>
         )}

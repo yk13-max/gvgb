@@ -7,6 +7,8 @@ import Pitch from './components/Pitch.jsx';
 import PlayerEditor from './components/PlayerEditor.jsx';
 import RecordResultDialog from './components/RecordResultDialog.jsx';
 import RosterPanel from './components/RosterPanel.jsx';
+import SeasonBar from './components/SeasonBar.jsx';
+import SeasonsDialog from './components/SeasonsDialog.jsx';
 import WeekAwardsDialog from './components/WeekAwardsDialog.jsx';
 import ShareDialog from './components/ShareDialog.jsx';
 import Standings from './components/Standings.jsx';
@@ -14,10 +16,12 @@ import StatLadder from './components/StatLadder.jsx';
 import StatsTable from './components/StatsTable.jsx';
 import SyncDialog, { syncLook } from './components/SyncDialog.jsx';
 import { exportJSON, readBackupFile } from './lib/backup.js';
+import { savedPassword } from './lib/remote.js';
 import { buildDoc, parseDoc } from './lib/doc.js';
 import { exportBoard } from './lib/exportBoard.js';
 import { DEFAULT_STATS, balance, layout, relax } from './lib/model.js';
 import { samplePlayers } from './lib/samplePlayers.js';
+import { ALL, currentSeason, labelFor, seasonOptions, weeksIn } from './lib/seasons.js';
 import { loadCache, loadPrefs, saveCache, savePrefs } from './lib/storage.js';
 import { useSync } from './lib/useSync.js';
 import { putMatch } from './lib/weeks.js';
@@ -51,6 +55,7 @@ function stateFromDoc(parsed) {
     },
     teams: { red: parsed.board.red, blue: parsed.board.blue },
     pos: parsed.board.pos,
+    seasons: parsed.seasons || [],
   };
 }
 
@@ -134,6 +139,7 @@ export default function App() {
         selected: samplePlayers.slice(0, 10).map((p) => p.id),
         match: null,
         board: { red: [], blue: [], pos: {} },
+        seasons: [],
       }
     );
   }, []);
@@ -155,13 +161,19 @@ export default function App() {
   const [queue, setQueue] = useState([]);
   const [narrow, setNarrow] = useState(isNarrow);
   const [view, setView] = useState('squad');
-  // The scores are what most people open the app to see; the balancer is one tap away.
-  const [page, setPage] = useState('history');
+  // Where the app opens. A device that holds the password is an organiser's: the results
+  // are its working page. Anyone else is here to look, and the league table is the look.
+  const [page, setPage] = useState(() => (savedPassword() ? 'history' : 'awards'));
   // The squad view is a preference belonging to this browser, not to the group — toggling
   // it on a phone has no business changing what everyone else is looking at.
   const [mini, setMini] = useState(() => loadPrefs().mini);
   const [squadSort, setSquadSort] = useState(() => loadPrefs().sort);
   const [history, setHistory] = useState(start.history);
+  const [seasons, setSeasons] = useState(start.seasons);
+  // Which season Results and the Table show. null means "whichever is current",
+  // so a device that has never chosen follows the calendar as seasons are added.
+  const [seasonKey, setSeasonKey] = useState(null);
+  const [managingSeasons, setManagingSeasons] = useState(false);
   const [recording, setRecording] = useState(null); // null | {} for a new match | { week, match } to edit
   const [awarding, setAwarding] = useState(null); // the week whose nominations are open
   const [notice, setNotice] = useState(null);
@@ -184,8 +196,8 @@ export default function App() {
   // Everything the group shares, as one value. Anything not in here — the squad view, the
   // PNG switches, which page you are on — belongs to this browser alone.
   const doc = useMemo(
-    () => buildDoc({ players, history, teamSize, selected, match, teams, pos }),
-    [players, history, teamSize, selected, match, teams, pos]
+    () => buildDoc({ players, history, teamSize, selected, match, teams, pos, seasons }),
+    [players, history, teamSize, selected, match, teams, pos, seasons]
   );
 
   const applyDoc = useCallback((parsed) => {
@@ -197,6 +209,7 @@ export default function App() {
     setMatch(s.match);
     setTeams(s.teams);
     setPos(s.pos);
+    setSeasons(s.seasons);
     setSel(null);
     setDraft(null);
     setQueue([]);
@@ -373,7 +386,7 @@ export default function App() {
   // The shared document, written to a file. Byte for byte what the server holds, plus a
   // note of when it was taken.
   function exportAll() {
-    exportJSON({ players, history, teamSize, selected, match, teams, pos });
+    exportJSON({ players, history, teamSize, selected, match, teams, pos, seasons });
   }
 
   // Signed out, neither row exists: an export is every rating in one file, which is the
@@ -512,6 +525,25 @@ export default function App() {
 
   const look = syncLook(sync);
 
+  // The season in view. An explicit pick that no longer exists (removed in the dialog)
+  // falls back to the current one, the same as a device that never picked.
+  const options = seasonOptions(seasons, history);
+  const current = currentSeason(seasons, todayISO());
+  const activeSeason =
+    seasonKey && options.some((o) => o.key === String(seasonKey)) ? String(seasonKey) : current ? String(current.id) : ALL;
+  const seasonWeeks = weeksIn(history, activeSeason, seasons);
+  const seasonLabel = seasons.length ? labelFor(activeSeason, seasons) : '';
+  const seasonBar =
+    seasons.length || canEdit ? (
+      <SeasonBar
+        options={options}
+        value={activeSeason}
+        onChange={setSeasonKey}
+        canEdit={canEdit}
+        onManage={() => setManagingSeasons(true)}
+      />
+    ) : null;
+
   return (
     <div className="tb-shell">
       <header className="tb-head">
@@ -543,8 +575,8 @@ export default function App() {
         <Segmented
           className="tb-pageswitch"
           options={[
-            ['history', 'Scores'],
-            ['awards', 'Awards'],
+            ['history', 'Results'],
+            ['awards', 'Table'],
             ['balancer', 'Balancer'],
             ['stats', 'Player stats'],
             ['ladder', 'Stat ladder'],
@@ -706,8 +738,10 @@ export default function App() {
 
       {page === 'history' ? (
         <History
-          weeks={history}
+          weeks={seasonWeeks}
           players={players}
+          seasonBar={seasonBar}
+          seasonLabel={seasonLabel}
           canEdit={canEdit}
           showValues={showValues}
           onAwards={(w) => setAwarding(w)}
@@ -716,7 +750,7 @@ export default function App() {
           onDeleteWeek={deleteWeek}
         />
       ) : page === 'awards' ? (
-        <Standings weeks={history} players={players} />
+        <Standings weeks={seasonWeeks} players={players} seasonBar={seasonBar} seasonLabel={seasonLabel} />
       ) : page === 'ladder' ? (
         showValues ? (
           <StatLadder players={players} selected={selected} canEdit={canEdit} onPatch={patchPlayer} />
@@ -860,11 +894,11 @@ export default function App() {
       <nav className="tb-tabs">
         <button type="button" data-on={page === 'history' ? '1' : '0'} onClick={() => setPage('history')}>
           <Icon name="history" size={19} />
-          <span>Scores</span>
+          <span>Results</span>
         </button>
         <button type="button" data-on={page === 'awards' ? '1' : '0'} onClick={() => setPage('awards')}>
           <Icon name="trophy" size={19} />
-          <span>Awards</span>
+          <span>Table</span>
         </button>
         {[
           ['squad', 'users', 'Squad'],
@@ -886,7 +920,7 @@ export default function App() {
         ))}
         <button type="button" data-on={page === 'stats' ? '1' : '0'} onClick={() => setPage('stats')}>
           <Icon name="table" size={19} />
-          <span>Table</span>
+          <span>Stats</span>
         </button>
         <button type="button" data-on={page === 'ladder' ? '1' : '0'} onClick={() => setPage('ladder')}>
           <Icon name="sliders-vertical" size={19} />
@@ -1106,6 +1140,9 @@ export default function App() {
         />
       )}
       {syncOpen && <SyncDialog sync={sync} onClose={() => setSyncOpen(false)} />}
+      {managingSeasons && (
+        <SeasonsDialog seasons={seasons} weeks={history} onChange={setSeasons} onClose={() => setManagingSeasons(false)} />
+      )}
 
       {notice && (
         <Dialog

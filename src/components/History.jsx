@@ -264,7 +264,7 @@ function WeekCard({ week, players, onAwards, onEditMatch, onDeleteMatch, onDelet
   );
 }
 
-export default function History({ weeks, players, onAwards, onEditMatch, onDeleteMatch, onDeleteWeek, canEdit = true, showValues = true }) {
+export default function History({ weeks, players, onAwards, onEditMatch, onDeleteMatch, onDeleteWeek, canEdit = true, showValues = true, seasonBar, seasonLabel }) {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
 
@@ -289,7 +289,7 @@ export default function History({ weeks, players, onAwards, onEditMatch, onDelet
               lineHeight: 1.1,
             }}
           >
-            Scores
+            Results
           </div>
           <div
             style={{
@@ -300,8 +300,10 @@ export default function History({ weeks, players, onAwards, onEditMatch, onDelet
             }}
           >
             {filtered ? rows.length + '/' + weeks.length + ' weeks shown' : weeks.length + ' weeks recorded'}
+            {seasonLabel ? ' · ' + seasonLabel : ''}
           </div>
         </div>
+        {seasonBar}
         <div className="tb-daterange">
           <label>
             <span>From</span>
@@ -332,7 +334,6 @@ export default function History({ weeks, players, onAwards, onEditMatch, onDelet
           <Stat label="Played" value={t.played} />
           <Stat label="Red wins" value={t.red} color="var(--team-red)" />
           <Stat label="Blue wins" value={t.blue} color="var(--team-blue)" />
-          <Stat label="Draws" value={t.draw} />
           <Stat label="Goals R–B" value={t.goalsRed + '–' + t.goalsBlue} />
           {t.off > 0 && <Stat label="Called off" value={t.off} />}
         </div>
@@ -357,9 +358,11 @@ export default function History({ weeks, players, onAwards, onEditMatch, onDelet
           <div className="tb-histempty">
             {weeks.length
               ? 'No weeks in that date range.'
-              : canEdit
-                ? 'Nothing recorded yet. Balance a squad, then use Record result on the Balancer to log the score.'
-                : 'Nothing recorded yet.'}
+              : seasonLabel && seasonLabel !== 'All time'
+                ? 'Nothing recorded in ' + seasonLabel + ' yet.'
+                : canEdit
+                  ? 'Nothing recorded yet. Balance a squad, then use Record result on the Balancer to log the score.'
+                  : 'Nothing recorded yet.'}
           </div>
         )}
       </div>

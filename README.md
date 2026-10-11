@@ -14,10 +14,10 @@ falls back to this-browser-only storage with no loss of function.
 
 ## What it does
 
-The app has five pages, switched from the header on desktop and the bottom tab bar on a phone.
-It opens on **Scores** — the match history, which is what most people open it to see — with
-**Awards** next to it, then the **Balancer** (squad, board, balance readout), the **Player
-stats** table and the **Stat ladder**. Wherever players are listed rather than ranked —
+The app has five pages, switched from the header on desktop and the bottom tab bar on a phone:
+**Results**, the **Table** (the league table), the **Balancer** (squad, board, balance readout),
+the **Player stats** table and the **Stat ladder**. A viewer opens on the Table; a device that
+holds the password opens on Results, the organiser's working page. Wherever players are listed rather than ranked —
 the squad, the stats table before you sort it, the line-ups — they read A–Z.
 
 ### Balancer
@@ -126,20 +126,34 @@ matches you played that night.
   exactly what moved (`PAC 92→50 · SHO 86→70`, and a position change if there was one). Players
   nobody has touched read as a plain list of what they were rated on the day.
 - **From** and **To** dates filter to a range of weeks, and the summary above — weeks, matches
-  played, wins each side, draws, goals — recomputes for whatever the range shows.
+  played, wins each side, goals — recomputes for whatever the range shows.
 
 A history saved before weeks existed migrates automatically: flat matches sharing a date are
 grouped into one week.
 
-### Awards
+### Table
 
-The season as a league table: one row per player, grouped headers over three sets of columns —
+The season as a league table, **ranked by win ratio** — the `#` is each player's position by
+PCT, ties sharing a number, anyone without a result yet at the bottom. Every match is played to
+a winner: there are no draws, and a level score cannot be saved. One row per player,
+grouped headers over three sets of columns —
 **Nominations** (best attacker, midfielder, defender, the overall POTM, and a total), **Played**
 (nights turned out, and matches played — a called-off night counts as a night and no match),
-and **Results** (won, drawn, lost, counted from the side each player was on in every scored
-match). Tap any header to sort by it — numbers biggest-first, names A–Z, again to flip — and
-the `#` stays the league position so a player's rank travels with them whatever the order.
-Results are not ratings, so viewers see all of it. Most
+and **Results** (won and lost, counted from the side each player was on in every scored match,
+and **PCT** — the win ratio the way the NBA prints it, wins over wins plus losses to three
+places, `0.268`; a dash until there is a result to count). Tap any header to sort by it — numbers biggest-first, names A–Z, again to flip — and
+the `#` stays the position by win ratio, so a player's rank travels with them whatever the
+order. Results are not ratings, so viewers see all of it.
+
+### Seasons
+
+A season is a name and the date it starts, and runs until the next one starts; a week belongs
+to the latest season that had begun by its date, so nothing is assigned by hand and nothing
+overlaps. Results and the Table carry a **Season** picker that opens on the current season, with
+*All time* and — if any weeks predate the first season — *Before …*. Signed in, **Seasons**
+beside the picker creates, renames and re-dates them, and shows how many weeks each holds.
+Removing a season deletes no results: its weeks fall to the season before. Seasons live in the
+shared document like everything else. Most
 awards first, POTM breaking ties since it is the one that counts for the whole night, then
 nights played, then A–Z; equal rows share a rank. Everyone on the roster is in it, so a new
 signing sits at the bottom on zero until they play, and someone no longer on the roster keeps

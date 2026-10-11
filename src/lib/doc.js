@@ -6,7 +6,7 @@ import { normalizePlayer } from './model.js';
 import { toWeeks } from './weeks.js';
 
 export const DOC_APP = 'fufa-team-balancer';
-export const DOC_VERSION = 3;
+export const DOC_VERSION = 4;
 
 const round = (n) => Math.round(Number(n) * 100) / 100;
 
@@ -38,7 +38,16 @@ function boardOf(teams, pos, ids) {
 
 // No timestamp in here on purpose: the document has to serialise identically when nothing
 // has changed, or the app would see every render as an edit worth saving.
-export function buildDoc({ players, history, teamSize, selected, match, teams, pos }) {
+function cleanSeasons(list) {
+  if (!Array.isArray(list)) return [];
+  const seen = new Set();
+  return list
+    .filter((s) => s && typeof s.name === 'string' && s.name.trim() && /^\d{4}-\d{2}-\d{2}$/.test(s.start || ''))
+    .map((s) => ({ id: Number(s.id), name: s.name.trim(), start: s.start }))
+    .filter((s) => Number.isInteger(s.id) && s.id > 0 && !seen.has(s.id) && seen.add(s.id));
+}
+
+export function buildDoc({ players, history, teamSize, selected, match, teams, pos, seasons }) {
   const list = Array.isArray(players) ? players : [];
   const ids = new Set(list.map((p) => p.id));
   return {
@@ -50,6 +59,7 @@ export function buildDoc({ players, history, teamSize, selected, match, teams, p
     board: boardOf(teams, pos, ids),
     players: list,
     history: Array.isArray(history) ? history : [],
+    seasons: cleanSeasons(seasons),
   };
 }
 
@@ -110,6 +120,7 @@ export function parseDoc(data) {
     selected: Array.isArray(d.selected) ? d.selected.map(Number).filter((id) => seen.has(id)) : null,
     match: d.match && typeof d.match === 'object' ? cleanMatch(d.match) : null,
     board: readBoard(d.board, byId),
+    seasons: cleanSeasons(d.seasons),
     // Written by version 2 documents, when the squad view was still shared. It is a per-device
     // preference now, so it is read for the sake of old files and never written back.
     mini: typeof d.mini === 'boolean' ? d.mini : null,

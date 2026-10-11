@@ -58,6 +58,9 @@ export default function RecordResultDialog({ teams, teamSize, match, weeks, exis
   const week = weeks.find((w) => w.date === date);
   const already = week ? week.matches.filter((m) => !existing || m.id !== existing.match.id).length : 0;
   const count = existing || !played ? 1 : rows.length;
+  // Every match is played to a winner, so a level score is not a result. Blank scores are
+  // still allowed — a match can be logged before the score is known.
+  const level = played && rows.some((r) => r.red !== '' && r.blue !== '' && Number(r.red) === Number(r.blue));
   const setRow = (i, patch) => setRows((rs) => rs.map((r, j) => (j === i ? { ...r, ...patch } : r)));
 
   function save() {
@@ -103,7 +106,7 @@ export default function RecordResultDialog({ teams, teamSize, match, weeks, exis
           <Button variant="secondary" size="sm" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="primary" size="sm" onClick={save} disabled={!date}>
+          <Button variant="primary" size="sm" onClick={save} disabled={!date || level}>
             {count > 1 ? 'Save ' + count + ' matches' : 'Save'}
           </Button>
         </>
@@ -178,6 +181,22 @@ export default function RecordResultDialog({ teams, teamSize, match, weeks, exis
                 )}
               </div>
             ))}
+            {level && (
+              <div
+                role="alert"
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 'var(--text-xs)',
+                  color: 'var(--color-warning-strong)',
+                  background: 'var(--color-warning-subtle)',
+                  border: '1px solid var(--amber-400)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '7px 10px',
+                }}
+              >
+                Scores can\u2019t be level — every match is played to a winner.
+              </div>
+            )}
             {!existing && (
               <Button
                 variant="secondary"

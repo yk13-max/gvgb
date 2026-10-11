@@ -2198,3 +2198,135 @@ td[data-zero='1'] {
 .tb-slider:focus-visible::-moz-range-thumb {
   box-shadow: var(--focus-ring);
 }
+
+/* ---- Seasons ------------------------------------------------------------------ */
+
+.tb-seasonbar {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.tb-seasonbar label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.tb-seasonbar select {
+  min-height: 34px;
+  min-width: 150px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--color-text-primary);
+}
+
+.tb-seasons {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tb-seasonlist {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tb-seasonrow {
+  display: grid;
+  grid-template-columns: 1fr 150px auto 32px;
+  align-items: center;
+  gap: 8px;
+}
+
+.tb-seasonname,
+.tb-seasonstart {
+  min-height: 36px;
+  border: 1px solid var(--color-border-strong) !important;
+  border-radius: var(--radius-sm);
+  padding: 0 8px;
+}
+
+.tb-seasoncount {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+
+.tb-seasonadd {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+}
+
+.tb-seasonaddrow {
+  display: flex;
+  gap: 10px;
+}
+
+@media (max-width: 760px) {
+  .tb-seasonbar {
+    width: 100%;
+  }
+
+  .tb-seasonbar label {
+    flex: 1;
+  }
+
+  .tb-seasonbar select,
+  .tb-seasonbar button {
+    min-height: 44px;
+  }
+
+  .tb-seasonrow {
+    grid-template-columns: 1fr 44px;
+    grid-template-rows: auto auto;
+  }
+
+  .tb-seasonrow .tb-seasonname {
+    grid-column: 1;
+  }
+
+  .tb-seasonrow .tb-seasonstart {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .tb-seasonrow .tb-seasoncount {
+    grid-column: 2;
+    grid-row: 2;
+    text-align: right;
+  }
+
+  .tb-seasonrow button {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  /* Twelve columns on a 390px screen: the rank and its gap give back a few pixels. */
+  .tb-league-rankinline {
+    width: 12px;
+  }
+
+  td.tb-league-name {
+    gap: 4px;
+  }
+}
