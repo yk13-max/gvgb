@@ -289,7 +289,7 @@ export default function History({ weeks, players, onAwards, onEditMatch, onDelet
               lineHeight: 1.1,
             }}
           >
-            Match history
+            Scores
           </div>
           <div
             style={{

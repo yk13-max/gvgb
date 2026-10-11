@@ -1,5 +1,5 @@
 import { byName, shortName } from './names.js';
-import { AWARDS, weekPlayerIds } from './weeks.js';
+import { AWARDS, outcome, weekPlayerIds } from './weeks.js';
 
 // The season so far, per player: nights turned out, and each award won, by week.
 //
@@ -21,6 +21,9 @@ export function standings(weeks, players) {
         total: 0,
         played: [], // dates, newest first
         wins: [], // { date, award, label }, newest first
+        won: 0, // matches, from the side the player was on
+        drawn: 0,
+        lost: 0,
       });
     }
     return rows.get(id);
@@ -31,6 +34,23 @@ export function standings(weeks, players) {
   // Weeks arrive newest first, so pushing in order keeps each list newest first.
   (weeks || []).forEach((w) => {
     weekPlayerIds(w).forEach((p) => row(p.id, p.name).played.push(w.date));
+    // A result counts for everyone who was on the pitch for it. Called off or unscored
+    // matches count for nobody.
+    (w.matches || []).forEach((m) => {
+      const o = outcome(m);
+      if (o !== 'red' && o !== 'blue' && o !== 'draw') return;
+      [
+        ['red', m.red],
+        ['blue', m.blue],
+      ].forEach(([side, list]) => {
+        (list || []).forEach((p) => {
+          const r = row(p.id, p.name);
+          if (o === 'draw') r.drawn += 1;
+          else if (o === side) r.won += 1;
+          else r.lost += 1;
+        });
+      });
+    });
     AWARDS.forEach(([k, label]) => {
       const id = w.awards && w.awards[k];
       if (id == null) return;

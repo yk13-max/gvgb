@@ -14,9 +14,10 @@ falls back to this-browser-only storage with no loss of function.
 
 ## What it does
 
-The app has five pages, switched from the header on desktop and the bottom tab bar on a phone:
-the **Balancer** (squad, board, balance readout), the **Player stats** table, the **Stat ladder**,
-the **Match history** and the **Awards** table. Wherever players are listed rather than ranked —
+The app has five pages, switched from the header on desktop and the bottom tab bar on a phone.
+It opens on **Scores** — the match history, which is what most people open it to see — with
+**Awards** next to it, then the **Balancer** (squad, board, balance readout), the **Player
+stats** table and the **Stat ladder**. Wherever players are listed rather than ranked —
 the squad, the stats table before you sort it, the line-ups — they read A–Z.
 
 ### Balancer
@@ -133,7 +134,9 @@ grouped into one week.
 ### Awards
 
 The season as a league table: one row per player, a column for each award — best attacker,
-midfielder, defender and the overall POTM — a total, and the number of nights played. Most
+midfielder, defender and the overall POTM — a total, the number of nights played, and a W–D–L
+record counted from the side each player was on in every scored match. Results are not
+ratings, so viewers see all of it. Most
 awards first, POTM breaking ties since it is the one that counts for the whole night, then
 nights played, then A–Z; equal rows share a rank. Everyone on the roster is in it, so a new
 signing sits at the bottom on zero until they play, and someone no longer on the roster keeps

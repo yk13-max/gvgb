@@ -155,7 +155,8 @@ export default function App() {
   const [queue, setQueue] = useState([]);
   const [narrow, setNarrow] = useState(isNarrow);
   const [view, setView] = useState('squad');
-  const [page, setPage] = useState('balancer');
+  // The scores are what most people open the app to see; the balancer is one tap away.
+  const [page, setPage] = useState('history');
   // The squad view is a preference belonging to this browser, not to the group — toggling
   // it on a phone has no business changing what everyone else is looking at.
   const [mini, setMini] = useState(() => loadPrefs().mini);
@@ -542,11 +543,11 @@ export default function App() {
         <Segmented
           className="tb-pageswitch"
           options={[
+            ['history', 'Scores'],
+            ['awards', 'Awards'],
             ['balancer', 'Balancer'],
             ['stats', 'Player stats'],
             ['ladder', 'Stat ladder'],
-            ['history', 'History'],
-            ['awards', 'Awards'],
           ]}
           value={page}
           onChange={setPage}
@@ -857,6 +858,14 @@ export default function App() {
       )}
 
       <nav className="tb-tabs">
+        <button type="button" data-on={page === 'history' ? '1' : '0'} onClick={() => setPage('history')}>
+          <Icon name="history" size={19} />
+          <span>Scores</span>
+        </button>
+        <button type="button" data-on={page === 'awards' ? '1' : '0'} onClick={() => setPage('awards')}>
+          <Icon name="trophy" size={19} />
+          <span>Awards</span>
+        </button>
         {[
           ['squad', 'users', 'Squad'],
           ['board', 'layout-grid', 'Board'],
@@ -882,14 +891,6 @@ export default function App() {
         <button type="button" data-on={page === 'ladder' ? '1' : '0'} onClick={() => setPage('ladder')}>
           <Icon name="sliders-vertical" size={19} />
           <span>Ladder</span>
-        </button>
-        <button type="button" data-on={page === 'history' ? '1' : '0'} onClick={() => setPage('history')}>
-          <Icon name="history" size={19} />
-          <span>History</span>
-        </button>
-        <button type="button" data-on={page === 'awards' ? '1' : '0'} onClick={() => setPage('awards')}>
-          <Icon name="trophy" size={19} />
-          <span>Awards</span>
         </button>
       </nav>
 

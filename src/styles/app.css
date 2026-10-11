@@ -1736,6 +1736,10 @@ th.tb-league-n {
   background: var(--color-primary-subtle);
 }
 
+.tb-league-rec {
+  white-space: nowrap;
+}
+
 th.tb-league-total {
   color: var(--green-700);
 }

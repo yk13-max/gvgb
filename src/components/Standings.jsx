@@ -14,12 +14,18 @@ const COLS = [
 // What the season adds up to for one player, shown under their row.
 function Detail({ r }) {
   const nights = r.played.length;
+  const games = r.won + r.drawn + r.lost;
   return (
     <div className="tb-league-detail">
       <div className="tb-league-detail-head">
         {nights === 0
           ? 'Not played yet.'
-          : 'Played ' + nights + ' night' + (nights === 1 ? '' : 's') + (r.total ? ' · ' + r.total + ' award' + (r.total === 1 ? '' : 's') : ' · no awards yet')}
+          : 'Played ' +
+            nights +
+            ' night' +
+            (nights === 1 ? '' : 's') +
+            (games ? ' · ' + games + ' match' + (games === 1 ? '' : 'es') + ': ' + r.won + ' won, ' + r.drawn + ' drawn, ' + r.lost + ' lost' : '') +
+            (r.total ? ' · ' + r.total + ' award' + (r.total === 1 ? '' : 's') : ' · no awards yet')}
       </div>
       {nights > 0 && (
         <div className="tb-league-nights">
@@ -100,6 +106,9 @@ export default function Standings({ weeks, players }) {
               ))}
               <th className="tb-league-n tb-league-total">Total</th>
               <th className="tb-league-n">Played</th>
+              <th className="tb-league-n tb-league-rec" title="Matches won – drawn – lost">
+                W–D–L
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -138,10 +147,13 @@ export default function Standings({ weeks, players }) {
                   <td className="tb-league-n" data-zero={r.played.length === 0 ? '1' : '0'}>
                     {r.played.length}
                   </td>
+                  <td className="tb-league-n tb-league-rec" data-zero={r.won + r.drawn + r.lost === 0 ? '1' : '0'}>
+                    {r.won}–{r.drawn}–{r.lost}
+                  </td>
                 </tr>,
                 isOpen && (
                   <tr key={r.id + '-d'} className="tb-league-detailrow">
-                    <td colSpan={COLS.length + 4}>
+                    <td colSpan={COLS.length + 5}>
                       <Detail r={r} />
                     </td>
                   </tr>
