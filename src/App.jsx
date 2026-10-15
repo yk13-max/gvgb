@@ -7,6 +7,8 @@ import Pitch from './components/Pitch.jsx';
 import PlayerEditor from './components/PlayerEditor.jsx';
 import RecordResultDialog from './components/RecordResultDialog.jsx';
 import RosterPanel from './components/RosterPanel.jsx';
+import Honours from './components/Honours.jsx';
+import HonoursDialog from './components/HonoursDialog.jsx';
 import SeasonBar from './components/SeasonBar.jsx';
 import SeasonsDialog from './components/SeasonsDialog.jsx';
 import WeekAwardsDialog from './components/WeekAwardsDialog.jsx';
@@ -174,6 +176,7 @@ export default function App() {
   // so a device that has never chosen follows the calendar as seasons are added.
   const [seasonKey, setSeasonKey] = useState(null);
   const [managingSeasons, setManagingSeasons] = useState(false);
+  const [honouring, setHonouring] = useState(null); // the season whose honours are being picked
   const [recording, setRecording] = useState(null); // null | {} for a new match | { week, match } to edit
   const [awarding, setAwarding] = useState(null); // the week whose nominations are open
   const [notice, setNotice] = useState(null);
@@ -299,9 +302,12 @@ export default function App() {
 
   // Inline edits from the stats table. Any change to a rating makes the current
   // split stale, so the board clears once and stays clear until you re-balance.
+  // Only a change that would alter the balance clears the board: a rating or a
+  // position. A new nickname or a corrected spelling leaves the drafted sides alone.
+  const unbalances = (patch) => 'stats' in patch || 'pos' in patch || 'alt' in patch;
   function patchPlayer(id, patch) {
     setPlayers((ps) => ps.map((p) => (p.id === id ? { ...p, ...patch } : p)));
-    if (teams.red.length) resetBoard();
+    if (teams.red.length && unbalances(patch)) resetBoard();
   }
 
   function advanceQueue() {
@@ -315,12 +321,20 @@ export default function App() {
   }
 
   function saveDraft() {
+    const before = draft.id ? players.find((p) => p.id === draft.id) : null;
     setPlayers((ps) => {
       if (draft.id) return ps.map((p) => (p.id === draft.id ? draft : p));
       const id = Math.max(0, ...ps.map((p) => p.id)) + 1;
       return [...ps, { ...draft, id }];
     });
-    resetBoard();
+    // A new player, or an existing one whose ratings or position moved, makes the
+    // current split stale. Renames and nicknames do not.
+    const moved =
+      !before ||
+      before.pos !== draft.pos ||
+      JSON.stringify(before.alt || []) !== JSON.stringify(draft.alt || []) ||
+      JSON.stringify(before.stats) !== JSON.stringify(draft.stats);
+    if (moved) resetBoard();
     if (queue.length) advanceQueue();
     else setDraft(null);
   }
@@ -360,6 +374,10 @@ export default function App() {
     setHistory(next);
     setRecording(null);
     setPage('history');
+    // A score logged against the drafted sides closes that night: the board clears so
+    // next week starts from a clean sheet. Editing an existing score leaves it alone —
+    // the sides are already on record with the match.
+    if (entry.isNew) resetBoard();
     // Ask for the week's nominations once it has a result to nominate from. Only on a
     // newly recorded match — editing a score shouldn't re-open the prompt every time.
     const week = next.find((w) => w.date === entry.date);
@@ -750,7 +768,23 @@ export default function App() {
           onDeleteWeek={deleteWeek}
         />
       ) : page === 'awards' ? (
-        <Standings weeks={seasonWeeks} players={players} seasonBar={seasonBar} seasonLabel={seasonLabel} />
+        <Standings
+          weeks={seasonWeeks}
+          players={players}
+          seasonBar={seasonBar}
+          seasonLabel={seasonLabel}
+          onHonours={() => setPage('honours')}
+        />
+      ) : page === 'honours' ? (
+        <Honours
+          seasons={seasons}
+          weeks={history}
+          players={players}
+          today={todayISO()}
+          canEdit={canEdit}
+          onBack={() => setPage('awards')}
+          onEdit={(season) => setHonouring(season)}
+        />
       ) : page === 'ladder' ? (
         showValues ? (
           <StatLadder players={players} selected={selected} canEdit={canEdit} onPatch={patchPlayer} />
@@ -1142,6 +1176,18 @@ export default function App() {
       {syncOpen && <SyncDialog sync={sync} onClose={() => setSyncOpen(false)} />}
       {managingSeasons && (
         <SeasonsDialog seasons={seasons} weeks={history} onChange={setSeasons} onClose={() => setManagingSeasons(false)} />
+      )}
+      {honouring && (
+        <HonoursDialog
+          season={seasons.find((x) => x.id === honouring.id) || honouring}
+          weeks={weeksIn(history, String(honouring.id), seasons)}
+          players={players}
+          onSave={(id, honours) => {
+            setSeasons((ss) => ss.map((x) => (x.id === id ? { ...x, honours } : x)));
+            setHonouring(null);
+          }}
+          onClose={() => setHonouring(null)}
+        />
       )}
 
       {notice && (

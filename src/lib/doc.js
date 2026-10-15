@@ -6,7 +6,7 @@ import { normalizePlayer } from './model.js';
 import { toWeeks } from './weeks.js';
 
 export const DOC_APP = 'fufa-team-balancer';
-export const DOC_VERSION = 4;
+export const DOC_VERSION = 5;
 
 const round = (n) => Math.round(Number(n) * 100) / 100;
 
@@ -38,12 +38,22 @@ function boardOf(teams, pos, ids) {
 
 // No timestamp in here on purpose: the document has to serialise identically when nothing
 // has changed, or the app would see every render as an edit worth saving.
+const HONOUR_KEYS = ['winner', 'attacker', 'midfielder', 'defender', 'player'];
+function cleanHonours(h) {
+  const out = {};
+  HONOUR_KEYS.forEach((k) => {
+    const v = h && Number(h[k]);
+    out[k] = Number.isInteger(v) && v > 0 ? v : null;
+  });
+  return out;
+}
+
 function cleanSeasons(list) {
   if (!Array.isArray(list)) return [];
   const seen = new Set();
   return list
     .filter((s) => s && typeof s.name === 'string' && s.name.trim() && /^\d{4}-\d{2}-\d{2}$/.test(s.start || ''))
-    .map((s) => ({ id: Number(s.id), name: s.name.trim(), start: s.start }))
+    .map((s) => ({ id: Number(s.id), name: s.name.trim(), start: s.start, honours: cleanHonours(s.honours) }))
     .filter((s) => Number.isInteger(s.id) && s.id > 0 && !seen.has(s.id) && seen.add(s.id));
 }
 

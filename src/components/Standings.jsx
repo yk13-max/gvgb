@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Icon } from '../ds/index.js';
+import { Button, Icon } from '../ds/index.js';
 import { shortName } from '../lib/names.js';
 import { standings } from '../lib/standings.js';
 import { formatDate } from '../lib/whatsapp.js';
@@ -87,7 +87,7 @@ function SortHead({ col, sort, onSort, className, children }) {
   );
 }
 
-export default function Standings({ weeks, players, seasonBar, seasonLabel }) {
+export default function Standings({ weeks, players, seasonBar, seasonLabel, onHonours }) {
   const ranked = useMemo(() => {
     // The league order is by win ratio. Ranks share a number when the ratio ties, and
     // the number stays with the player whatever column the table is later sorted by.
@@ -158,7 +158,12 @@ export default function Standings({ weeks, players, seasonBar, seasonLabel }) {
             {weeks.length} week{weeks.length === 1 ? '' : 's'} · tap a header to sort, a player for their nights
           </div>
         </div>
-        {seasonBar}
+        <div className="tb-tblbar-right">
+          {seasonBar}
+          <Button variant="secondary" size="sm" icon={<Icon name="award" size={15} />} onClick={onHonours}>
+            Honours
+          </Button>
+        </div>
       </div>
 
       <div className="tb-tblwrap">

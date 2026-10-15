@@ -1,7 +1,9 @@
 import {
   ArrowDown10,
   ArrowDownAZ,
+  ArrowLeft,
   ArrowLeftRight,
+  Award,
   BarChart2,
   Calendar,
   Check,
@@ -12,6 +14,7 @@ import {
   Cloud,
   CloudOff,
   Copy,
+  Crown,
   Download,
   FileJson,
   FilterX,
@@ -28,15 +31,18 @@ import {
   RefreshCw,
   RotateCcw,
   Share2,
+  Shield,
   Shuffle,
   SlidersVertical,
   Table,
+  Target,
   Trash2,
   TriangleAlert,
   Trophy,
   Upload,
   Users,
   X,
+  Zap,
 } from 'lucide-react';
 
 // The design system wraps Lucide by name. The prototype loaded Lucide from a CDN and
@@ -45,7 +51,9 @@ import {
 const registry = {
   'arrow-down-1-0': ArrowDown10,
   'arrow-down-a-z': ArrowDownAZ,
+  'arrow-left': ArrowLeft,
   'arrow-left-right': ArrowLeftRight,
+  award: Award,
   'bar-chart-2': BarChart2,
   calendar: Calendar,
   check: Check,
@@ -56,6 +64,7 @@ const registry = {
   cloud: Cloud,
   'cloud-off': CloudOff,
   copy: Copy,
+  crown: Crown,
   download: Download,
   'file-json': FileJson,
   'filter-x': FilterX,
@@ -72,15 +81,18 @@ const registry = {
   'refresh-cw': RefreshCw,
   'rotate-ccw': RotateCcw,
   'share-2': Share2,
+  shield: Shield,
   shuffle: Shuffle,
   'sliders-vertical': SlidersVertical,
   table: Table,
+  target: Target,
   'trash-2': Trash2,
   'triangle-alert': TriangleAlert,
   trophy: Trophy,
   upload: Upload,
   users: Users,
   x: X,
+  zap: Zap,
 };
 
 export default function Icon({ name, size = 18, strokeWidth = 1.75, color = 'currentColor', style, ...rest }) {

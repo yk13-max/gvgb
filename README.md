@@ -50,7 +50,9 @@ the squad, the stats table before you sort it, the line-ups — they read A–Z.
   between teams. **Stat labels** toggles the per-pin stat lines. Pins are labelled first name
   plus second initial ("Sam O"), so two players sharing a first name still read apart. The board
   is part of the shared document: it survives a reload, and everyone with the link is looking at
-  the same one.
+  the same one. It stays until something makes it stale — a rating or position change, a change
+  to the squad or format — or until a result is recorded against it, which closes that night. A
+  renamed player or a new nickname leaves it alone.
 - **Balance readout** — balance score out of 100 and the average-OVR delta, team total and
   average, stat-by-stat comparison bars, strongest/weakest callouts, and the position mix.
 - **Paste list** — paste a WhatsApp signup thread or numbered list. Numbering, timestamps,
@@ -154,7 +156,18 @@ overlaps. Results and the Table carry a **Season** picker that opens on the curr
 *All time* and — if any weeks predate the first season — *Before …*. Signed in, **Seasons**
 beside the picker creates, renames and re-dates them, and shows how many weeks each holds.
 Removing a season deletes no results: its weeks fall to the season before. Seasons live in the
-shared document like everything else. Most
+shared document like everything else.
+
+### Honours
+
+**Honours** on the Table opens the season honours page: for each season, the **winner**, **best
+player**, **best attacker**, **best midfielder** and **best defender**, each on its own card — a
+tone and a glyph for the honour, a medallion with the player's initials, and the number behind
+it (the winner's record and ratio; a best attacker's nominations). Signed in, **Name honours**
+on a season picks each from the players who turned out that season, every list leading with the
+obvious choice. A season is finished once the next one has started, and that is when its
+honours are shown to everyone; before then the page says it's in progress, and picks an
+organiser has entered early stay out of sight. Most
 awards first, POTM breaking ties since it is the one that counts for the whole night, then
 nights played, then A–Z; equal rows share a rank. Everyone on the roster is in it, so a new
 signing sits at the bottom on zero until they play, and someone no longer on the roster keeps
