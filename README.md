@@ -163,8 +163,10 @@ shared document like everything else.
 **Honours** on the Table opens the season honours page: for each season, the **winner**, **best
 player**, **best attacker**, **best midfielder** and **best defender**, each on its own card — a
 tone and a glyph for the honour, a medallion with the player's initials, and the number behind
-it (the winner's record and ratio; a best attacker's nominations). Signed in, **Name honours**
-on a season picks each from the players who turned out that season, every list leading with the
+it (the winner's record and ratio; a best attacker's nominations). **Best player** is not
+picked: it is whoever won the most player-of-the-match awards that season, ties going to the
+higher table position, and the card shows the count. Signed in, **Name honours** on a season
+picks the other four from the players who turned out that season, every list leading with the
 obvious choice. A season is finished once the next one has started, and that is when its
 honours are shown to everyone; before then the page says it's in progress, and picks an
 organiser has entered early stay out of sight. Most

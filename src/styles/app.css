@@ -2638,3 +2638,21 @@ td[data-zero='1'] {
     min-height: 44px;
   }
 }
+
+.tb-honour-auto {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+}
+
+.tb-honour-auto-note {
+  font-size: var(--text-2xs);
+  color: var(--color-text-tertiary);
+}

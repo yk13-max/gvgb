@@ -1,5 +1,5 @@
 import { Button, Icon } from '../ds/index.js';
-import { HONOURS, backing, hasStarted, isFinished } from '../lib/honours.js';
+import { HONOURS, PICKED, backing, bestPlayer, hasStarted, isFinished } from '../lib/honours.js';
 import { initials, shortName } from '../lib/names.js';
 import { sortSeasons } from '../lib/seasons.js';
 import { standings } from '../lib/standings.js';
@@ -43,9 +43,11 @@ function SeasonBlock({ season, seasons, weeks, players, today, canEdit, onEdit }
   const finished = isFinished(season, seasons, today);
   const started = hasStarted(season, today);
   const rows = standings(weeks, players);
-  const rowOf = (id) => (id == null ? null : rows.find((r) => r.id === id) || null);
+  const best = bestPlayer(weeks, players);
+  // Best player is worked out, not picked; everything else comes from the organiser.
+  const rowOf = (key) => (key === 'player' ? best : h[key] == null ? null : rows.find((r) => r.id === h[key]) || null);
   const h = season.honours || {};
-  const named = HONOURS.filter(([k]) => h[k] != null).length;
+  const named = PICKED.filter(([k]) => h[k] != null).length;
   const nights = weeks.length;
 
   return (
@@ -67,10 +69,10 @@ function SeasonBlock({ season, seasons, weeks, players, today, canEdit, onEdit }
 
       {finished ? (
         <div className="tb-honours">
-          <Card honour={HONOURS[0]} row={rowOf(h.winner)} season={season} hero />
+          <Card honour={HONOURS[0]} row={rowOf('winner')} season={season} hero />
           <div className="tb-honours-grid">
             {HONOURS.slice(1).map((hn) => (
-              <Card key={hn[0]} honour={hn} row={rowOf(h[hn[0]])} season={season} />
+              <Card key={hn[0]} honour={hn} row={rowOf(hn[0])} season={season} />
             ))}
           </div>
         </div>
@@ -84,7 +86,7 @@ function SeasonBlock({ season, seasons, weeks, players, today, canEdit, onEdit }
             <div className="tb-season-wait-sub">
               {started
                 ? 'Honours are revealed when the next season starts.' +
-                  (canEdit && named ? ' ' + named + ' of 5 already named.' : canEdit ? ' You can name them now; nobody else sees them until then.' : '')
+                  (canEdit && named ? ' ' + named + ' of 4 already named.' : canEdit ? ' You can name them now; nobody else sees them until then.' : '')
                 : 'Starts ' + formatDate(season.start) + '.'}
             </div>
           </div>

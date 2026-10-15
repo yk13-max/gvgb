@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Button, Dialog, Icon } from '../ds/index.js';
-import { EMPTY_HONOURS, HONOURS, backing, candidates } from '../lib/honours.js';
+import { EMPTY_HONOURS, PICKED, backing, bestPlayer, candidates } from '../lib/honours.js';
 
 export default function HonoursDialog({ season, weeks, players, onSave, onClose }) {
   const [h, setH] = useState({ ...EMPTY_HONOURS, ...(season.honours || {}) });
   const any = weeks.length > 0;
+  const best = bestPlayer(weeks, players);
 
   return (
     <Dialog
@@ -25,10 +26,18 @@ export default function HonoursDialog({ season, weeks, players, onSave, onClose 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div className="tb-sync-note">
           {any
-            ? 'Anyone who turned out this season can be named. Each list leads with the obvious pick — the table order for the winner and best player, nominations in that line for the rest.'
+            ? 'Anyone who turned out this season can be named. Each list leads with the obvious pick — the table order for the winner, nominations in that line for the rest.'
             : 'Nobody has played in this season yet.'}
         </div>
-        {HONOURS.map(([key, label, icon]) => {
+        <div className="tb-honour-auto">
+          <span className="tb-honour-pick-label">
+            <Icon name="crown" size={14} />
+            Best player
+          </span>
+          <span>{best ? best.name + ' · ' + backing(best, 'player') : 'Nobody has a POTM award yet'}</span>
+          <span className="tb-honour-auto-note">Worked out from the season\u2019s player-of-the-match awards, not picked.</span>
+        </div>
+        {PICKED.map(([key, label, icon]) => {
           const list = candidates(weeks, players, key);
           return (
             <label key={key} className="tb-honour-pick" data-key={key}>

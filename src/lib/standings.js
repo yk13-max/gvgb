@@ -78,13 +78,15 @@ export function standings(weeks, players) {
   // result yet has a ratio, so they come last. Equal ratios are split by games played
   // (the same ratio over more games is the harder one to hold), then wins, then
   // nominations, then A–Z so equals read as equals.
-  return [...rows.values()].sort((a, b) => {
-    if (a.pct == null || b.pct == null) {
-      if (a.pct == null && b.pct == null) return b.played.length - a.played.length || byName(a, b);
-      return a.pct == null ? 1 : -1;
-    }
-    return b.pct - a.pct || b.games - a.games || b.won - a.won || b.total - a.total || byName(a, b);
-  });
+  return [...rows.values()]
+    .sort((a, b) => {
+      if (a.pct == null || b.pct == null) {
+        if (a.pct == null && b.pct == null) return b.played.length - a.played.length || byName(a, b);
+        return a.pct == null ? 1 : -1;
+      }
+      return b.pct - a.pct || b.games - a.games || b.won - a.won || b.total - a.total || byName(a, b);
+    })
+    .map((r, i) => ({ ...r, order: i }));
 }
 
 export function shortRow(r) {
