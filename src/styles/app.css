@@ -2488,6 +2488,7 @@ td[data-zero='1'] {
 
 .tb-honour-label {
   display: inline-flex;
+  align-self: flex-start; /* a flex item stretches otherwise, and the box ran under the tag */
   align-items: center;
   gap: 6px;
   font-family: var(--font-body);
@@ -2613,6 +2614,12 @@ td[data-zero='1'] {
   .tb-honour[data-hero='1'] {
     min-height: 200px;
     padding: 18px 20px;
+  }
+
+  /* On a card half a phone wide the season tag ran into the honour's label. The
+     section heading above already names the season; the hero keeps its tag. */
+  .tb-honour[data-hero='0'] .tb-honour-season {
+    display: none;
   }
 
   .tb-honour[data-hero='1'] .tb-honour-name {
