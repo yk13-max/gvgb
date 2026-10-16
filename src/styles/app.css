@@ -1090,6 +1090,229 @@ a:hover {
   box-shadow: var(--focus-ring);
 }
 
+/* ---- Ask the results ------------------------------------------------------------ */
+
+.tb-ask {
+  flex-shrink: 0;
+  margin-bottom: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.tb-ask-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  color: var(--color-text-tertiary);
+}
+
+.tb-ask-row input {
+  flex: 1;
+  min-width: 0;
+  min-height: 46px;
+  border: 0;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  color: var(--color-text-primary);
+}
+
+.tb-ask-row input:focus {
+  outline: none;
+}
+
+.tb-ask[data-open='1'] .tb-ask-row,
+.tb-ask:focus-within .tb-ask-row {
+  color: var(--color-primary);
+}
+
+.tb-ask-row input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.tb-ask-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-sunken);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.tb-ask-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 12px 12px;
+}
+
+.tb-ask-chip,
+.tb-ask-link {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.tb-ask-chip:hover,
+.tb-ask-link:hover {
+  border-color: var(--color-primary);
+  color: var(--green-700);
+}
+
+.tb-ask-link {
+  padding: 1px 8px;
+}
+
+.tb-ask-note,
+.tb-ask-answer {
+  border-top: 1px solid var(--color-border);
+  padding: 12px 14px 14px;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-normal);
+}
+
+.tb-ask-headline {
+  font-family: var(--font-display);
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-lg);
+  line-height: 1.25;
+  color: var(--color-text-primary);
+}
+
+.tb-ask-scope {
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--color-text-tertiary);
+}
+
+.tb-ask-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px 16px;
+  margin: 12px 0 0;
+}
+
+.tb-ask-fact dt {
+  font-family: var(--font-body);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.tb-ask-fact dd {
+  margin: 2px 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.tb-ask-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 12px;
+  border: 0;
+  background: none;
+  padding: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.tb-ask-matches {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tb-ask-matches li {
+  display: grid;
+  grid-template-columns: 110px 70px 56px 1fr;
+  gap: 8px;
+  align-items: baseline;
+  padding: 5px 8px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+.tb-ask-matches li:nth-child(odd) {
+  background: var(--color-surface-sunken);
+}
+
+.tb-ask-matches li[data-result='won'] .tb-ask-mscore {
+  color: var(--green-700);
+  font-weight: var(--weight-semibold);
+}
+
+.tb-ask-matches li[data-result='lost'] .tb-ask-mscore {
+  color: var(--color-text-primary);
+}
+
+.tb-ask-mnote {
+  font-family: var(--font-body);
+}
+
+.tb-ask-side {
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+  font-weight: var(--weight-semibold);
+}
+
+.tb-ask-side[data-side='red'] {
+  color: var(--team-red);
+}
+
+.tb-ask-side[data-side='blue'] {
+  color: var(--team-blue);
+}
+
+.tb-ask-more {
+  color: var(--color-text-tertiary);
+}
+
+@media (max-width: 640px) {
+  .tb-ask-row input::placeholder {
+    font-size: var(--text-sm);
+  }
+
+  .tb-ask-matches li {
+    grid-template-columns: 96px 1fr;
+  }
+
+  .tb-ask-mno {
+    display: none;
+  }
+
+  .tb-ask-mnote {
+    grid-column: 1 / -1;
+    padding-left: 0;
+  }
+}
+
 .tb-histsummary {
   display: flex;
   gap: 20px;
@@ -1256,6 +1479,16 @@ a:hover {
 @media (max-width: 760px) {
   .tb-histpage {
     padding: 12px;
+    /* On a phone the whole page scrolls, not just the list: with a question answered
+       above it there is otherwise no room left for the list, and the answer itself
+       runs under the tab bar. */
+    overflow-y: auto;
+  }
+
+  .tb-histlist {
+    flex: none;
+    min-height: auto;
+    overflow: visible;
   }
 
   .tb-histsummary {

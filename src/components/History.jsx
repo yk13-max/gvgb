@@ -5,6 +5,7 @@ import { shortName } from '../lib/names.js';
 import { exportWeek } from '../lib/exportWeek.js';
 import { AWARDS, lineupLabel, lineups, outcome, ratingDiff, tally, weekPlayerIds } from '../lib/weeks.js';
 import { formatDate } from '../lib/whatsapp.js';
+import AskBar from './AskBar.jsx';
 
 function Stat({ label, value, color }) {
   return (
@@ -327,6 +328,8 @@ export default function History({ weeks, players, onAwards, onEditMatch, onDelet
           </Button>
         </div>
       </div>
+
+      {weeks.length > 0 && <AskBar players={players} weeks={weeks} seasonLabel={seasonLabel} />}
 
       {rows.length > 0 && (
         <div className="tb-histsummary">

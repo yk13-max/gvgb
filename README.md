@@ -109,6 +109,18 @@ matches you played that night.
   no score. Editing is always one match: the one you opened.
 - The date on a match is what decides its week, so editing a match's date moves it between
   weeks, and a week with no matches left disappears.
+- **Ask the results.** A question box at the top of Results answers in plain words, worked
+  out from the recorded matches as you type. Name one player for their nights, matches,
+  record, nominations, who they line up with and against most, and when they last played.
+  Name two or more ("Jo with Sam", "how many games have Jo, Sam and Priya played together?")
+  for the nights they all turned out, the matches on the same side and the record in them,
+  the matches on opposite sides, and for a pair the head-to-head. Put **vs**, **v** or
+  **against** between names or groups ("Sam vs Jo", "Sam and Tom against Jo and Priya") for
+  how often they have met and who won. The words around the names don't matter; first names,
+  surnames, "Jo R" and nicknames all work, and if a first name fits two players you're asked
+  which. Example questions, built from the players who have played most, sit under the box;
+  **Show the matches** lists every match the answer counted. Answers follow the season picker
+  and say so. Viewers can ask too.
 - **Line-ups once, not per match.** A session is usually several games between the same two
   sides. When any line-up repeats, the week card states each distinct line-up once — "All 3
   matches", "Matches 1, 2, 4", "Match 3" — and the match rows below keep to the scores. A
