@@ -1283,6 +1283,23 @@ a:hover {
   font-family: var(--font-body);
 }
 
+.tb-ask-mwho {
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.tb-ask-mresult {
+  font-weight: var(--weight-semibold);
+}
+
+.tb-ask-mresult[data-result='won'] {
+  color: var(--green-700);
+}
+
+.tb-ask-mresult[data-result='lost'] {
+  color: var(--team-red);
+}
+
 .tb-ask-side {
   text-transform: uppercase;
   font-family: var(--font-mono);

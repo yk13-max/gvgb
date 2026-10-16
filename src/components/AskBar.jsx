@@ -112,11 +112,38 @@ function Answer({ result, compact }) {
                       <span className="tb-ask-mscore">{m.score || 'no score'}</span>
                       <span className="tb-ask-mnote">
                         {m.side === 'red' || m.side === 'blue' ? (
+                          // Who was on which side, then who won — the score alone is Red's and Blue's.
                           <>
+                            {m.us && <span className="tb-ask-mwho">{m.us}</span>} on{' '}
                             <span className="tb-ask-side" data-side={m.side}>
                               {m.side}
-                            </span>{' '}
-                            {m.result === 'won' ? 'won' : m.result === 'lost' ? 'lost' : m.result === 'level' ? 'level' : ''}
+                            </span>
+                            {m.them && (
+                              <>
+                                {' '}v <span className="tb-ask-mwho">{m.them}</span> on{' '}
+                                <span className="tb-ask-side" data-side={m.side === 'red' ? 'blue' : 'red'}>
+                                  {m.side === 'red' ? 'blue' : 'red'}
+                                </span>
+                              </>
+                            )}
+                            {' · '}
+                            <span className="tb-ask-mresult" data-result={m.result}>
+                              {m.them
+                                ? m.result === 'won'
+                                  ? m.us + ' won'
+                                  : m.result === 'lost'
+                                    ? m.them + ' won'
+                                    : m.result === 'level'
+                                      ? 'level'
+                                      : 'no score'
+                                : m.result === 'won'
+                                  ? 'won'
+                                  : m.result === 'lost'
+                                    ? 'lost'
+                                    : m.result === 'level'
+                                      ? 'level'
+                                      : 'no score'}
+                            </span>
                           </>
                         ) : (
                           m.note

@@ -374,7 +374,7 @@ const MEASURES = [
   { key: 'won', re: /\b(won|wins|win|victories|winning|winners?)\b/, label: 'wins' },
   { key: 'lost', re: /\b(lost|losses|loses|defeats|losing|losers?)\b/, label: 'losses' },
   { key: 'pct', re: /\b(record|records|win ratio|ratio|pct|percentage|successful|success rate)\b/, label: 'win ratio' },
-  { key: 'goalsFor', re: /\b(goals?|scoring|scored)\b/, label: 'team goals when playing' },
+  { key: 'goalsFor', re: /\b(goals?|scoring|scored)\b/, label: 'goals by their sides' },
   { key: 'games', re: /\b(matches|games)\b/, label: 'matches' },
   { key: 'nights', re: /\b(nights?|attendance|appearances?|turn(ed|s)? out|turnout|regular|regulars|played|seen)\b/, label: 'nights' },
 ];
@@ -675,19 +675,22 @@ function goalsSection(list, who) {
   const best = byMargin[0];
   const worst = byMargin[byMargin.length - 1];
   const high = scored.slice().sort((a, b) => b.gf + b.ga - (a.gf + a.ga))[0];
+  // Goals are recorded for a side, never for a scorer: every number here is what the
+  // side a player was on scored or let in, and scores read from that side's point of view.
+  const theirs = (m) => m.gf + '–' + m.ga + ' on ' + (m.side === 'red' ? 'Red' : 'Blue') + ' · ' + m.date;
   const facts = [
-    ['Goals for', gf],
-    ['Goals against', ga],
+    ['Their side scored', gf],
+    ['Their side conceded', ga],
     ['Per match', (gf / scored.length).toFixed(1) + ' for · ' + (ga / scored.length).toFixed(1) + ' against'],
-    ['Clean sheets', scored.filter((m) => m.ga === 0).length],
+    ['Clean sheets (side)', scored.filter((m) => m.ga === 0).length],
   ];
-  if (best.gf > best.ga) facts.push(['Biggest win', best.score + ' · ' + best.date]);
-  if (worst.gf < worst.ga) facts.push(['Heaviest defeat', worst.score + ' · ' + worst.date]);
-  facts.push(['Highest-scoring', high.score + ' · ' + high.date]);
-  const have = / and /.test(who) ? 'have' : 'has';
+  if (best.gf > best.ga) facts.push(['Biggest win', theirs(best)]);
+  if (worst.gf < worst.ga) facts.push(['Heaviest defeat', theirs(worst)]);
+  facts.push(['Highest-scoring', theirs(high)]);
+  const side = / and /.test(who) ? who + '’s side' : who + '’s side';
   return {
     title: 'Goals',
-    line: (best.gf > best.ga ? who + '’s biggest win is ' + best.score + ' on ' + best.date : who + ' ' + have + ' not won yet') + '; ' + gf + ' scored and ' + ga + ' conceded across ' + plural(scored.length, 'match', 'matches') + '.',
+    line: 'Across ' + plural(scored.length, 'match', 'matches') + ', ' + side + ' scored ' + gf + ' and conceded ' + ga + (best.gf > best.ga ? '; the biggest win was ' + best.gf + '–' + best.ga + ' on ' + best.date : '') + '. Goals count for the side, not the scorer.',
     facts,
   };
 }
@@ -1149,6 +1152,11 @@ export function ask(text, data, context) {
   const sections = [];
   let table = null;
   let matches = answer ? answer.matches : [];
+  if (answer) {
+    const us = answer.mode === 'versus' ? answer.names[0] : answer.who;
+    const them = answer.mode === 'versus' ? answer.names[1] : null;
+    matches = matches.map((m) => (m.side === 'red' || m.side === 'blue' ? { ...m, us, them } : m));
+  }
   let headline;
   let facts;
   let sub = null;
@@ -1165,7 +1173,7 @@ export function ask(text, data, context) {
     const who = answer.mode === 'versus' ? answer.names[0] + ' against ' + answer.names[1] : answer.who;
     if (q.intent.streak) sections.push(formSection(answer.sided, who));
     if (q.intent.attendance && answer.mode !== 'versus') sections.push(attendanceSection(answer.ids, sliced, answer.who, q.when.from));
-    if (q.intent.goals) sections.push(goalsSection(answer.sided, who));
+    if (q.intent.goals) sections.push(goalsSection(answer.sided, answer.mode === 'versus' ? answer.names[0] : who));
     if ((q.intent.awards || (q.award && !q.award.player)) && !(q.award && q.award.player) && answer.mode !== 'versus') sections.push(awardsSection(answer.ids, sliced, players, answer.who));
     if (q.intent.ratings && answer.mode === 'solo') sections.push(ratingsSection(answer.player, sliced, players, showValues));
     if (q.intent.ratings && answer.mode !== 'solo') {
@@ -1245,6 +1253,8 @@ export function ask(text, data, context) {
         headline = r.headline;
         facts = [];
         table = r.table;
+        if (measure.key === 'goalsFor') sub = 'Goals are recorded for the side, not the scorer — this counts what the sides each player was on scored.';
+        if (measure.key === 'cleanSheets') sub = 'A clean sheet is the side’s — this counts matches each player’s side kept one.';
       }
     } else if (q.intent.summary && !q.superlative && !q.intent.goals) {
       const o = overview(sliced, rows);
@@ -1261,7 +1271,7 @@ export function ask(text, data, context) {
         const big = scored.slice().sort((a, b) => Math.abs(b.gf - b.ga) - Math.abs(a.gf - a.ga))[0];
         const high = scored.slice().sort((a, b) => b.gf + b.ga - (a.gf + a.ga))[0];
         const bigSide = big.gf > big.ga ? big.m.red : big.m.blue;
-        headline = 'Biggest win so far: ' + big.score + ' on ' + big.date + (bigSide.length ? ', by ' + joinNames(bigSide.map((p) => shortName(p.name))) : '') + '.';
+        headline = 'Biggest win so far: ' + Math.max(big.gf, big.ga) + '–' + Math.min(big.gf, big.ga) + ' to ' + (big.gf > big.ga ? 'Red' : 'Blue') + ' on ' + big.date + (bigSide.length ? ', a side of ' + joinNames(bigSide.map((p) => shortName(p.name))) : '') + '.';
         facts = [['Matches scored', scored.length], ['Goals', goals], ['Per match', (goals / scored.length).toFixed(1)], ['Highest-scoring', high.score + ' · ' + high.date], ['Biggest margin', big.score + ' · ' + big.date]];
         table = { title: 'Winning side that day', rows: bigSide.map((p) => ({ name: shortName(p.name), value: '' })) };
       }
