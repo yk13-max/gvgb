@@ -13,6 +13,11 @@ export const LEAGUES = [
   ['GER', 'Bundesliga'],
   ['FRA', 'Ligue 1'],
   ['EFL', 'Championship'],
+  ['UEFA', 'Internationals · Europe'],
+  ['CONMEBOL', 'Internationals · South America'],
+  ['CONCACAF', 'Internationals · North & Central America'],
+  ['CAF', 'Internationals · Africa'],
+  ['AFC', 'Internationals · Asia & Oceania'],
 ];
 
 // [code, name, league, first colour, second colour, pattern, Wikipedia article]
@@ -147,7 +152,109 @@ const LIST = [
   ['WRX', 'Wrexham', 'EFL', '#CE1126', '#FFFFFF', 'solid', 'Wrexham A.F.C.'],
 ];
 
-export const CLUBS = LIST.map(([code, name, league, a, b, pattern, wiki]) => ({ code, name, league, a, b, pattern, wiki }));
+
+// National sides, for whoever follows a country before (or instead of) a club. Codes
+// carry an N- prefix so they never collide with a club's. The pattern draws the flag
+// as a fallback shield; the real badge comes from the team's Wikipedia article.
+// [code, name, confederation, colour 1, colour 2, pattern, Wikipedia article, colour 3]
+const NATIONS = [
+  // Europe
+  ['N-ALB', 'Albania', 'UEFA', '#E41E20', '#000000', 'solid', 'Albania national football team'],
+  ['N-AUT', 'Austria', 'UEFA', '#ED2939', '#FFFFFF', 'bands', 'Austria national football team', '#ED2939'],
+  ['N-BEL', 'Belgium', 'UEFA', '#000000', '#FDDA24', 'tricolour', 'Belgium national football team', '#EF3340'],
+  ['N-BIH', 'Bosnia and Herzegovina', 'UEFA', '#002395', '#FECB00', 'sash', 'Bosnia and Herzegovina national football team'],
+  ['N-CRO', 'Croatia', 'UEFA', '#FF0000', '#FFFFFF', 'quarters', 'Croatia national football team'],
+  ['N-CZE', 'Czechia', 'UEFA', '#FFFFFF', '#D7141A', 'hhalves', 'Czech Republic national football team'],
+  ['N-DEN', 'Denmark', 'UEFA', '#C8102E', '#FFFFFF', 'nordic', 'Denmark national football team'],
+  ['N-ENG', 'England', 'UEFA', '#FFFFFF', '#CE1124', 'cross', 'England national football team'],
+  ['N-FIN', 'Finland', 'UEFA', '#FFFFFF', '#002F6C', 'nordic', 'Finland national football team'],
+  ['N-FRA', 'France', 'UEFA', '#002395', '#FFFFFF', 'tricolour', 'France national football team', '#ED2939'],
+  ['N-GEO', 'Georgia', 'UEFA', '#FFFFFF', '#FF0000', 'cross', 'Georgia national football team'],
+  ['N-GER', 'Germany', 'UEFA', '#000000', '#DD0000', 'bands', 'Germany national football team', '#FFCE00'],
+  ['N-GRE', 'Greece', 'UEFA', '#0D5EAF', '#FFFFFF', 'hoops', 'Greece national football team'],
+  ['N-HUN', 'Hungary', 'UEFA', '#CE2939', '#FFFFFF', 'bands', 'Hungary national football team', '#477050'],
+  ['N-ISL', 'Iceland', 'UEFA', '#02529C', '#FFFFFF', 'nordic', 'Iceland national football team', '#DC1E35'],
+  ['N-IRL', 'Republic of Ireland', 'UEFA', '#169B62', '#FFFFFF', 'tricolour', 'Republic of Ireland national football team', '#FF883E'],
+  ['N-ITA', 'Italy', 'UEFA', '#009246', '#FFFFFF', 'tricolour', 'Italy national football team', '#CE2B37'],
+  ['N-NED', 'Netherlands', 'UEFA', '#F36C21', '#21468B', 'solid', 'Netherlands national football team'],
+  ['N-NIR', 'Northern Ireland', 'UEFA', '#00A651', '#FFFFFF', 'solid', 'Northern Ireland national football team'],
+  ['N-NOR', 'Norway', 'UEFA', '#BA0C2F', '#FFFFFF', 'nordic', 'Norway national football team', '#00205B'],
+  ['N-POL', 'Poland', 'UEFA', '#FFFFFF', '#DC143C', 'hhalves', 'Poland national football team'],
+  ['N-POR', 'Portugal', 'UEFA', '#006600', '#FF0000', 'halves', 'Portugal national football team'],
+  ['N-ROU', 'Romania', 'UEFA', '#002B7F', '#FCD116', 'tricolour', 'Romania national football team', '#CE1126'],
+  ['N-SCO', 'Scotland', 'UEFA', '#005EB8', '#FFFFFF', 'saltire', 'Scotland national football team'],
+  ['N-SRB', 'Serbia', 'UEFA', '#C6363C', '#0C4076', 'bands', 'Serbia national football team', '#FFFFFF'],
+  ['N-SVK', 'Slovakia', 'UEFA', '#FFFFFF', '#0B4EA2', 'bands', 'Slovakia national football team', '#EE1C25'],
+  ['N-SVN', 'Slovenia', 'UEFA', '#FFFFFF', '#005DA4', 'bands', 'Slovenia national football team', '#ED1C24'],
+  ['N-ESP', 'Spain', 'UEFA', '#AA151B', '#F1BF00', 'bands', 'Spain national football team', '#AA151B'],
+  ['N-SWE', 'Sweden', 'UEFA', '#006AA7', '#FECC00', 'nordic', 'Sweden national football team'],
+  ['N-SUI', 'Switzerland', 'UEFA', '#DA291C', '#FFFFFF', 'cross', 'Switzerland national football team'],
+  ['N-TUR', 'Türkiye', 'UEFA', '#E30A17', '#FFFFFF', 'solid', 'Turkey national football team'],
+  ['N-UKR', 'Ukraine', 'UEFA', '#0057B7', '#FFD700', 'hhalves', 'Ukraine national football team'],
+  ['N-WAL', 'Wales', 'UEFA', '#FFFFFF', '#00B140', 'hhalves', 'Wales national football team'],
+  // South America
+  ['N-ARG', 'Argentina', 'CONMEBOL', '#FFFFFF', '#75AADB', 'stripes', 'Argentina national football team'],
+  ['N-BOL', 'Bolivia', 'CONMEBOL', '#D52B1E', '#F9E300', 'bands', 'Bolivia national football team', '#007934'],
+  ['N-BRA', 'Brazil', 'CONMEBOL', '#FEDD00', '#009739', 'solid', 'Brazil national football team'],
+  ['N-CHI', 'Chile', 'CONMEBOL', '#FFFFFF', '#D52B1E', 'hhalves', 'Chile national football team'],
+  ['N-COL', 'Colombia', 'CONMEBOL', '#FCD116', '#003893', 'bands', 'Colombia national football team', '#CE1126'],
+  ['N-ECU', 'Ecuador', 'CONMEBOL', '#FFDD00', '#034EA2', 'bands', 'Ecuador national football team', '#ED1C24'],
+  ['N-PAR', 'Paraguay', 'CONMEBOL', '#D52B1E', '#FFFFFF', 'stripes', 'Paraguay national football team'],
+  ['N-PER', 'Peru', 'CONMEBOL', '#FFFFFF', '#D91023', 'sash', 'Peru national football team'],
+  ['N-URU', 'Uruguay', 'CONMEBOL', '#5CBFEB', '#FFFFFF', 'solid', 'Uruguay national football team'],
+  ['N-VEN', 'Venezuela', 'CONMEBOL', '#7B1E2B', '#FFCC00', 'solid', 'Venezuela national football team'],
+  // North & Central America
+  ['N-CAN', 'Canada', 'CONCACAF', '#FF0000', '#FFFFFF', 'tricolour', "Canada men's national soccer team", '#FF0000'],
+  ['N-CRC', 'Costa Rica', 'CONCACAF', '#002B7F', '#FFFFFF', 'bands', 'Costa Rica national football team', '#CE1126'],
+  ['N-HAI', 'Haiti', 'CONCACAF', '#00209F', '#D21034', 'hhalves', 'Haiti national football team'],
+  ['N-JAM', 'Jamaica', 'CONCACAF', '#009B3A', '#FED100', 'saltire', 'Jamaica national football team'],
+  ['N-MEX', 'Mexico', 'CONCACAF', '#006847', '#FFFFFF', 'tricolour', 'Mexico national football team', '#CE1126'],
+  ['N-PAN', 'Panama', 'CONCACAF', '#DA121A', '#FFFFFF', 'quarters', 'Panama national football team'],
+  ['N-TRI', 'Trinidad and Tobago', 'CONCACAF', '#CE1126', '#000000', 'sash', 'Trinidad and Tobago national football team'],
+  ['N-USA', 'United States', 'CONCACAF', '#0A3161', '#B31942', 'solid', "United States men's national soccer team"],
+  // Africa
+  ['N-ALG', 'Algeria', 'CAF', '#006233', '#FFFFFF', 'halves', 'Algeria national football team'],
+  ['N-CMR', 'Cameroon', 'CAF', '#007A5E', '#CE1126', 'tricolour', 'Cameroon national football team', '#FCD116'],
+  ['N-CPV', 'Cape Verde', 'CAF', '#003893', '#FFFFFF', 'solid', 'Cape Verde national football team'],
+  ['N-COD', 'DR Congo', 'CAF', '#007FFF', '#CE1021', 'sash', 'DR Congo national football team'],
+  ['N-EGY', 'Egypt', 'CAF', '#CE1126', '#FFFFFF', 'bands', 'Egypt national football team', '#000000'],
+  ['N-GHA', 'Ghana', 'CAF', '#CE1126', '#FCD116', 'bands', 'Ghana national football team', '#006B3F'],
+  ['N-CIV', 'Ivory Coast', 'CAF', '#F77F00', '#FFFFFF', 'tricolour', 'Ivory Coast national football team', '#009E60'],
+  ['N-KEN', 'Kenya', 'CAF', '#000000', '#BB0000', 'bands', 'Kenya national football team', '#006600'],
+  ['N-MLI', 'Mali', 'CAF', '#14B53A', '#FCD116', 'tricolour', 'Mali national football team', '#CE1126'],
+  ['N-MAR', 'Morocco', 'CAF', '#C1272D', '#006233', 'solid', 'Morocco national football team'],
+  ['N-NGA', 'Nigeria', 'CAF', '#008751', '#FFFFFF', 'tricolour', 'Nigeria national football team', '#008751'],
+  ['N-SEN', 'Senegal', 'CAF', '#00853F', '#FDEF42', 'tricolour', 'Senegal national football team', '#E31B23'],
+  ['N-SLE', 'Sierra Leone', 'CAF', '#1EB53A', '#FFFFFF', 'bands', 'Sierra Leone national football team', '#0072C6'],
+  ['N-SOM', 'Somalia', 'CAF', '#4189DD', '#FFFFFF', 'solid', 'Somalia national football team'],
+  ['N-RSA', 'South Africa', 'CAF', '#FFB612', '#007749', 'solid', 'South Africa national soccer team'],
+  ['N-TUN', 'Tunisia', 'CAF', '#E70013', '#FFFFFF', 'solid', 'Tunisia national football team'],
+  ['N-ZIM', 'Zimbabwe', 'CAF', '#FFD200', '#006400', 'hoops', 'Zimbabwe national football team'],
+  // Asia & Oceania
+  ['N-AFG', 'Afghanistan', 'AFC', '#000000', '#D32011', 'tricolour', 'Afghanistan national football team', '#007A36'],
+  ['N-AUS', 'Australia', 'AFC', '#FFCD00', '#00843D', 'solid', "Australia men's national soccer team"],
+  ['N-BAN', 'Bangladesh', 'AFC', '#006A4E', '#F42A41', 'solid', 'Bangladesh national football team'],
+  ['N-CHN', 'China', 'AFC', '#EE1C25', '#FFFF00', 'solid', 'China national football team'],
+  ['N-IND', 'India', 'AFC', '#FF9933', '#FFFFFF', 'bands', 'India national football team', '#138808'],
+  ['N-IDN', 'Indonesia', 'AFC', '#FF0000', '#FFFFFF', 'hhalves', 'Indonesia national football team'],
+  ['N-IRN', 'Iran', 'AFC', '#239F40', '#FFFFFF', 'bands', 'Iran national football team', '#DA0000'],
+  ['N-IRQ', 'Iraq', 'AFC', '#CE1126', '#FFFFFF', 'bands', 'Iraq national football team', '#000000'],
+  ['N-JPN', 'Japan', 'AFC', '#1B3D8F', '#FFFFFF', 'solid', 'Japan national football team'],
+  ['N-JOR', 'Jordan', 'AFC', '#000000', '#FFFFFF', 'bands', 'Jordan national football team', '#007A3D'],
+  ['N-NZL', 'New Zealand', 'AFC', '#FFFFFF', '#000000', 'solid', "New Zealand men's national football team"],
+  ['N-PAK', 'Pakistan', 'AFC', '#FFFFFF', '#01411C', 'halves', 'Pakistan national football team'],
+  ['N-PHI', 'Philippines', 'AFC', '#0038A8', '#CE1126', 'hhalves', 'Philippines national football team'],
+  ['N-QAT', 'Qatar', 'AFC', '#8A1538', '#FFFFFF', 'solid', 'Qatar national football team'],
+  ['N-KSA', 'Saudi Arabia', 'AFC', '#006C35', '#FFFFFF', 'solid', 'Saudi Arabia national football team'],
+  ['N-KOR', 'South Korea', 'AFC', '#C60C30', '#FFFFFF', 'solid', 'South Korea national football team'],
+  ['N-SRI', 'Sri Lanka', 'AFC', '#8D153A', '#FFBE29', 'solid', 'Sri Lanka national football team'],
+  ['N-THA', 'Thailand', 'AFC', '#A51931', '#F4F5F8', 'bands', 'Thailand national football team', '#2D2A4A'],
+  ['N-UAE', 'United Arab Emirates', 'AFC', '#00732F', '#FFFFFF', 'bands', 'United Arab Emirates national football team', '#000000'],
+  ['N-UZB', 'Uzbekistan', 'AFC', '#0099B5', '#FFFFFF', 'bands', 'Uzbekistan national football team', '#1EB53A'],
+  ['N-VIE', 'Vietnam', 'AFC', '#DA251D', '#FFFF00', 'solid', 'Vietnam national football team'],
+];
+
+export const CLUBS = [...LIST, ...NATIONS].map(([code, name, league, a, b, pattern, wiki, c]) => ({ code, name, league, a, b, c: c || null, pattern, wiki, national: code.startsWith('N-') }));
 
 const byCode = Object.fromEntries(CLUBS.map((c) => [c.code, c]));
 

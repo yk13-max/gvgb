@@ -25,8 +25,8 @@ the squad, the stats table before you sort it, the line-ups — they read A–Z.
 - **Squad** — a card grid of players with ten 0–100 stats each (PAC, SHO, PAS, DEF, PHY, DRI,
   STA for stamina, GKP for goalkeeping, VIS for vision, POS for positioning), a primary position
   and any number of "can also play" positions, plus any number of nicknames and, for fun, the
-  club they **support** — any side in this season's Premier League, La Liga, Serie A, Bundesliga,
-  Ligue 1 or Championship, picked in the player editor. The club's badge shows beside the
+  club or country they **support** — any side in this season's Premier League, La Liga, Serie A, Bundesliga,
+  Ligue 1 or Championship, or one of 89 national teams grouped by continent, picked in the player editor. The club's badge shows beside the
   name on the squad, the player stats table, the league table and the honours cards. Badges are
   fetched from the club's Wikipedia article the first time a browser needs them (one request for
   every club on screen, cached for a month) and fall back to a shield drawn in the club's colours

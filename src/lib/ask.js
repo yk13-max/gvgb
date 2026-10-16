@@ -170,6 +170,26 @@ const CLUB_ALIASES = {
   VEN: ['venezia'],
   MON: ['monza'],
   FRO: ['frosinone'],
+  'N-NED': ['holland', 'dutch', 'the netherlands'],
+  'N-USA': ['usa', 'usmnt', 'america', 'the us', 'united states of america'],
+  'N-IRL': ['ireland', 'roi', 'republic of ireland'],
+  'N-NIR': ['northern ireland', 'norn iron'],
+  'N-CZE': ['czech republic', 'czech'],
+  'N-TUR': ['turkey', 'turkiye'],
+  'N-KOR': ['korea', 'south korea'],
+  'N-CIV': ['cote divoire', 'ivory coast'],
+  'N-COD': ['drc', 'congo'],
+  'N-RSA': ['bafana bafana'],
+  'N-BIH': ['bosnia'],
+  'N-TRI': ['trinidad'],
+  'N-UAE': ['uae', 'emirates'],
+  'N-KSA': ['saudi'],
+  'N-ENG': ['three lions'],
+  'N-BRA': ['selecao'],
+  'N-ITA': ['azzurri'],
+  'N-ARG': ['albiceleste'],
+  'N-NGA': ['super eagles'],
+  'N-GHA': ['black stars'],
 };
 const clubTable = CLUBS.map((c) => ({
   item: c,
@@ -1234,7 +1254,7 @@ export function ask(text, data, context) {
       headline = rosterNote.length
         ? list.length
           ? plural(list.length, 'player') + ' — ' + rosterNote.join(', ') + ': ' + joinNames(list.map((r) => r.name)) + '.'
-          : 'Nobody on the roster is ' + (q.clubs.length ? 'a ' + q.clubs.map((c) => c.name).join(' or ') + ' fan' : 'a ' + q.positions.join(' or ').toLowerCase()) + ' yet.'
+          : 'Nobody on the roster is ' + (q.clubs.length ? (/^[aeiou]/i.test(q.clubs[0].name) ? 'an ' : 'a ') + q.clubs.map((c) => c.name).join(' or ') + ' fan' : 'a ' + q.positions.join(' or ').toLowerCase()) + ' yet.'
         : plural(list.length, 'player') + ' on the roster, ' + list.filter((r) => r.nights).length + ' of whom have played.';
       facts = [];
       table = list.length ? { title: 'Nights · record', rows: list.map((r) => ({ name: r.name, value: r.nights + ' · ' + r.won + '–' + r.lost })) } : null;

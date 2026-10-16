@@ -9,8 +9,59 @@ import { dropLogo, useLogo } from '../lib/logos.js';
 
 const SHIELD = 'M12 1.5 L21.5 4.5 V13 C21.5 19.5 17 24.5 12 26.5 C7 24.5 2.5 19.5 2.5 13 V4.5 Z';
 
-function Pattern({ a, b, pattern }) {
+function Pattern({ a, b, c, pattern }) {
+  const third = c || a;
   switch (pattern) {
+    // Flag shapes, for national sides.
+    case 'tricolour': // three vertical bands
+      return (
+        <>
+          <rect width="8" height="28" fill={a} />
+          <rect x="8" width="8" height="28" fill={b} />
+          <rect x="16" width="8" height="28" fill={third} />
+        </>
+      );
+    case 'bands': // three horizontal bands
+      return (
+        <>
+          <rect width="24" height="10" fill={a} />
+          <rect y="10" width="24" height="8" fill={b} />
+          <rect y="18" width="24" height="10" fill={third} />
+        </>
+      );
+    case 'hhalves':
+      return (
+        <>
+          <rect width="24" height="14" fill={a} />
+          <rect y="14" width="24" height="14" fill={b} />
+        </>
+      );
+    case 'cross': // a centred cross, St George or Swiss
+      return (
+        <>
+          <rect width="24" height="28" fill={a} />
+          <rect x="9.5" width="5" height="28" fill={b} />
+          <rect y="11" width="24" height="5" fill={b} />
+        </>
+      );
+    case 'nordic': // the off-centre Scandinavian cross; a third colour edges it
+      return (
+        <>
+          <rect width="24" height="28" fill={a} />
+          {c && <rect x="5" width="7" height="28" fill={b} />}
+          {c && <rect y="10" width="24" height="7" fill={b} />}
+          <rect x={c ? 6.5 : 6} width={c ? 4 : 5} height="28" fill={c || b} />
+          <rect y={c ? 11.5 : 11} width="24" height={c ? 4 : 5} fill={c || b} />
+        </>
+      );
+    case 'saltire': // a diagonal cross
+      return (
+        <>
+          <rect width="24" height="28" fill={a} />
+          <polygon points="0,0 4,0 24,24 24,28 20,28 0,4" fill={b} />
+          <polygon points="24,0 20,0 0,24 0,28 4,28 24,4" fill={b} />
+        </>
+      );
     case 'stripes':
       return (
         <>
@@ -109,7 +160,7 @@ export default function Crest({ code, size = 16, className, style }) {
         </clipPath>
       </defs>
       <g clipPath={'url(#' + id + ')'}>
-        <Pattern a={club.a} b={club.b} pattern={club.pattern} />
+        <Pattern a={club.a} b={club.b} c={club.c} pattern={club.pattern} />
       </g>
       {/* A dark edge so a white shirt still has a shape on a white page, and a thin
           light line inside it so a black one has a shape on the honours cards. */}
