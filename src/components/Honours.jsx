@@ -5,6 +5,7 @@ import { sortSeasons } from '../lib/seasons.js';
 import { standings } from '../lib/standings.js';
 import { weeksIn } from '../lib/seasons.js';
 import { formatDate } from '../lib/whatsapp.js';
+import Crest from './Crest.jsx';
 
 // `live` is a season still running: the card shows who is in line for the honour and
 // what they lead by, not who won it.
@@ -25,7 +26,10 @@ function Card({ honour, row, season, hero, live }) {
           <div className="tb-honour-medal" aria-hidden="true">
             {initials(r.name)}
           </div>
-          <div className="tb-honour-name">{hero ? r.name : shortName(r.name)}</div>
+          <div className="tb-honour-name">
+            {r.club && <Crest code={r.club} size={hero ? 26 : 16} className="tb-honour-crest" />}
+            {hero ? r.name : shortName(r.name)}
+          </div>
           <div className="tb-honour-back">
             {backing(r, key)}
             {live && <span className="tb-honour-lead"> · {lead(row)}</span>}

@@ -9,11 +9,12 @@ import { AWARDS, outcome, weekPlayerIds } from './weeks.js';
 // a POTM is a POTM whether or not they are still around.
 export function standings(weeks, players) {
   const rows = new Map();
-  const row = (id, name) => {
+  const row = (id, name, club) => {
     if (!rows.has(id)) {
       rows.set(id, {
         id,
         name,
+        club: club || null,
         attacker: 0,
         midfielder: 0,
         defender: 0,
@@ -29,7 +30,7 @@ export function standings(weeks, players) {
     return rows.get(id);
   };
 
-  (players || []).forEach((p) => row(p.id, p.name));
+  (players || []).forEach((p) => row(p.id, p.name, p.club));
 
   // Weeks arrive newest first, so pushing in order keeps each list newest first.
   (weeks || []).forEach((w) => {

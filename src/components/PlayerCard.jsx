@@ -1,6 +1,7 @@
 import { Icon, IconButton } from '../ds/index.js';
 import { ABBR, SHORT, STATS, overall } from '../lib/model.js';
 import { initials, shortName } from '../lib/names.js';
+import Crest from './Crest.jsx';
 
 export function StatRow({ k, v }) {
   return (
@@ -66,6 +67,7 @@ export function MiniPlayerCard({ p, selected, team, onToggle, canEdit = true, sh
       }}
     >
       <span className="tb-mini-name">
+        {p.club && <Crest code={p.club} size={13} className="tb-mini-crest" />}
         <span className="tb-mini-full">{p.name}</span>
         <span className="tb-mini-short">{shortName(p.name)}</span>
       </span>
@@ -107,23 +109,25 @@ export default function PlayerCard({ p, selected, team, onToggle, onEdit, onDele
       }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-        <div
-          style={{
-            width: 34,
-            height: 34,
-            borderRadius: '50%',
-            flexShrink: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontFamily: 'var(--font-display)',
-            fontWeight: 'var(--weight-semibold)',
-            fontSize: 13,
-            background: teamColor && selected ? teamColor : 'var(--green-100)',
-            color: teamColor && selected ? 'var(--white)' : 'var(--green-700)',
-          }}
-        >
-          {initials(p.name)}
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          <div
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: 'var(--font-display)',
+              fontWeight: 'var(--weight-semibold)',
+              fontSize: 13,
+              background: teamColor && selected ? teamColor : 'var(--green-100)',
+              color: teamColor && selected ? 'var(--white)' : 'var(--green-700)',
+            }}
+          >
+            {initials(p.name)}
+          </div>
+          {p.club && <Crest code={p.club} size={16} className="tb-card-crest" />}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div

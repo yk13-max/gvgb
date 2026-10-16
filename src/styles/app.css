@@ -2331,6 +2331,63 @@ td[data-zero='1'] {
   }
 }
 
+/* ---- Club crests ----------------------------------------------------------------- */
+
+/* The shield sits on the text line beside a name; each place sets its own size. */
+.tb-mini-crest {
+  margin-right: 4px;
+}
+
+.tb-card-crest {
+  position: absolute;
+  right: -5px;
+  bottom: -3px;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
+}
+
+.tb-namecell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.tb-honour-crest {
+  margin-right: 8px;
+  vertical-align: -0.15em;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
+
+.tb-clubpick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tb-clubpick-crest {
+  width: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tb-clubpick-none {
+  color: var(--color-text-tertiary);
+}
+
+.tb-clubpick select {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  padding: 9px 10px;
+  font-size: var(--text-base);
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  font-family: var(--font-body);
+}
+
 /* ---- Season honours ------------------------------------------------------------ */
 
 .tb-tblbar-right {

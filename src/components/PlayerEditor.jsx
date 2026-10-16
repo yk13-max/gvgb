@@ -1,6 +1,47 @@
 import { useState } from 'react';
 import { Button, Dialog, Icon, Input, Select } from '../ds/index.js';
 import { ABBR, POSITIONS, SHORT, STATS, overall } from '../lib/model.js';
+import { clubGroups, clubOf } from '../lib/clubs.js';
+import Crest from './Crest.jsx';
+
+// Which club they support — for fun, and for the crest beside their name. Grouped
+// by league; the design-system Select has no groups, so this is its own control.
+function ClubPicker({ value, onChange }) {
+  const club = clubOf(value);
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontFamily: 'var(--font-body)' }}>
+      <label
+        htmlFor="tb-club"
+        style={{
+          fontSize: 'var(--text-xs)',
+          fontWeight: 'var(--weight-medium)',
+          color: 'var(--color-text-secondary)',
+          textTransform: 'uppercase',
+          letterSpacing: 'var(--tracking-wide)',
+        }}
+      >
+        Supports
+      </label>
+      <div className="tb-clubpick">
+        <span className="tb-clubpick-crest" aria-hidden="true">
+          {club ? <Crest code={club.code} size={22} /> : <span className="tb-clubpick-none">—</span>}
+        </span>
+        <select id="tb-club" value={value || ''} onChange={(e) => onChange(e.target.value || null)}>
+          <option value="">No club</option>
+          {clubGroups().map((g) => (
+            <optgroup key={g.id} label={g.label}>
+              {g.clubs.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.name}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+}
 
 function Slider({ k, value, onChange }) {
   return (
@@ -157,6 +198,7 @@ export default function PlayerEditor({ draft, onChange, onSave, onClose, queueNo
           onChange={(e) => set({ name: e.target.value })}
         />
         <Nicknames list={draft.nicknames || []} onChange={(nicknames) => set({ nicknames })} />
+        <ClubPicker value={draft.club} onChange={(club) => set({ club })} />
         <Select
           label="Primary position"
           value={draft.pos}

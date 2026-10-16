@@ -1,4 +1,5 @@
 // FUFA team balancer: stats model, position-weighted overall, balancing algorithm.
+import { cleanClub } from './clubs.js';
 
 export const STATS = [
   'Pace',
@@ -57,7 +58,7 @@ export function normalizePlayer(p) {
   const nicknames = Array.isArray(p && p.nicknames)
     ? p.nicknames.map((n) => String(n).trim()).filter(Boolean)
     : [];
-  return { ...p, alt: Array.isArray(p && p.alt) ? p.alt : [], nicknames, stats };
+  return { ...p, alt: Array.isArray(p && p.alt) ? p.alt : [], nicknames, club: cleanClub(p && p.club), stats };
 }
 
 export function overall(p) {

@@ -3,6 +3,7 @@ import { Button, Icon } from '../ds/index.js';
 import { shortName } from '../lib/names.js';
 import { standings } from '../lib/standings.js';
 import { formatDate } from '../lib/whatsapp.js';
+import Crest from './Crest.jsx';
 
 // Every column after the name, grouped the way the header groups them. `dir` is the
 // direction a first click sorts in: numbers biggest-first, since that is the question
@@ -222,6 +223,7 @@ export default function Standings({ weeks, players, seasonBar, seasonLabel, onHo
                   <td className="tb-league-rank">{r.rank}</td>
                   <td className="tb-league-name">
                     <span className="tb-league-rankinline">{r.rank}</span>
+                    {r.club && <Crest code={r.club} size={14} className="tb-league-crest" />}
                     <span className="tb-league-full">{r.name}</span>
                     <span className="tb-league-short">{shortName(r.name)}</span>
                     <span className="tb-league-chev">

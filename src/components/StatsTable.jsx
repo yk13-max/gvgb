@@ -3,6 +3,7 @@ import { Button, Icon, IconButton } from '../ds/index.js';
 import { readBackupFile } from '../lib/backup.js';
 import { ABBR, POSITIONS, SHORT, STATS, overall, statAvg, ovrAvg } from '../lib/model.js';
 import { byName } from '../lib/names.js';
+import Crest from './Crest.jsx';
 
 const RANGE_KEYS = [...STATS, 'ovr'];
 
@@ -331,13 +332,16 @@ export default function StatsTable({ players, selected, onPatch, onEdit, onDelet
               return (
                 <tr key={p.id}>
                   <td className="tb-col-name">
-                    <input
-                      className="tb-cellinput"
-                      readOnly={!canEdit}
-                      aria-label={'Name of ' + p.name}
-                      value={p.name}
-                      onChange={(e) => onPatch(p.id, { name: e.target.value })}
-                    />
+                    <div className="tb-namecell">
+                      {p.club && <Crest code={p.club} size={14} />}
+                      <input
+                        className="tb-cellinput"
+                        readOnly={!canEdit}
+                        aria-label={'Name of ' + p.name}
+                        value={p.name}
+                        onChange={(e) => onPatch(p.id, { name: e.target.value })}
+                      />
+                    </div>
                   </td>
                   <td className="tb-col-pos">
                     <select
