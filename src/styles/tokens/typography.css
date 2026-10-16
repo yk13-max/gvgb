@@ -1,0 +1,7 @@
+:root{
+--font-display:"Barlow Condensed",sans-serif;--font-body:"Inter",sans-serif;--font-mono:"JetBrains Mono",monospace;
+--text-2xs:11px;--text-xs:12px;--text-sm:13px;--text-base:15px;--text-md:16px;--text-lg:18px;--text-xl:21px;--text-2xl:26px;--text-3xl:32px;--text-4xl:44px;--text-5xl:60px;
+--leading-tight:1.1;--leading-snug:1.25;--leading-normal:1.45;--leading-relaxed:1.6;
+--tracking-tight:-0.01em;--tracking-normal:0em;--tracking-wide:0.04em;--tracking-widest:0.12em;
+--weight-regular:400;--weight-medium:500;--weight-semibold:600;--weight-bold:700;
+}

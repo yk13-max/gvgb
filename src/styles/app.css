@@ -1,0 +1,3553 @@
+/* Team-balancer shell layout. Three columns on desktop, one pane at a time under 760px. */
+
+:root {
+  /* Team colors — not part of the design system, added for this surface. */
+  --team-red: oklch(52% 0.18 27);
+  --team-blue: oklch(50% 0.15 255);
+}
+
+/* On a dark page the team colours lift a little, so a red name or score still reads. */
+:root[data-theme='dark'] {
+  --team-red: oklch(62% 0.17 27);
+  --team-blue: oklch(64% 0.14 255);
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--color-bg);
+  font-family: var(--font-body);
+  color: var(--color-text-primary);
+  /* Stop iOS from auto-inflating text in the dense stat columns. */
+  -webkit-text-size-adjust: 100%;
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--color-primary-hover);
+  text-decoration: underline;
+}
+
+.tb-shell {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+  /* A page's width, not a monitor's. On an ultra-wide the three columns were stretched
+     across the whole screen; capped and centred they read like any site would. */
+  width: 100%;
+  max-width: 1480px;
+  margin: 0 auto;
+}
+
+@media (min-width: 1481px) {
+  body {
+    background: var(--color-surface-sunken);
+  }
+
+  .tb-shell {
+    border-left: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-border);
+  }
+}
+
+.tb-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  row-gap: 8px;
+  padding: 12px 20px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.tb-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tb-main {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(230px, 1fr) minmax(300px, 0.9fr) 272px;
+  gap: 16px;
+  padding: 16px;
+}
+
+.tb-pitch {
+  position: relative;
+  height: 100%;
+  min-height: 470px;
+  aspect-ratio: 0.68;
+  max-width: 100%;
+}
+
+.tb-data {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* ---- Shared-data status ---------------------------------------------------- */
+
+/* One dot, four meanings. Colour alone never carries it: the chip spells the state
+   out beside the dot, and the icon in the dialog repeats it. */
+.tb-syncdot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--slate-400);
+}
+
+[data-tone='ok'] > .tb-syncdot,
+.tb-syncdot[data-tone='ok'] {
+  background: var(--color-primary);
+}
+
+[data-tone='busy'] > .tb-syncdot,
+.tb-syncdot[data-tone='busy'] {
+  background: var(--color-accent);
+}
+
+[data-tone='warn'] > .tb-syncdot,
+.tb-syncdot[data-tone='warn'] {
+  background: var(--color-danger);
+}
+
+.tb-syncchip {
+  appearance: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 11px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.tb-syncchip:hover {
+  background: var(--color-surface-sunken);
+}
+
+.tb-syncchip[data-tone='warn'] {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.tb-morewrap {
+  position: relative;
+  display: inline-flex;
+}
+
+/* On a phone the state rides on the More button rather than taking a slot of its own. */
+.tb-morebadge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--color-surface);
+  pointer-events: none;
+}
+
+.tb-sync-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-family: var(--font-body);
+}
+
+.tb-sync-state {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunken);
+  color: var(--color-text-secondary);
+}
+
+.tb-sync-state[data-tone='ok'] {
+  background: var(--color-primary-subtle);
+  color: var(--color-primary);
+}
+
+.tb-sync-state[data-tone='warn'] {
+  background: var(--color-warning-subtle);
+  color: var(--color-warning-strong);
+}
+
+.tb-sync-head {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.tb-sync-sub {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+.tb-sync-note,
+.tb-sync-warn,
+.tb-sync-fine {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--color-text-secondary);
+}
+
+.tb-sync-fine {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+.tb-sync-warn {
+  color: var(--color-danger);
+}
+
+.tb-sync-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.tb-sync-signed {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-xs);
+  color: var(--color-primary);
+}
+
+.tb-sync-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.tb-tabs,
+.tb-mobilebar {
+  display: none;
+}
+
+/* ---- Phone actions sheet --------------------------------------------------- */
+
+.tb-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tb-menu-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tb-menu-note {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--color-text-secondary);
+}
+
+.tb-menu-label {
+  font-family: var(--font-body);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  padding: 0 0 4px;
+}
+
+.tb-menu-row {
+  appearance: none;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 6px;
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+}
+
+.tb-menu-row:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.tb-menu-row:not(:disabled):active {
+  background: var(--color-surface-sunken);
+}
+
+.tb-menu-sync {
+  justify-content: flex-start;
+  font-weight: var(--weight-semibold);
+}
+
+.tb-menu-aside {
+  margin-left: auto;
+  padding-left: 10px;
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-regular);
+  color: var(--color-text-tertiary);
+  text-align: right;
+  line-height: 1.3;
+}
+
+.tb-menu-seg {
+  align-self: stretch;
+}
+
+.tb-menu-seg button {
+  flex: 1;
+  min-height: 40px;
+}
+
+/* Tablet: roster + board side by side, balance readout drops full width below. */
+@media (max-width: 1100px) and (min-width: 761px) {
+  .tb-main {
+    grid-template-columns: minmax(240px, 1fr) minmax(300px, 1fr);
+    grid-template-rows: minmax(540px, 1fr) auto;
+    overflow-y: auto;
+  }
+
+  .tb-aside {
+    grid-column: 1 / -1;
+    min-height: auto !important;
+    max-height: none;
+    height: auto;
+    overflow: visible !important;
+  }
+}
+
+/* Phone: single column, one pane at a time, bottom tab bar. */
+@media (max-width: 760px) {
+  .tb-head {
+    padding: 10px 12px;
+    gap: 8px;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+
+  .tb-brand span:last-child {
+    display: none;
+  }
+
+  .tb-spacer {
+    display: none;
+  }
+
+  /* The bottom tab bar already switches pages on a phone, and everything the header
+     held on a desktop moves into the actions sheet — so the header stays one row that
+     never scrolls: brand, More, and the one action worth a tap of its own. */
+  .tb-pageswitch,
+  .tb-fmt,
+  .tb-actions,
+  .tb-data {
+    display: none !important;
+  }
+
+  /* The sheet row carries the long explanation; on a narrow screen it would wrap to
+     three lines and push everything else down. */
+  .tb-menu-aside {
+    display: none;
+  }
+
+  .tb-mobilebar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .tb-mobilebar button {
+    min-height: 44px;
+  }
+
+  /* min-* rather than width/height: the design system sets those inline, and a 32px
+     icon button is below the touch target everything else on a phone gets. */
+  .tb-mobilebar > button:first-child {
+    min-width: 44px;
+  }
+
+  .tb-main {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr);
+    gap: 0;
+    padding: 12px;
+    overflow: hidden;
+  }
+
+  .tb-main > .tb-pane {
+    grid-area: 1 / 1;
+    min-width: 0;
+  }
+
+  .tb-main[data-view='squad'] .tb-pane-board,
+  .tb-main[data-view='squad'] .tb-pane-stats,
+  .tb-main[data-view='board'] .tb-pane-squad,
+  .tb-main[data-view='board'] .tb-pane-stats,
+  .tb-main[data-view='stats'] .tb-pane-squad,
+  .tb-main[data-view='stats'] .tb-pane-board {
+    display: none !important;
+  }
+
+  .tb-pitch {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+  }
+
+  .tb-pane-board {
+    overflow-y: auto;
+    overflow-x: hidden;
+    justify-content: flex-start;
+  }
+
+  .tb-pane-board > div:first-child {
+    flex: 0 0 auto !important;
+  }
+
+  .tb-pane-squad {
+    overflow: hidden;
+  }
+
+  .tb-tabs {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    flex-shrink: 0;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .tb-tabs button {
+    appearance: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    min-height: 56px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    font-family: var(--font-body);
+    font-size: var(--text-2xs);
+    letter-spacing: var(--tracking-wide);
+    color: var(--color-text-tertiary);
+  }
+
+  .tb-tabs button[data-on='1'] {
+    color: var(--color-primary);
+    box-shadow: inset 0 2px 0 var(--color-primary);
+  }
+
+  /* Anything under 16px makes iOS Safari zoom the page when the field takes focus.
+     Overrides the components' inline font sizes, which stay as designed on desktop. */
+  input:not([type='range']),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Score boxes are the exception: the rule above shrinks them to a 33px target, and a
+     session can stack several of them. Anything at or over 16px keeps iOS from zooming. */
+  .tb-scoreinput {
+    font-size: 22px !important;
+    min-height: 48px;
+  }
+}
+
+/* ---- Player stats table ---------------------------------------------------- */
+
+.tb-page-stats {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+
+.tb-tblbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 10px;
+  flex-shrink: 0;
+}
+
+/* The table is the only thing that scrolls — horizontally on narrow screens,
+   vertically within the page. */
+.tb-tblwrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.tb-tbl {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+}
+
+.tb-tbl th,
+.tb-tbl td {
+  padding: 4px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.tb-tbl thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  height: 34px;
+  background: var(--color-surface-sunken);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+/* Second header row sits directly under the first, which is a fixed 34px tall. */
+.tb-tbl thead tr.tb-tbl-filters th {
+  top: 34px;
+  height: 38px;
+  z-index: 3;
+  border-bottom: 1px solid var(--color-border-strong);
+}
+
+/* The name column stays put while the stats scroll sideways. */
+.tb-tbl .tb-col-name {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  min-width: 170px;
+  border-right: 1px solid var(--color-border);
+}
+
+/* Both header rows' name cells must outrank their own row's other cells, which the
+   `.tb-tbl thead tr.tb-tbl-filters th` rule would otherwise tie with and win on order. */
+.tb-tbl thead tr:first-child th.tb-col-name,
+.tb-tbl thead tr.tb-tbl-filters th.tb-col-name {
+  z-index: 5;
+}
+
+.tb-tbl tbody tr:hover td {
+  background: var(--color-surface-sunken);
+}
+
+.tb-col-pos {
+  min-width: 130px;
+}
+
+.tb-col-nick {
+  min-width: 150px;
+}
+
+.tb-col-alt {
+  min-width: 190px;
+}
+
+.tb-col-stat {
+  min-width: 84px;
+}
+
+.tb-col-ovr {
+  min-width: 78px;
+}
+
+/* Beats the `.tb-tbl th, .tb-tbl td` base rule, which is a class + an element. */
+.tb-tbl th.tb-col-stat,
+.tb-tbl td.tb-col-stat,
+.tb-tbl th.tb-col-ovr,
+.tb-tbl td.tb-col-ovr {
+  text-align: right;
+}
+
+/* Averages sit under inputs that carry their own 6px of padding. */
+.tb-tbl tfoot td.tb-col-stat {
+  padding-right: 14px;
+}
+
+.tb-col-squad {
+  min-width: 92px;
+}
+
+.tb-col-act {
+  min-width: 76px;
+}
+
+.tb-sort {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+}
+
+.tb-sort:hover {
+  color: var(--color-text-primary);
+}
+
+/* Editable cells read as text until you focus them. */
+.tb-cellinput {
+  width: 100%;
+  min-width: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-xs);
+  padding: 5px 6px;
+  min-height: 32px;
+}
+
+.tb-cellinput:hover {
+  border-color: var(--color-border);
+}
+
+.tb-cellinput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background: var(--color-surface);
+  box-shadow: var(--focus-ring);
+}
+
+.tb-cellnum {
+  font-family: var(--font-mono);
+  text-align: right;
+}
+
+.tb-filterinput {
+  width: 100%;
+  min-width: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-xs);
+  padding: 5px 6px;
+  min-height: 28px;
+}
+
+.tb-filterinput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
+}
+
+.tb-range {
+  display: flex;
+  gap: 4px;
+}
+
+.tb-range .tb-filterinput {
+  padding: 5px 4px;
+}
+
+.tb-alts {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.tb-altchip {
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: var(--text-2xs);
+  padding: 3px 6px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-tertiary);
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.tb-altchip[data-on='1'] {
+  border-color: var(--color-primary);
+  background: var(--color-primary-subtle);
+  color: var(--green-700);
+  font-weight: var(--weight-semibold);
+}
+
+.tb-ovrcell {
+  font-family: var(--font-mono);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+}
+
+.tb-tbl tfoot td {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background: var(--color-surface-sunken);
+  border-top: 1px solid var(--color-border-strong);
+  border-bottom: none;
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--color-text-tertiary);
+}
+
+.tb-tbl tfoot .tb-col-name {
+  z-index: 3;
+}
+
+.tb-avgcell {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: none;
+  letter-spacing: var(--tracking-normal);
+  color: var(--color-text-secondary);
+}
+
+.tb-tblempty {
+  padding: 24px 12px !important;
+  text-align: center !important;
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 760px) {
+  .tb-page-stats {
+    padding: 12px;
+  }
+
+  .tb-tblbar {
+    align-items: flex-start;
+  }
+
+  /* Touch targets, and a narrower sticky name column so the stats still get room. */
+  .tb-tbl .tb-col-name {
+    min-width: 132px;
+  }
+
+  .tb-cellinput {
+    min-height: 40px;
+  }
+
+  .tb-filterinput {
+    min-height: 36px;
+  }
+
+  .tb-altchip {
+    min-height: 32px;
+    padding: 3px 9px;
+  }
+}
+
+/* ---- Squad mini view -------------------------------------------------------- */
+
+.tb-viewtoggle {
+  display: flex;
+  gap: 2px;
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+
+.tb-viewtoggle button {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 28px;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--color-text-secondary);
+  transition: background 120ms ease;
+}
+
+.tb-viewtoggle button[data-on='1'] {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.tb-grid {
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(205px, 1fr));
+  gap: 10px;
+  padding-right: 4px;
+  padding-bottom: 4px;
+  align-content: start;
+}
+
+.tb-grid[data-mini='1'] {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px;
+}
+
+.tb-mini-short {
+  display: none;
+}
+
+.tb-mini {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 38px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  cursor: pointer;
+  text-align: left;
+  opacity: 0.55;
+  transition: opacity 120ms ease, border-color 120ms ease;
+}
+
+.tb-mini[data-on='1'] {
+  opacity: 1;
+  box-shadow: var(--shadow-sm);
+}
+
+.tb-mini-name {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tb-mini-ovr {
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
+}
+
+@media (max-width: 760px) {
+  .tb-viewtoggle button {
+    width: 36px;
+    height: 34px;
+  }
+
+  /* A tile that is just a name earns four to a row on a phone. The name goes to first
+     name plus initial, the overall drops under it, and the row of four still clears the
+     44px touch target. */
+  .tb-grid[data-mini='1'] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    padding-right: 0;
+  }
+
+  /* Four controls no longer fit beside the title on a phone, and a group that will not
+     shrink was squeezing the subtitle into four lines and pushing Add player off the edge.
+     The controls take a row of their own under the title instead. */
+  .tb-squadhead {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .tb-squadctl {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .tb-squadctl .tb-addbtn {
+    margin-left: auto;
+  }
+
+  /* The squad header's buttons: the same 44px as everything else on a phone. The clear
+     button keeps its icon and its accessible name and loses its printed label; below
+     360px, where three worded controls cannot share a line, so does Add player. */
+  .tb-clearbtn,
+  .tb-addbtn {
+    min-height: 44px;
+  }
+
+  .tb-clearbtn {
+    min-width: 44px;
+    padding-left: 9px !important;
+    padding-right: 9px !important;
+  }
+
+  .tb-clearbtn > span {
+    display: none;
+  }
+
+  .tb-mini {
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    min-height: 44px;
+    padding: 6px 4px;
+    text-align: center;
+  }
+
+  .tb-mini-name {
+    flex: none;
+    width: 100%;
+    font-size: var(--text-xs);
+  }
+
+  .tb-mini-full {
+    display: none;
+  }
+
+  .tb-mini-short {
+    display: inline;
+  }
+
+  .tb-mini-ovr {
+    font-size: var(--text-sm);
+    line-height: 1;
+  }
+}
+
+@media (max-width: 360px) {
+  .tb-addbtn {
+    min-width: 44px;
+    padding-left: 9px !important;
+    padding-right: 9px !important;
+  }
+
+  .tb-addbtn > span {
+    display: none;
+  }
+}
+
+/* ---- Nicknames + score inputs ---------------------------------------------- */
+
+.tb-nickchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 4px 3px 9px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface-sunken);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-text-primary);
+}
+
+.tb-nickchip button {
+  appearance: none;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: var(--color-text-tertiary);
+}
+
+.tb-nickchip button:hover {
+  background: var(--color-border);
+  color: var(--color-danger);
+}
+
+.tb-scoreinput {
+  width: 100%;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  text-align: center;
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+}
+
+.tb-scoreinput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
+}
+
+/* One row per match of the session. */
+.tb-scorerow {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.tb-scorerow-n {
+  flex-shrink: 0;
+  width: 20px;
+  padding-bottom: 12px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  text-align: right;
+}
+
+/* ---- Match history --------------------------------------------------------- */
+
+.tb-histpage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+
+.tb-daterange {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tb-daterange label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--color-text-secondary);
+}
+
+.tb-daterange input {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  padding: 7px 8px;
+  min-height: 34px;
+}
+
+.tb-daterange input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
+}
+
+/* ---- Ask the results ------------------------------------------------------------ */
+
+.tb-ask {
+  flex-shrink: 0;
+  margin-bottom: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.tb-ask-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  color: var(--color-text-tertiary);
+}
+
+.tb-ask-row input {
+  flex: 1;
+  min-width: 0;
+  min-height: 46px;
+  border: 0;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  color: var(--color-text-primary);
+}
+
+.tb-ask-row input:focus {
+  outline: none;
+}
+
+.tb-ask[data-open='1'] .tb-ask-row,
+.tb-ask:focus-within .tb-ask-row {
+  color: var(--color-primary);
+}
+
+.tb-ask-row input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.tb-ask-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-sunken);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.tb-ask-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 12px 12px;
+}
+
+.tb-ask-chip,
+.tb-ask-link {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.tb-ask-chip:hover,
+.tb-ask-link:hover {
+  border-color: var(--color-primary);
+  color: var(--green-700);
+}
+
+.tb-ask-link {
+  padding: 1px 8px;
+}
+
+.tb-ask-note,
+.tb-ask-answer {
+  border-top: 1px solid var(--color-border);
+  padding: 12px 14px 14px;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-normal);
+}
+
+.tb-ask-headline {
+  font-family: var(--font-display);
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-lg);
+  line-height: 1.25;
+  color: var(--color-text-primary);
+}
+
+.tb-ask-sub {
+  margin-top: 4px;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.tb-ask-scope {
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--color-text-tertiary);
+}
+
+.tb-ask-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px 16px;
+  margin: 12px 0 0;
+}
+
+.tb-ask-fact dt {
+  font-family: var(--font-body);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.tb-ask-fact dd {
+  margin: 2px 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.tb-ask-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 12px;
+  border: 0;
+  background: none;
+  padding: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.tb-ask-matches {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tb-ask-matches li {
+  display: grid;
+  grid-template-columns: 110px 70px 56px 1fr;
+  gap: 8px;
+  align-items: baseline;
+  padding: 5px 8px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+.tb-ask-matches li:nth-child(odd) {
+  background: var(--color-surface-sunken);
+}
+
+.tb-ask-matches li[data-result='won'] .tb-ask-mscore {
+  color: var(--green-700);
+  font-weight: var(--weight-semibold);
+}
+
+.tb-ask-matches li[data-result='lost'] .tb-ask-mscore {
+  color: var(--color-text-primary);
+}
+
+.tb-ask-mnote {
+  font-family: var(--font-body);
+}
+
+.tb-ask-mwho {
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.tb-ask-mresult {
+  font-weight: var(--weight-semibold);
+}
+
+.tb-ask-mresult[data-result='won'] {
+  color: var(--green-700);
+}
+
+.tb-ask-mresult[data-result='lost'] {
+  color: var(--team-red);
+}
+
+.tb-ask-side {
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+  font-weight: var(--weight-semibold);
+}
+
+.tb-ask-side[data-side='red'] {
+  color: var(--team-red);
+}
+
+.tb-ask-side[data-side='blue'] {
+  color: var(--team-blue);
+}
+
+.tb-ask-more {
+  color: var(--color-text-tertiary);
+}
+
+/* The thread: earlier answers fold to their question and headline; the latest stays open
+   above the box, so a follow-up reads as a reply. */
+.tb-ask-thread {
+  display: flex;
+  flex-direction: column;
+}
+
+.tb-ask-turn {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tb-ask-q {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.tb-ask-q:disabled {
+  cursor: default;
+}
+
+.tb-ask-turn .tb-ask-answer {
+  border-top: 0;
+}
+
+.tb-ask-answer[data-compact='1'] {
+  padding-top: 4px;
+  padding-bottom: 10px;
+}
+
+.tb-ask-answer[data-compact='1'] .tb-ask-headline {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.tb-ask-next {
+  padding: 10px 14px 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tb-ask-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.tb-ask-starters {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tb-ask-chiplabel {
+  align-self: center;
+  font-family: var(--font-body);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  margin-right: 2px;
+}
+
+.tb-ask-chip[data-recent='1'] {
+  background: var(--color-surface);
+}
+
+.tb-ask-live {
+  position: relative;
+}
+
+.tb-ask-hint {
+  padding: 0 14px 12px;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--color-text-tertiary);
+}
+
+.tb-ask-section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--color-border);
+}
+
+.tb-ask-section-title {
+  font-family: var(--font-body);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--color-primary);
+}
+
+.tb-ask-section-line {
+  margin-top: 4px;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+}
+
+.tb-ask-section .tb-ask-facts {
+  margin-top: 10px;
+}
+
+.tb-ask-form {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.tb-ask-pip {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: #fff;
+  background: var(--slate-300);
+}
+
+.tb-ask-pip[data-r='W'] {
+  background: var(--color-primary);
+}
+
+.tb-ask-pip[data-r='L'] {
+  background: var(--team-red);
+}
+
+.tb-ask-table {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 2px 16px;
+}
+
+.tb-ask-table li {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  gap: 6px;
+  align-items: baseline;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+}
+
+.tb-ask-table li:first-child {
+  background: var(--color-primary-subtle);
+}
+
+.tb-ask-trank {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+.tb-ask-tvalue {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 640px) {
+  .tb-ask-row input::placeholder {
+    font-size: var(--text-sm);
+  }
+
+  .tb-ask-matches li {
+    grid-template-columns: 96px 1fr;
+  }
+
+  .tb-ask-mno {
+    display: none;
+  }
+
+  .tb-ask-mnote {
+    grid-column: 1 / -1;
+    padding-left: 0;
+  }
+}
+
+.tb-histsummary {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+}
+
+.tb-histlist {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 4px;
+}
+
+.tb-histrow {
+  display: grid;
+  grid-template-columns: 148px 96px 1fr 76px;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+}
+
+.tb-histrow[data-outcome='red'] {
+  border-left-color: var(--team-red);
+}
+
+.tb-histrow[data-outcome='blue'] {
+  border-left-color: var(--team-blue);
+}
+
+.tb-histrow[data-outcome='draw'] {
+  border-left-color: var(--color-accent);
+}
+
+.tb-histrow[data-outcome='off'] {
+  opacity: 0.7;
+}
+
+.tb-histdate-main {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+}
+
+.tb-histdate-sub {
+  font-family: var(--font-body);
+  font-size: var(--text-2xs);
+  color: var(--color-text-tertiary);
+}
+
+.tb-histscore {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xl);
+}
+
+.tb-histoff {
+  font-family: var(--font-body);
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--color-text-tertiary);
+}
+
+.tb-histteams {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+.tb-histteams > div {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tb-histteam-label {
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-wide);
+}
+
+.tb-histacts {
+  display: flex;
+  gap: 2px;
+  justify-content: flex-end;
+}
+
+/* Rows with no team column: the line-ups block above them has already said who played. */
+.tb-histrow[data-compact='1'] {
+  grid-template-columns: 148px 96px 1fr;
+}
+
+.tb-histrow[data-compact='1'] .tb-histacts {
+  grid-column: 3;
+}
+
+.tb-lineups {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-sunken);
+}
+
+.tb-lineup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-normal);
+}
+
+.tb-lineup + .tb-lineup {
+  padding-top: 6px;
+  border-top: 1px solid var(--color-border);
+}
+
+.tb-lineup-label {
+  font-family: var(--font-body);
+  font-size: 9px;
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.tb-histempty {
+  padding: 32px 16px;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  line-height: var(--leading-normal);
+}
+
+@media (max-width: 760px) {
+  .tb-histpage {
+    padding: 12px;
+    /* On a phone the whole page scrolls, not just the list: with a question answered
+       above it there is otherwise no room left for the list, and the answer itself
+       runs under the tab bar. */
+    overflow-y: auto;
+  }
+
+  .tb-histlist {
+    flex: none;
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .tb-histsummary {
+    gap: 14px;
+    padding: 10px 12px;
+  }
+
+  /* Date and score on the top line, squads underneath, actions pinned right. Placement
+     is explicit: the full-width squad row would otherwise push the actions to a third. */
+  .tb-histrow {
+    grid-template-columns: 1fr auto 36px;
+    gap: 6px 10px;
+  }
+
+  .tb-histdate {
+    grid-area: 1 / 1;
+  }
+
+  .tb-histscore {
+    grid-area: 1 / 2;
+    justify-content: flex-end;
+  }
+
+  .tb-histacts {
+    grid-area: 1 / 3 / span 2 / 4;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: flex-start;
+  }
+
+  .tb-histteams {
+    grid-area: 2 / 1 / 3 / 3;
+  }
+
+  .tb-histrow[data-compact='1'] .tb-histacts {
+    grid-area: 1 / 3;
+    flex-direction: row;
+  }
+}
+
+/* ---- Stat ladder ----------------------------------------------------------- */
+
+.tb-ladder {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+
+.tb-statpick {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.tb-statpick::-webkit-scrollbar {
+  display: none;
+}
+
+.tb-statpick button {
+  flex: 0 0 auto;
+  cursor: pointer;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 7px 12px;
+  min-height: 38px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.tb-statpick button[data-on='1'] {
+  border-color: var(--color-primary);
+  background: var(--color-primary-subtle);
+  color: var(--green-700);
+  font-weight: var(--weight-semibold);
+}
+
+.tb-statpick-abbr {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  opacity: 0.75;
+}
+
+.tb-plotwrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  /* Room for the axis labels on the left, and for the top and bottom chips to sit
+     centred on 100 and 0 without clipping. */
+  padding: 22px 16px 22px 44px;
+}
+
+.tb-plot {
+  position: relative;
+  flex: 1;
+  min-height: 380px;
+}
+
+.tb-tick {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.tb-tick-label {
+  position: absolute;
+  right: 100%;
+  top: -0.6em;
+  padding-right: 8px;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--color-text-tertiary);
+}
+
+.tb-avgline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed var(--color-primary);
+  opacity: 0.7;
+}
+
+.tb-avgline-label {
+  position: absolute;
+  right: 0;
+  top: -1.5em;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--color-primary);
+}
+
+.tb-ladderchip {
+  position: absolute;
+  transform: translateY(-50%);
+  width: 120px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  z-index: 2;
+}
+
+.tb-ladderchip:focus-visible {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
+}
+
+.tb-ladderchip[data-benched='1'] {
+  opacity: 0.6;
+  border-style: dashed;
+}
+
+.tb-ladderchip[data-dragging='1'] {
+  cursor: grabbing;
+  z-index: 6;
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+}
+
+.tb-ladderchip-name {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tb-ladderchip-val {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+}
+
+@media (max-width: 760px) {
+  .tb-ladder {
+    padding: 12px;
+  }
+
+  .tb-plotwrap {
+    padding: 22px 12px 22px 36px;
+  }
+
+  /* The instruction is desktop-only; the height it frees keeps the chips to fewer
+     lanes, which is what makes them fit a phone without scrolling sideways. */
+  .tb-ladderhint {
+    display: none;
+  }
+
+  /* Taller than the viewport on purpose: the extra height spreads the chips into
+     fewer columns, so the ladder scrolls up and down rather than sideways. */
+  .tb-plot {
+    min-height: 620px;
+  }
+
+  .tb-ladderchip {
+    width: 104px;
+    height: 40px;
+  }
+}
+
+/* Invisible hit ring so pins stay tappable at their drawn size. */
+.tb-pin-crest {
+  position: absolute;
+  top: -10px;
+  right: -13px;
+  pointer-events: none;
+  /* A light disc behind every badge, so a black or navy one still reads on the dark
+     pitch and a white one keeps an edge. */
+  box-sizing: content-box;
+  padding: 3px 4px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 0 1px rgba(10, 14, 20, 0.55), 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+.tb-pin-badge::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+}
+
+@media (max-width: 760px) {
+  .tb-pin-badge {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 15px;
+  }
+
+  .tb-pin-badge::before {
+    inset: -4px;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--slate-300);
+  border-radius: var(--radius-full);
+}
+
+/* ---- Game weeks ------------------------------------------------------------- */
+
+.tb-week {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tb-weekhead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tb-weekdate {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+  line-height: 1.1;
+}
+
+.tb-weeksub {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--color-text-tertiary);
+  margin-top: 2px;
+}
+
+.tb-awards {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tb-award {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-sunken);
+}
+
+.tb-award[data-potm='1'] {
+  border-color: var(--color-primary);
+  background: var(--color-primary-subtle);
+}
+
+.tb-award-label {
+  font-family: var(--font-body);
+  font-size: 9px;
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.tb-award[data-potm='1'] .tb-award-label {
+  color: var(--green-700);
+}
+
+.tb-award-name {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.tb-weekmatches {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Ratings snapshot */
+
+.tb-ratpanel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-sm);
+}
+
+.tb-ratnote,
+.tb-ratempty {
+  font-family: var(--font-body);
+  font-size: var(--text-2xs);
+  color: var(--color-text-tertiary);
+  margin-bottom: 4px;
+}
+
+.tb-ratrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+.tb-ratname {
+  font-family: var(--font-body);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+  min-width: 92px;
+}
+
+.tb-ratovr {
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+}
+
+.tb-ratdelta[data-dir='up'] {
+  color: var(--color-primary);
+}
+
+.tb-ratdelta[data-dir='down'] {
+  color: var(--color-danger);
+}
+
+.tb-ratdelta[data-dir='flat'] {
+  color: var(--color-text-tertiary);
+}
+
+.tb-ratgone,
+.tb-ratchanges {
+  font-family: var(--font-body);
+  font-size: var(--text-2xs);
+  color: var(--color-text-tertiary);
+}
+
+.tb-ratchanges {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .tb-ratname {
+    min-width: 76px;
+  }
+
+  .tb-ratchanges {
+    flex-basis: 100%;
+  }
+}
+
+.tb-ratrow[data-moved='0'] .tb-ratovr {
+  color: var(--color-text-secondary);
+  font-weight: var(--weight-regular);
+}
+
+/* ---- Awards table ------------------------------------------------------------ */
+
+.tb-league {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+}
+
+.tb-league th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 10px 12px;
+  background: var(--color-surface-sunken);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.tb-league td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.tb-league-rank {
+  width: 36px;
+  font-family: var(--font-mono);
+  color: var(--color-text-tertiary);
+}
+
+.tb-league-name {
+  min-width: 160px;
+}
+
+.tb-league-name span:first-child {
+  font-weight: var(--weight-semibold);
+}
+
+td.tb-league-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tb-league-chev {
+  margin-left: auto;
+  display: inline-flex;
+}
+
+/* The rank-in-cell and the short name exist for the phone; the desktop has room. */
+.tb-league-rankinline,
+.tb-league-short,
+.tb-league-forminline {
+  display: none;
+}
+
+.tb-league-n,
+th.tb-league-n {
+  text-align: right;
+  font-family: var(--font-mono);
+  width: 64px;
+}
+
+/* Form: the last five as W/L pips, oldest on the left. */
+.tb-league-form {
+  text-align: left;
+  white-space: nowrap;
+  padding-left: 12px !important;
+}
+
+.tb-form {
+  display: inline-flex;
+  gap: 3px;
+  vertical-align: middle;
+}
+
+.tb-form-pip {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  color: #fff;
+}
+
+.tb-form-pip[data-r='W'] {
+  background: var(--color-primary);
+}
+
+.tb-form-pip[data-r='L'] {
+  background: var(--team-red);
+}
+
+.tb-form-none {
+  font-family: var(--font-mono);
+  color: var(--color-text-tertiary);
+}
+
+td.tb-league-form[data-sorted='1'] {
+  background: var(--color-surface-sunken);
+}
+
+@media (max-width: 760px) {
+  /* On a phone the form leaves its own column and sits under the name in the pinned
+     cell, as five dots: the table keeps its width and the form never scrolls away. */
+  .tb-league-form,
+  .tb-league-formgroup {
+    display: none;
+  }
+
+  td.tb-league-name {
+    flex-wrap: wrap;
+    row-gap: 3px;
+  }
+
+  .tb-league-forminline {
+    display: block;
+    flex-basis: 100%;
+    padding-left: 16px; /* under the name, past the folded-in rank */
+    line-height: 0;
+  }
+
+  .tb-form {
+    gap: 2px;
+  }
+
+  .tb-form-pip {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    font-size: 0;
+  }
+}
+
+.tb-league-total {
+  font-weight: var(--weight-bold);
+  background: var(--color-primary-subtle);
+}
+
+.tb-league-hshort {
+  display: none;
+}
+
+/* Two header rows, both pinned: the group row at the top, the column row under it. */
+.tb-league-grouprow th {
+  height: 26px;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+  font-size: 9px;
+  letter-spacing: var(--tracking-widest);
+  color: var(--color-text-secondary);
+  text-align: center;
+  background: var(--color-surface-sunken);
+}
+
+.tb-league-group {
+  border-left: 1px solid var(--color-border);
+}
+
+.tb-league-colrow th {
+  top: 26px;
+}
+
+.tb-league-sort {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: inherit;
+  gap: 3px;
+  cursor: pointer;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+}
+
+th.tb-league-n .tb-league-sort {
+  justify-content: flex-end;
+}
+
+.tb-league th[aria-sort='ascending'],
+.tb-league th[aria-sort='descending'] {
+  color: var(--color-text-primary);
+}
+
+td.tb-league-n[data-sorted='1'] {
+  background: var(--color-surface-sunken);
+}
+
+th.tb-league-total {
+  color: var(--green-700);
+}
+
+/* POTM is the one that counts for the whole night, so its column reads apart. */
+th.tb-league-potm {
+  color: var(--amber-700, #a16207);
+}
+
+td.tb-league-n[data-potm='1']:not([data-zero='1']) {
+  color: var(--amber-700, #a16207);
+  font-weight: var(--weight-bold);
+}
+
+td[data-zero='1'] {
+  color: var(--color-text-tertiary);
+}
+
+.tb-league-row {
+  cursor: pointer;
+}
+
+.tb-league-row:hover td,
+.tb-league-row:focus-visible td {
+  background: var(--color-surface-sunken);
+}
+
+.tb-league-row[data-open='1'] td {
+  border-bottom-color: transparent;
+}
+
+.tb-league-row[data-zero='1'] .tb-league-name span:first-child {
+  font-weight: var(--weight-regular);
+  color: var(--color-text-secondary);
+}
+
+.tb-league-detailrow td {
+  padding: 0 12px 12px;
+  background: var(--color-surface);
+}
+
+.tb-league-detail {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+}
+
+.tb-league-detail-head {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+}
+
+.tb-league-nights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tb-league-night {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--color-text-secondary);
+}
+
+.tb-league-night[data-won='1'] {
+  border-color: var(--color-primary);
+  color: var(--color-text-primary);
+}
+
+.tb-league-chip {
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
+  background: var(--color-primary-subtle);
+  color: var(--green-700);
+  font-family: var(--font-body);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  font-size: 9px;
+}
+
+.tb-league-chip[data-potm='1'] {
+  background: var(--color-warning-subtle);
+  color: var(--amber-700, #a16207);
+}
+
+@media (max-width: 760px) {
+  .tb-league th,
+  .tb-league td {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  /* Eight columns at phone width: the rank folds into the name cell, the name goes to
+     first-name-plus-initial, and that one cell pins to the left so the numbers can
+     scroll under it on the narrowest phones. */
+  .tb-league-rank {
+    display: none;
+  }
+
+  .tb-league-rankinline {
+    display: inline;
+    width: 16px;
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+  }
+
+  .tb-league-full {
+    display: none;
+  }
+
+  .tb-league-short {
+    display: inline;
+    white-space: nowrap;
+  }
+
+  .tb-league-name,
+  th.tb-league-name {
+    min-width: 0;
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--color-surface);
+  }
+
+  th.tb-league-name {
+    z-index: 3;
+    background: var(--color-surface-sunken);
+  }
+
+  .tb-league-row:hover td.tb-league-name,
+  .tb-league-row[data-open='1'] td.tb-league-name {
+    background: var(--color-surface-sunken);
+  }
+
+  /* Eleven columns on a 390px screen: a little less air per number, and the row's
+     chevron goes — the row is still a button, and aria-expanded still says so. */
+  .tb-league-n,
+  th.tb-league-n {
+    width: auto;
+    padding-left: 3px;
+    padding-right: 3px;
+    font-size: var(--text-xs);
+  }
+
+  .tb-league-chev {
+    display: none;
+  }
+
+  /* Two long headers were what pushed the record column off a 390px screen. */
+  .tb-league-hfull {
+    display: none;
+  }
+
+  .tb-league-hshort {
+    display: inline;
+  }
+
+  .tb-league-detailrow td {
+    position: sticky;
+    left: 0;
+  }
+
+  /* Seven tabs now; labels this short still clear 44px each on a 320px phone. */
+  .tb-tabs {
+    grid-template-columns: repeat(7, 1fr);
+  }
+
+  .tb-tabs button {
+    font-size: 9px;
+    letter-spacing: 0;
+  }
+}
+
+/* ---- Stat ladder, phone list view --------------------------------------------- */
+
+.tb-statselect {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.tb-statselect select {
+  flex: 1;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font-family: var(--font-body);
+  font-weight: var(--weight-medium);
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--color-text-primary);
+}
+
+.tb-ladderlist {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 8px;
+}
+
+.tb-ladderrow {
+  padding: 8px 10px 6px;
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+/* The one cue the plot's average line gave: above or below the squad average. */
+.tb-ladderrow[data-above='1'] {
+  border-left-color: var(--color-primary);
+}
+
+.tb-ladderrow[data-benched='1'] {
+  opacity: 0.6;
+  border-left-style: dashed;
+}
+
+.tb-ladderrow[data-held='1'] {
+  box-shadow: var(--shadow-sm);
+  border-color: var(--color-primary);
+}
+
+.tb-ladderrow-top {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-body);
+}
+
+.tb-ladderrow-rank {
+  width: 20px;
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+.tb-ladderrow-name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tb-ladderrow-val {
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+  min-width: 36px;
+  text-align: right;
+}
+
+.tb-ladderrow-ctl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.tb-nudge {
+  appearance: none;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.tb-nudge:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.tb-nudge:not(:disabled):active {
+  background: var(--color-surface-sunken);
+}
+
+/* A range input drawn with the tokens: a filled track up to the value, a faint mark at
+   the squad average, and a thumb a thumb can find. Each vendor needs its own rules. */
+.tb-slider {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  cursor: pointer;
+  touch-action: pan-y;
+}
+
+.tb-slider:disabled {
+  cursor: default;
+}
+
+.tb-slider::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: var(--radius-full);
+  background:
+    linear-gradient(var(--color-text-tertiary), var(--color-text-tertiary)) no-repeat calc(var(--avg) - 1px) 0 / 2px 100%,
+    linear-gradient(var(--color-primary), var(--color-primary)) no-repeat 0 0 / var(--pct) 100%,
+    var(--slate-200);
+}
+
+.tb-slider::-moz-range-track {
+  height: 8px;
+  border-radius: var(--radius-full);
+  background:
+    linear-gradient(var(--color-text-tertiary), var(--color-text-tertiary)) no-repeat calc(var(--avg) - 1px) 0 / 2px 100%,
+    linear-gradient(var(--color-primary), var(--color-primary)) no-repeat 0 0 / var(--pct) 100%,
+    var(--slate-200);
+}
+
+.tb-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 28px;
+  height: 28px;
+  margin-top: -10px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  border: 2px solid var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.tb-slider::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  border: 2px solid var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.tb-slider:disabled::-webkit-slider-thumb {
+  border-color: var(--slate-300);
+}
+
+.tb-slider:disabled::-moz-range-thumb {
+  border-color: var(--slate-300);
+}
+
+.tb-slider:focus-visible {
+  outline: none;
+}
+
+.tb-slider:focus-visible::-webkit-slider-thumb {
+  box-shadow: var(--focus-ring);
+}
+
+.tb-slider:focus-visible::-moz-range-thumb {
+  box-shadow: var(--focus-ring);
+}
+
+/* ---- Seasons ------------------------------------------------------------------ */
+
+.tb-seasonbar {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.tb-seasonbar label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.tb-seasonbar select {
+  min-height: 34px;
+  min-width: 150px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--color-text-primary);
+}
+
+.tb-seasons {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tb-seasonlist {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tb-seasonrow {
+  display: grid;
+  grid-template-columns: 1fr 150px auto 32px;
+  align-items: center;
+  gap: 8px;
+}
+
+.tb-seasonname,
+.tb-seasonstart {
+  min-height: 36px;
+  border: 1px solid var(--color-border-strong) !important;
+  border-radius: var(--radius-sm);
+  padding: 0 8px;
+}
+
+.tb-seasoncount {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+
+.tb-seasonadd {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+}
+
+.tb-seasonaddrow {
+  display: flex;
+  gap: 10px;
+}
+
+@media (max-width: 760px) {
+  .tb-seasonbar {
+    width: 100%;
+  }
+
+  .tb-seasonbar label {
+    flex: 1;
+  }
+
+  .tb-seasonbar select,
+  .tb-seasonbar button {
+    min-height: 44px;
+  }
+
+  .tb-seasonrow {
+    grid-template-columns: 1fr 44px;
+    grid-template-rows: auto auto;
+  }
+
+  .tb-seasonrow .tb-seasonname {
+    grid-column: 1;
+  }
+
+  .tb-seasonrow .tb-seasonstart {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .tb-seasonrow .tb-seasoncount {
+    grid-column: 2;
+    grid-row: 2;
+    text-align: right;
+  }
+
+  .tb-seasonrow button {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  /* Twelve columns on a 390px screen: the rank and its gap give back a few pixels. */
+  .tb-league-rankinline {
+    width: 12px;
+  }
+
+  td.tb-league-name {
+    gap: 4px;
+  }
+}
+
+/* ---- Club crests ----------------------------------------------------------------- */
+
+/* The shield sits on the text line beside a name; each place sets its own size. */
+.tb-mini-crest {
+  margin-right: 4px;
+}
+
+.tb-card-crest {
+  position: absolute;
+  right: -5px;
+  bottom: -3px;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
+}
+
+.tb-namecell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.tb-honour-crest {
+  margin-right: 8px;
+  vertical-align: -0.15em;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
+
+.tb-clubpick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tb-clubpick-crest {
+  width: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tb-clubpick-none {
+  color: var(--color-text-tertiary);
+}
+
+.tb-clubpick select {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  padding: 9px 10px;
+  font-size: var(--text-base);
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  font-family: var(--font-body);
+}
+
+/* ---- Season honours ------------------------------------------------------------ */
+
+.tb-tblbar-right {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tb-honourspage .tb-tblbar {
+  align-items: center;
+}
+
+.tb-honourslist {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-bottom: 12px;
+}
+
+.tb-season {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tb-season-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tb-season-name {
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-2xl);
+  color: var(--color-text-primary);
+  line-height: 1;
+}
+
+.tb-season-sub {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  margin-top: 4px;
+}
+
+.tb-season-wait {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-text-tertiary);
+}
+
+.tb-season-wait-head {
+  font-family: var(--font-display);
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-lg);
+  color: var(--color-text-primary);
+}
+
+.tb-season-wait-sub {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+  line-height: var(--leading-normal);
+}
+
+.tb-honours {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tb-honours-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+/* One card per honour. Each tone is a glow in the top corner, a watermark of its glyph
+   and a medallion ring; the dark ground is shared so they read as a set. */
+.tb-honour {
+  --glow: var(--amber-400);
+  --ink: #fff;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 190px;
+  padding: 16px 18px;
+  border-radius: var(--radius-lg);
+  color: var(--ink);
+  background:
+    radial-gradient(120% 90% at 100% 0%, color-mix(in oklab, var(--glow) 55%, transparent) 0%, transparent 55%),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.035) 0 2px, transparent 2px 14px),
+    linear-gradient(160deg, #222b36 0%, #151b23 100%);
+  box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+}
+
+.tb-honour[data-tone='gold'] {
+  --glow: #e8b73a;
+}
+
+.tb-honour[data-tone='violet'] {
+  --glow: #a78bfa;
+}
+
+.tb-honour[data-tone='crimson'] {
+  --glow: #ef5a4c;
+}
+
+.tb-honour[data-tone='emerald'] {
+  --glow: #34d399;
+}
+
+.tb-honour[data-tone='cobalt'] {
+  --glow: #60a5fa;
+}
+
+.tb-honour[data-hero='1'] {
+  min-height: 230px;
+  padding: 22px 26px;
+  background:
+    radial-gradient(70% 120% at 100% 50%, color-mix(in oklab, var(--glow) 60%, transparent) 0%, transparent 60%),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0 2px, transparent 2px 14px),
+    linear-gradient(160deg, #262f3b 0%, #141a21 100%);
+}
+
+.tb-honour-glyph {
+  position: absolute;
+  right: -14px;
+  bottom: -18px;
+  color: var(--glow);
+  opacity: 0.22;
+  transform: rotate(-12deg);
+  pointer-events: none;
+}
+
+.tb-honour[data-hero='1'] .tb-honour-glyph {
+  right: 24px;
+  bottom: -10px;
+  opacity: 0.3;
+}
+
+.tb-honour-label {
+  display: inline-flex;
+  align-self: flex-start; /* a flex item stretches otherwise, and the box ran under the tag */
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--glow);
+}
+
+.tb-honour-medal {
+  width: 56px;
+  height: 56px;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  font-size: 20px;
+  color: #141a21;
+  background: linear-gradient(145deg, #fff 0%, var(--glow) 70%);
+  box-shadow:
+    0 0 0 3px #141a21,
+    0 0 0 5px var(--glow),
+    0 8px 20px -8px var(--glow);
+}
+
+.tb-honour[data-hero='1'] .tb-honour-medal {
+  width: 76px;
+  height: 76px;
+  font-size: 28px;
+}
+
+.tb-honour[data-empty='1'] .tb-honour-medal {
+  background: linear-gradient(145deg, #3a4452, #222b36);
+  color: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 0 0 3px #141a21, 0 0 0 5px rgba(255, 255, 255, 0.18);
+}
+
+.tb-honour-name {
+  margin-top: auto;
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-xl);
+  line-height: 1.05;
+  letter-spacing: var(--tracking-tight);
+}
+
+.tb-honour[data-hero='1'] .tb-honour-name {
+  font-size: var(--text-4xl);
+}
+
+.tb-honour-tba {
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: var(--weight-medium);
+}
+
+.tb-honour-back {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.tb-honour-season {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* A season still running: the same cards, but the ring is open, the ground is lighter
+   and the corner tag says what they are — a lead, not a result. */
+.tb-honour[data-live='1'] {
+  box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.6), inset 0 0 0 1px color-mix(in oklab, var(--glow) 35%, transparent);
+}
+
+.tb-honour[data-live='1'] .tb-honour-medal {
+  background: linear-gradient(145deg, #2b3542, #1b222b);
+  color: var(--glow);
+  box-shadow: 0 0 0 3px #141a21, 0 0 0 5px var(--glow);
+  outline: 2px dashed rgba(255, 255, 255, 0.35);
+  outline-offset: -8px;
+}
+
+.tb-honour[data-live='1'] .tb-honour-season {
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: #141a21;
+  background: var(--glow);
+}
+
+.tb-honour-lead {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.tb-season-wait[data-live='1'] {
+  margin-bottom: 10px;
+  padding: 12px 16px;
+}
+
+.tb-season-wait[data-live='1'] .tb-season-wait-head {
+  font-size: var(--text-md);
+}
+
+.tb-honour-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tb-honour-pick-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.tb-honour-pick select {
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+}
+
+@media (max-width: 1100px) {
+  .tb-honours-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .tb-tblbar-right {
+    width: 100%;
+  }
+
+  .tb-tblbar-right .tb-seasonbar {
+    flex: 1;
+  }
+
+  .tb-tblbar-right > button {
+    min-height: 44px;
+  }
+
+  .tb-honour[data-hero='1'] {
+    min-height: 200px;
+    padding: 18px 20px;
+  }
+
+  /* On a card half a phone wide the season tag ran into the honour's label. The
+     section heading above already names the season; the hero keeps its tag. */
+  .tb-honour[data-hero='0'] .tb-honour-season {
+    display: none;
+  }
+
+  .tb-honour[data-hero='1'] .tb-honour-name {
+    font-size: var(--text-3xl);
+  }
+
+  .tb-season-head {
+    flex-wrap: wrap;
+  }
+
+  .tb-season-head button {
+    min-height: 44px;
+  }
+
+  .tb-honour-pick select {
+    min-height: 44px;
+  }
+}
+
+.tb-honour-auto {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+}
+
+.tb-honour-auto-note {
+  font-size: var(--text-2xs);
+  color: var(--color-text-tertiary);
+}
+
+/* ---- Backups & change history ---------------------------------------------------- */
+
+.tb-hk {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: min(520px, 100%);
+}
+
+.tb-hk-tabs {
+  align-self: flex-start;
+}
+
+.tb-hk-tabs button {
+  padding: 0 12px;
+  width: auto;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+}
+
+.tb-hk-log,
+.tb-hk-backups {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 52vh;
+  overflow-y: auto;
+}
+
+.tb-hk-log > li,
+.tb-hk-backups > li {
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.tb-hk-log > li[data-restore='1'] {
+  border-color: var(--amber-400);
+}
+
+.tb-hk-log ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+}
+
+.tb-hk-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+.tb-hk-meta strong {
+  color: var(--color-text-primary);
+}
+
+.tb-hk-sub {
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--color-text-tertiary);
+}
+
+.tb-hk-tag {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--green-700);
+  background: var(--color-primary-subtle);
+  border-radius: var(--radius-full);
+  padding: 1px 7px;
+}
+
+.tb-hk-backups > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tb-hk-confirm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+/* ---- Results in balancing, rating suggestions -------------------------------------- */
+
+.tb-influence {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tb-influence-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.tb-influence-head .tb-viewtoggle button {
+  width: auto;
+  padding: 0 8px;
+  font-family: var(--font-body);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.tb-influence-note {
+  font-family: var(--font-body);
+  font-size: var(--text-2xs);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-normal);
+}
+
+.tb-influence-now {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-primary);
+}
+
+.tb-statspage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.tb-suggest {
+  margin: 12px 16px 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  flex-shrink: 0;
+}
+
+.tb-suggest-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+  text-align: left;
+}
+
+.tb-suggest-head span {
+  flex: 1;
+}
+
+.tb-suggest-head em {
+  font-style: normal;
+  font-size: var(--text-2xs);
+  margin-left: 4px;
+  padding: 1px 7px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent-subtle);
+  color: var(--color-warning-strong);
+}
+
+.tb-suggest-note {
+  margin: 0 14px 8px;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-normal);
+}
+
+.tb-suggest-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 34vh;
+  overflow-y: auto;
+}
+
+.tb-suggest-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  border-left: 3px solid var(--color-primary);
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-normal);
+}
+
+.tb-suggest-list li[data-dir='down'] {
+  border-left-color: var(--team-red);
+}
+
+.tb-suggest-list strong,
+.tb-suggest-list b {
+  color: var(--color-text-primary);
+}
+
+.tb-suggest-ovr {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--color-text-tertiary);
+}
+
+.tb-suggest-text {
+  flex: 1;
+  min-width: 220px;
+}
+
+.tb-suggest-actions {
+  display: flex;
+  gap: 6px;
+}
+
+@media (max-width: 760px) {
+  .tb-suggest {
+    margin: 10px 12px 0;
+  }
+}
