@@ -24,6 +24,8 @@ import { buildDoc, parseDoc } from './lib/doc.js';
 import { exportBoard } from './lib/exportBoard.js';
 import { preMatchFacts } from './lib/facts.js';
 import { useTheme } from './lib/theme.js';
+import { strengthOf } from './lib/strength.js';
+import RatingSuggestions from './components/RatingSuggestions.jsx';
 import { DEFAULT_STATS, balance, layout, relax } from './lib/model.js';
 import { samplePlayers } from './lib/samplePlayers.js';
 import { ALL, currentSeason, labelFor, seasonOptions, weeksIn } from './lib/seasons.js';
@@ -181,6 +183,8 @@ export default function App() {
   // it on a phone has no business changing what everyone else is looking at.
   const [mini, setMini] = useState(() => loadPrefs().mini);
   const [squadSort, setSquadSort] = useState(() => loadPrefs().sort);
+  // How much results count when balancing: a per-device choice for whoever balances.
+  const [influence, setInfluence] = useState(() => loadPrefs().influence);
   const [history, setHistory] = useState(start.history);
   const [seasons, setSeasons] = useState(start.seasons);
   // Which season Results and the Table show. null means "whichever is current",
@@ -270,8 +274,8 @@ export default function App() {
   }, [doc, sync.push]);
 
   useEffect(() => {
-    savePrefs({ mini, sort: squadSort });
-  }, [mini, squadSort]);
+    savePrefs({ mini, sort: squadSort, influence });
+  }, [mini, squadSort, influence]);
 
   const teamOf = useMemo(() => {
     const m = {};
@@ -296,7 +300,7 @@ export default function App() {
     const pool = players.filter((p) => selected.includes(p.id));
     if (pool.length !== needed) return;
     const s = nextSeed == null ? seed : nextSeed;
-    const t = balance(pool, teamSize, s);
+    const t = balance(pool, teamSize, s, strengthOf(history, players, influence));
     setTeams(t);
     setPos(relax(Object.assign({}, layout(t.red, 'red'), layout(t.blue, 'blue'))));
     setSel(null);
@@ -822,6 +826,8 @@ export default function App() {
           </div>
         )
       ) : page === 'stats' ? (
+        <div className="tb-statspage">
+        {showValues && <RatingSuggestions weeks={history} players={players} canEdit={canEdit} onPatch={patchPlayer} />}
         <StatsTable
           players={players}
           selected={selected}
@@ -834,6 +840,7 @@ export default function App() {
           onExport={exportAll}
           onImport={applyBackup}
         />
+        </div>
       ) : (
       <main className="tb-main" data-view={narrow ? view : 'all'}>
         <section className="tb-pane tb-pane-squad" style={{ minHeight: 0 }}>
@@ -948,7 +955,13 @@ export default function App() {
             boxShadow: 'var(--shadow-sm)',
           }}
         >
-          <Metrics teams={teams} showValues={showValues} />
+          <Metrics
+            teams={teams}
+            showValues={showValues}
+            influence={influence}
+            onInfluence={setInfluence}
+            strength={strengthOf(history, players, influence)}
+          />
         </aside>
       </main>
       )}

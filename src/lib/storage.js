@@ -30,9 +30,9 @@ export function saveCache(doc) {
 export function loadPrefs() {
   try {
     const d = JSON.parse(localStorage.getItem(PREFS) || '{}');
-    return { mini: !!d.mini, sort: d.sort === 'ovr' ? 'ovr' : 'name' };
+    return { mini: !!d.mini, sort: d.sort === 'ovr' ? 'ovr' : 'name', influence: ['off', 'light', 'strong'].includes(d.influence) ? d.influence : 'off' };
   } catch {
-    return { mini: false, sort: 'name' };
+    return { mini: false, sort: 'name', influence: 'off' };
   }
 }
 

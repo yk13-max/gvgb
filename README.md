@@ -96,6 +96,22 @@ the squad, the stats table before you sort it, the line-ups — they read A–Z.
     with the leading side highlighted. It extends the image by 190px rather than covering any
     of the pitch.
 
+- **Results in balancing** (signed in, top of the balance panel) — *Off*, *Light* or *Strong*.
+  Off splits the sides on ratings alone. Light and Strong let each player count as up to 4 or 8
+  points stronger or weaker by their results: their win–loss record, damped by six phantom even
+  games so a lucky start doesn't count for much, blended with their last five. Ratings are never
+  changed by this; it only affects how the sides are split, and the panel shows the balance as
+  results see it ("With results: balance 82/100 · Red 71.4 v Blue 71.1"). The choice is kept
+  per device. The balancer itself now tries a few dozen starting splits and keeps the best,
+  picking at random among near-equal best splits so **Reshuffle** still gives a different one.
+- **Rating suggestions** (signed in, top of Player stats) — for every match, the two sides'
+  average ratings at the time give the chance each side was expected to win. A player whose
+  sides keep beating that, or falling short of it, over at least 8 matches and by more than luck
+  would explain, gets a suggested change: "Their sides won 83% of 12 matches; the ratings
+  expected about 21%. Probably under-rated — try +8." **Apply** moves every stat by that amount,
+  which moves OVR by exactly that much and keeps the player's shape; **Dismiss** hides it. Either
+  way the suggestion stays hidden on that device until the player has played more matches.
+
 ### Match history
 
 History is organised by **game week** — one session, typically a Friday, holding however many

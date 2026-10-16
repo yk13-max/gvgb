@@ -74,20 +74,22 @@ export function statAvg(t, k) {
   return avg(t, (p) => Number(p.stats[k]) || 0);
 }
 
-export function ovrTotal(t) {
-  return t.reduce((s, p) => s + overall(p), 0);
+// `sf` is how strong a player counts as: their rating by default, or a rating nudged by
+// their results when the balancer is asked to take those into account.
+export function ovrTotal(t, sf = overall) {
+  return t.reduce((s, p) => s + sf(p), 0);
 }
 
-export function ovrAvg(t) {
-  return t.length ? ovrTotal(t) / t.length : 0;
+export function ovrAvg(t, sf = overall) {
+  return t.length ? ovrTotal(t, sf) / t.length : 0;
 }
 
 export function countPos(t, pos) {
   return t.filter((p) => p.pos === pos).length;
 }
 
-function cost(a, b) {
-  let c = Math.abs(ovrAvg(a) - ovrAvg(b)) * 1.6;
+function cost(a, b, sf = overall) {
+  let c = Math.abs(ovrAvg(a, sf) - ovrAvg(b, sf)) * 1.6;
   STATS.forEach((k) => {
     c += Math.abs(statAvg(a, k) - statAvg(b, k)) * 0.35;
   });
@@ -98,14 +100,14 @@ function cost(a, b) {
 }
 
 // Balance delta as a 0-100 readout: 100 = perfectly level sides.
-export function balanceScore(a, b) {
-  return Math.max(0, Math.round(100 - cost(a, b) * 1.2));
+export function balanceScore(a, b, sf = overall) {
+  return Math.max(0, Math.round(100 - cost(a, b, sf) * 1.2));
 }
 
 // Each side must field a keeper: best two goalkeepers, falling back to anyone who
 // can also play there, then to the best goalkeeping rating in the pool.
-function pickKeepers(players) {
-  const byOvr = (x, y) => overall(y) - overall(x);
+function pickKeepers(players, sf = overall) {
+  const byOvr = (x, y) => sf(y) - sf(x);
   let cand = players.filter((p) => p.pos === 'Goalkeeper').sort(byOvr);
   if (cand.length < 2) {
     cand = cand.concat(
@@ -120,33 +122,40 @@ function pickKeepers(players) {
   return [cand[0], cand[1]];
 }
 
-export function balance(pool, size, seed) {
-  const players = pool.slice();
-  if (players.length < 2) return { red: players.slice(0, 1), blue: [] };
-  const [gkA, gkB] = pickKeepers(players);
-  const flip = seed % 2 === 1;
-  const red = [flip ? gkB : gkA];
-  const blue = [flip ? gkA : gkB];
-  const rest = players.filter((p) => p !== gkA && p !== gkB).sort((x, y) => overall(y) - overall(x));
-  // Light shuffle within equal-strength neighbours so reshuffle gives a genuinely different split.
-  for (let i = 0; i < rest.length - 1; i++) {
-    if (Math.abs(overall(rest[i]) - overall(rest[i + 1])) <= 3 && Math.random() < 0.5) {
+// One go at a split: deal the outfield players out greedily, then swap pairs while any
+// swap helps. Fast, but it can stop at a split that is only locally best.
+function attempt(rest0, gks, size, sf, mix) {
+  const red = [gks[0]];
+  const blue = [gks[1]];
+  const rest = rest0.slice();
+  if (mix === 'light') {
+    // Light shuffle within equal-strength neighbours, as the balancer always has.
+    for (let i = 0; i < rest.length - 1; i++) {
+      if (Math.abs(sf(rest[i]) - sf(rest[i + 1])) <= 3 && Math.random() < 0.5) {
+        const t = rest[i];
+        rest[i] = rest[i + 1];
+        rest[i + 1] = t;
+      }
+    }
+  } else if (mix === 'full') {
+    for (let i = rest.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
       const t = rest[i];
-      rest[i] = rest[i + 1];
-      rest[i + 1] = t;
+      rest[i] = rest[j];
+      rest[j] = t;
     }
   }
   rest.forEach((p) => {
     let target;
     if (red.length >= size) target = blue;
     else if (blue.length >= size) target = red;
-    else target = ovrTotal(red) <= ovrTotal(blue) ? red : blue;
+    else target = ovrTotal(red, sf) <= ovrTotal(blue, sf) ? red : blue;
     target.push(p);
   });
   // Best-improvement pairwise swaps, keepers held in place.
+  let bestC = cost(red, blue, sf);
   for (let pass = 0; pass < 200; pass++) {
     let best = null;
-    let bestC = cost(red, blue);
     for (let i = 1; i < red.length; i++) {
       for (let j = 1; j < blue.length; j++) {
         const r2 = red.slice();
@@ -154,7 +163,7 @@ export function balance(pool, size, seed) {
         const t = r2[i];
         r2[i] = b2[j];
         b2[j] = t;
-        const c = cost(r2, b2);
+        const c = cost(r2, b2, sf);
         if (c < bestC - 0.001) {
           bestC = c;
           best = [i, j];
@@ -166,7 +175,35 @@ export function balance(pool, size, seed) {
     red[best[0]] = blue[best[1]];
     blue[best[1]] = t;
   }
-  return { red, blue };
+  return { red, blue, c: bestC };
+}
+
+const ATTEMPTS = 32;
+const NEAR = 0.3; // splits this close to the best are as good as each other
+
+// Many starts, the best kept. A single greedy-then-swap pass can settle on a split that
+// a different start beats, so the balancer tries a few dozen and picks among the best —
+// at random among near-equals, so Reshuffle still gives a genuinely different split.
+export function balance(pool, size, seed, sf = overall) {
+  const players = pool.slice();
+  if (players.length < 2) return { red: players.slice(0, 1), blue: [] };
+  const [gkA, gkB] = pickKeepers(players, sf);
+  const flip = seed % 2 === 1;
+  const gks = [flip ? gkB : gkA, flip ? gkA : gkB];
+  const rest = players.filter((p) => p !== gkA && p !== gkB).sort((x, y) => sf(y) - sf(x));
+  const tries = [];
+  for (let k = 0; k < ATTEMPTS; k++) tries.push(attempt(rest, gks, size, sf, k === 0 ? 'light' : 'full'));
+  const best = Math.min(...tries.map((t) => t.c));
+  const seen = new Set();
+  const near = tries.filter((t) => {
+    if (t.c > best + NEAR) return false;
+    const key = t.red.map((p) => p.id).sort((x, y) => x - y).join(',');
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  const pick = near[Math.floor(Math.random() * near.length)];
+  return { red: pick.red, blue: pick.blue };
 }
 
 const ROW = { Goalkeeper: 0, Defender: 1, Midfielder: 2, Any: 2, Striker: 3 };

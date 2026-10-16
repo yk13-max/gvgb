@@ -1,4 +1,5 @@
-import { ABBR, SHORT, STATS, balanceScore, countPos, ovrAvg, ovrTotal, statAvg } from '../lib/model.js';
+import { ABBR, SHORT, STATS, balanceScore, countPos, overall, ovrAvg, ovrTotal, statAvg } from '../lib/model.js';
+import { INFLUENCE } from '../lib/strength.js';
 
 function CompareRow({ k, r, b }) {
   const rw = (r / 100) * 100;
@@ -146,12 +147,46 @@ function PositionMix({ red, blue }) {
   );
 }
 
-export default function Metrics({ teams, showValues = true }) {
+// How much results count when balancing. Ratings stay as they are; this only changes
+// how strong each player counts as when the sides are split.
+function Influence({ value, onChange, teams, strength }) {
+  const { red, blue } = teams;
+  const counting = value !== 'off' && red.length && blue.length;
+  return (
+    <div className="tb-influence">
+      <div className="tb-influence-head">
+        <span>Results in balancing</span>
+        <div className="tb-viewtoggle" role="group" aria-label="Results in balancing">
+          {Object.entries(INFLUENCE).map(([k, v]) => (
+            <button key={k} type="button" data-on={value === k ? '1' : '0'} aria-pressed={value === k} onClick={() => onChange(k)}>
+              {v.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="tb-influence-note">
+        {value === 'off'
+          ? 'Sides are split on ratings alone.'
+          : 'Each player counts as up to ' + INFLUENCE[value].points + ' points stronger or weaker by their record and last five. Ratings are not changed. Re-balance to use it.'}
+      </div>
+      {counting ? (
+        <div className="tb-influence-now">
+          With results: balance <strong>{balanceScore(red, blue, strength)}</strong>/100 · Red {ovrAvg(red, strength).toFixed(1)} v Blue {ovrAvg(blue, strength).toFixed(1)}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+export default function Metrics({ teams, showValues = true, influence = 'off', onInfluence, strength = overall }) {
   const { red, blue } = teams;
   if (!red.length || !blue.length) {
     return (
-      <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>
-        {showValues ? 'Select a squad and balance to see the split.' : 'Nobody has balanced a side yet.'}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {showValues && onInfluence && <Influence value={influence} onChange={onInfluence} teams={teams} strength={strength} />}
+        <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>
+          {showValues ? 'Select a squad and balance to see the split.' : 'Nobody has balanced a side yet.'}
+        </div>
       </div>
     );
   }
@@ -177,6 +212,7 @@ export default function Metrics({ teams, showValues = true }) {
   const bE = edge(blue, red);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {onInfluence && <Influence value={influence} onChange={onInfluence} teams={teams} strength={strength} />}
       <div>
         <div
           style={{
