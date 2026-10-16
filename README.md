@@ -168,8 +168,10 @@ picked: it is whoever won the most player-of-the-match awards that season, ties 
 higher table position, and the card shows the count. Signed in, **Name honours** on a season
 picks the other four from the players who turned out that season, every list leading with the
 obvious choice. A season is finished once the next one has started, and that is when its
-honours are shown to everyone; before then the page says it's in progress, and picks an
-organiser has entered early stay out of sight. Most
+honours are shown to everyone. While a season is in progress the same cards show the **front
+runners** instead — the table leader, the most POTMs, the most nominations in each line — with
+what they lead by ("2 clear", "Level with Jo"); these come from the table, never from picks an
+organiser has entered early, which stay out of sight. Most
 awards first, POTM breaking ties since it is the one that counts for the whole night, then
 nights played, then A–Z; equal rows share a rank. Everyone on the roster is in it, so a new
 signing sits at the bottom on zero until they play, and someone no longer on the roster keeps

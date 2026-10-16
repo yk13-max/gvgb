@@ -1,15 +1,18 @@
 import { Button, Icon } from '../ds/index.js';
-import { HONOURS, PICKED, backing, bestPlayer, hasStarted, isFinished } from '../lib/honours.js';
+import { HONOURS, PICKED, backing, bestPlayer, frontRunners, hasStarted, isFinished, lead } from '../lib/honours.js';
 import { initials, shortName } from '../lib/names.js';
 import { sortSeasons } from '../lib/seasons.js';
 import { standings } from '../lib/standings.js';
 import { weeksIn } from '../lib/seasons.js';
 import { formatDate } from '../lib/whatsapp.js';
 
-function Card({ honour, row, season, hero }) {
+// `live` is a season still running: the card shows who is in line for the honour and
+// what they lead by, not who won it.
+function Card({ honour, row, season, hero, live }) {
   const [key, label, icon, tone, blurb] = honour;
+  const r = live ? row && row.row : row;
   return (
-    <div className="tb-honour" data-tone={tone} data-hero={hero ? '1' : '0'} data-empty={row ? '0' : '1'}>
+    <div className="tb-honour" data-tone={tone} data-hero={hero ? '1' : '0'} data-empty={r ? '0' : '1'} data-live={live ? '1' : '0'}>
       <div className="tb-honour-glyph" aria-hidden="true">
         <Icon name={icon} size={hero ? 120 : 84} strokeWidth={1.2} />
       </div>
@@ -17,24 +20,27 @@ function Card({ honour, row, season, hero }) {
         <Icon name={icon} size={14} />
         <span>{label}</span>
       </div>
-      {row ? (
+      {r ? (
         <>
           <div className="tb-honour-medal" aria-hidden="true">
-            {initials(row.name)}
+            {initials(r.name)}
           </div>
-          <div className="tb-honour-name">{hero ? row.name : shortName(row.name)}</div>
-          <div className="tb-honour-back">{backing(row, key)}</div>
+          <div className="tb-honour-name">{hero ? r.name : shortName(r.name)}</div>
+          <div className="tb-honour-back">
+            {backing(r, key)}
+            {live && <span className="tb-honour-lead"> · {lead(row)}</span>}
+          </div>
         </>
       ) : (
         <>
           <div className="tb-honour-medal" aria-hidden="true">
             ?
           </div>
-          <div className="tb-honour-name tb-honour-tba">Not yet named</div>
+          <div className="tb-honour-name tb-honour-tba">{live ? 'Nobody yet' : 'Not yet named'}</div>
           <div className="tb-honour-back">{blurb}</div>
         </>
       )}
-      <div className="tb-honour-season">{season.name}</div>
+      <div className="tb-honour-season">{live ? 'Front runner' : season.name}</div>
     </div>
   );
 }
@@ -49,6 +55,20 @@ function SeasonBlock({ season, seasons, weeks, players, today, canEdit, onEdit }
   const h = season.honours || {};
   const named = PICKED.filter(([k]) => h[k] != null).length;
   const nights = weeks.length;
+  // While the season runs, the cards show who is in line, worked out from the table —
+  // never the organiser's early picks, which stay private until the season is done.
+  const live = started && !finished;
+  const fr = live ? frontRunners(weeks, players) : null;
+  const cards = (
+    <div className="tb-honours">
+      <Card honour={HONOURS[0]} row={live ? fr.winner : rowOf('winner')} season={season} hero live={live} />
+      <div className="tb-honours-grid">
+        {HONOURS.slice(1).map((hn) => (
+          <Card key={hn[0]} honour={hn} row={live ? fr[hn[0]] : rowOf(hn[0])} season={season} live={live} />
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <section className="tb-season" data-finished={finished ? '1' : '0'}>
@@ -68,29 +88,25 @@ function SeasonBlock({ season, seasons, weeks, players, today, canEdit, onEdit }
       </div>
 
       {finished ? (
-        <div className="tb-honours">
-          <Card honour={HONOURS[0]} row={rowOf('winner')} season={season} hero />
-          <div className="tb-honours-grid">
-            {HONOURS.slice(1).map((hn) => (
-              <Card key={hn[0]} honour={hn} row={rowOf(hn[0])} season={season} />
-            ))}
-          </div>
-        </div>
+        cards
       ) : (
-        <div className="tb-season-wait">
-          <Icon name="trophy" size={28} />
-          <div>
-            <div className="tb-season-wait-head">
-              {started ? 'Season in progress' : 'Season not started'}
-            </div>
-            <div className="tb-season-wait-sub">
-              {started
-                ? 'Honours are revealed when the next season starts.' +
-                  (canEdit && named ? ' ' + named + ' of 4 already named.' : canEdit ? ' You can name them now; nobody else sees them until then.' : '')
-                : 'Starts ' + formatDate(season.start) + '.'}
+        <>
+          <div className="tb-season-wait" data-live={live ? '1' : '0'}>
+            <Icon name="trophy" size={live ? 22 : 28} />
+            <div>
+              <div className="tb-season-wait-head">{started ? 'Season in progress' : 'Season not started'}</div>
+              <div className="tb-season-wait-sub">
+                {started
+                  ? 'Front runners as the table stands' +
+                    (nights ? '' : ' — nothing played yet') +
+                    '. Honours are revealed when the next season starts.' +
+                    (canEdit && named ? ' ' + named + ' of 4 already named.' : canEdit ? ' You can name them now; nobody else sees them until then.' : '')
+                  : 'Starts ' + formatDate(season.start) + '.'}
+              </div>
             </div>
           </div>
-        </div>
+          {live && cards}
+        </>
       )}
     </section>
   );

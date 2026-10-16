@@ -2563,6 +2563,43 @@ td[data-zero='1'] {
   color: rgba(255, 255, 255, 0.45);
 }
 
+/* A season still running: the same cards, but the ring is open, the ground is lighter
+   and the corner tag says what they are — a lead, not a result. */
+.tb-honour[data-live='1'] {
+  box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.6), inset 0 0 0 1px color-mix(in oklab, var(--glow) 35%, transparent);
+}
+
+.tb-honour[data-live='1'] .tb-honour-medal {
+  background: linear-gradient(145deg, #2b3542, #1b222b);
+  color: var(--glow);
+  box-shadow: 0 0 0 3px #141a21, 0 0 0 5px var(--glow);
+  outline: 2px dashed rgba(255, 255, 255, 0.35);
+  outline-offset: -8px;
+}
+
+.tb-honour[data-live='1'] .tb-honour-season {
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: #141a21;
+  background: var(--glow);
+}
+
+.tb-honour-lead {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.tb-season-wait[data-live='1'] {
+  margin-bottom: 10px;
+  padding: 12px 16px;
+}
+
+.tb-season-wait[data-live='1'] .tb-season-wait-head {
+  font-size: var(--text-md);
+}
+
 .tb-honour-pick {
   display: flex;
   flex-direction: column;
