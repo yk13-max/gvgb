@@ -26,8 +26,11 @@ the squad, the stats table before you sort it, the line-ups — they read A–Z.
   STA for stamina, GKP for goalkeeping, VIS for vision, POS for positioning), a primary position
   and any number of "can also play" positions, plus any number of nicknames and, for fun, the
   club they **support** — any side in this season's Premier League, La Liga, Serie A, Bundesliga,
-  Ligue 1 or Championship, picked in the player editor. The club's colours are drawn as a small crest beside
-  the name on the squad, the player stats table, the league table and the honours cards. Add, edit and delete
+  Ligue 1 or Championship, picked in the player editor. The club's badge shows beside the
+  name on the squad, the player stats table, the league table and the honours cards. Badges are
+  fetched from the club's Wikipedia article the first time a browser needs them (one request for
+  every club on screen, cached for a month) and fall back to a shield drawn in the club's colours
+  until they arrive, or if Wikipedia can't be reached. Add, edit and delete
   anyone; **Deselect all** benches everyone at once for a clean start to a night's pick. Overall (OVR) is weighted by primary position: a striker's shooting, pace and
   positioning count for more than their defending, vision is weighted towards the players who
   create, and goalkeeping carries a keeper's rating while staying a token weight outfield.
