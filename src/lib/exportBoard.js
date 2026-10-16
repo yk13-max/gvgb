@@ -118,26 +118,49 @@ function drawBoard(teams, pos, showRatings, showSummary, facts = []) {
     g.strokeRect(W * 0.36, s === 1 ? top : top - H * 0.055, W * 0.28, H * 0.055);
   });
   const cols = COLS;
+  // Pins sized for a phone: the image is shown at about half its width, so these read
+  // as a comfortable 19pt disc and 11pt name. Each name sits on a dark tab so it stays
+  // legible across the pitch lines.
+  const PIN = 38;
   ['red', 'blue'].forEach((t) =>
     teams[t].forEach((p) => {
       const c0 = pos[p.id] || { x: 50, y: t === 'red' ? 70 : 30 };
       const x = (c0.x / 100) * W;
       const y = (c0.y / 100) * H;
       g.beginPath();
-      g.arc(x, y, 22, 0, Math.PI * 2);
+      g.arc(x, y, PIN, 0, Math.PI * 2);
       g.fillStyle = cols[t];
       g.fill();
-      g.strokeStyle = 'rgba(255,255,255,0.8)';
-      g.lineWidth = 2;
+      g.strokeStyle = 'rgba(255,255,255,0.9)';
+      g.lineWidth = 3;
       g.stroke();
       g.fillStyle = '#fff';
-      g.font = 'bold 15px "Barlow Condensed",sans-serif';
+      g.font = 'bold 30px "Barlow Condensed",sans-serif';
       g.textAlign = 'center';
       g.textBaseline = 'middle';
-      g.fillText(initials(p.name), x, y + 1);
-      g.font = '600 12px Inter,sans-serif';
-      g.fillStyle = 'rgba(255,255,255,0.95)';
-      g.fillText(showRatings ? shortName(p.name) + '  ' + overall(p) : shortName(p.name), x, y + 36);
+      g.fillText(initials(p.name), x, y + 2);
+
+      const label = showRatings ? shortName(p.name) + '  ' + overall(p) : shortName(p.name);
+      g.font = '700 22px Inter,sans-serif';
+      const tw = g.measureText(label).width + 16;
+      // Kept on the canvas: a pin near the edge pulls its name inwards.
+      const lx = Math.max(tw / 2 + 4, Math.min(W - tw / 2 - 4, x));
+      const ly = Math.min(H - 18, y + PIN + 20);
+      g.fillStyle = 'rgba(10,14,20,0.72)';
+      const rx = lx - tw / 2;
+      const ry = ly - 15;
+      const rw = tw;
+      const rh = 30;
+      const rr = 8;
+      g.beginPath();
+      g.moveTo(rx + rr, ry);
+      g.arcTo(rx + rw, ry, rx + rw, ry + rh, rr);
+      g.arcTo(rx + rw, ry + rh, rx, ry + rh, rr);
+      g.arcTo(rx, ry + rh, rx, ry, rr);
+      g.arcTo(rx, ry, rx + rw, ry, rr);
+      g.fill();
+      g.fillStyle = '#fff';
+      g.fillText(label, lx, ly + 1);
     })
   );
   g.textAlign = 'left';
@@ -175,7 +198,7 @@ function drawBoard(teams, pos, showRatings, showSummary, facts = []) {
 // faces the board uses first; stop waiting after a moment rather than block the share.
 function fontsReady() {
   if (!document.fonts || !document.fonts.load) return Promise.resolve();
-  const want = ['bold 15px "Barlow Condensed"', '600 12px Inter', '500 21px Inter', '700 14px Inter', 'bold 30px "JetBrains Mono"', '500 15px "JetBrains Mono"'];
+  const want = ['bold 30px "Barlow Condensed"', '700 22px Inter', '600 12px Inter', '500 21px Inter', '700 14px Inter', 'bold 30px "JetBrains Mono"', '500 15px "JetBrains Mono"'];
   const loads = want.map((f) => document.fonts.load(f).catch(() => null));
   return Promise.race([Promise.all(loads), new Promise((r) => setTimeout(r, 1500))]);
 }
