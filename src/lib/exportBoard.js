@@ -42,21 +42,25 @@ async function loadBadges(players) {
 }
 
 // A badge on the pin's shoulder: the real one when it loaded, the drawn shield if not.
+// Either way it sits on a light disc with a dark rim, so a black or navy badge still
+// stands out on the dark pitch, and a white one still has an edge.
 function drawBadge(g, code, img, cx, cy, size) {
   const club = clubOf(code);
   if (!club) return;
+  g.beginPath();
+  g.arc(cx, cy, size * 0.64, 0, Math.PI * 2);
+  g.fillStyle = 'rgba(255,255,255,0.95)';
+  g.fill();
+  g.lineWidth = 2;
+  g.strokeStyle = 'rgba(10,14,20,0.55)';
+  g.stroke();
   if (img) {
-    const k = Math.min(size / img.naturalWidth, size / img.naturalHeight);
+    const k = Math.min((size * 0.9) / img.naturalWidth, (size * 0.9) / img.naturalHeight);
     const w = img.naturalWidth * k;
     const h = img.naturalHeight * k;
-    // a soft disc behind it, so a badge with a transparent edge still reads on the pitch
-    g.beginPath();
-    g.arc(cx, cy, size * 0.62, 0, Math.PI * 2);
-    g.fillStyle = 'rgba(255,255,255,0.92)';
-    g.fill();
     g.drawImage(img, cx - w / 2, cy - h / 2, w, h);
   } else {
-    const w = size * 0.86;
+    const w = size * 0.72;
     drawCrestShield(g, club, cx - w / 2, cy - (w * 28) / 24 / 2, w);
   }
 }
