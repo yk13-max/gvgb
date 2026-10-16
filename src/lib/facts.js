@@ -15,7 +15,7 @@ import { outcome } from './weeks.js';
 export const CATEGORY = {
   h2h: { tag: 'Head to head', tone: 'gold' },
   form: { tag: 'Form guide', tone: 'green' },
-  duo: { tag: 'Partnerships', tone: 'violet' },
+  duo: { tag: 'Partnerships', tone: 'violet' }, // pairs, and groups of three or four
   story: { tag: 'Milestone', tone: 'blue' },
   streak: { tag: 'Streak', tone: 'green' },
   record: { tag: 'Record', tone: 'gold' },
@@ -73,6 +73,45 @@ function resultsOf(id, list) {
   });
   return out;
 }
+
+// Every group of three or more within a side, up to the whole side, for streaks shared
+// by more than a pair. The biggest group sharing a run is the one worth naming.
+function groupsOf(side) {
+  const out = [];
+  const n = side.length;
+  for (let mask = 1; mask < 1 << n; mask++) {
+    const g = side.filter((_, i) => mask & (1 << i));
+    if (g.length >= 3) out.push(g);
+  }
+  return out;
+}
+
+// A group's results in the matches they all played on the same side, oldest first.
+function groupResults(group, list) {
+  const out = [];
+  list.forEach(({ m, o }) => {
+    if (o !== 'red' && o !== 'blue') return;
+    const side = group.every((id) => has(m.red, id)) ? 'red' : group.every((id) => has(m.blue, id)) ? 'blue' : null;
+    if (side) out.push(side === o ? 'W' : 'L');
+  });
+  return out;
+}
+
+// The best shared winning run among the groups of three or more on these sides: the
+// longest run first, a bigger group breaking ties. Only runs of three or more count.
+function bestGroupRun(sides, list, minRun = 3) {
+  let best = null;
+  sides.forEach((side) =>
+    groupsOf(side).forEach((group) => {
+      const r = runOf(groupResults(group, list));
+      if (r.kind !== 'W' || r.n < minRun) return;
+      if (!best || r.n > best.n || (r.n === best.n && group.length > best.group.length)) best = { group, n: r.n };
+    })
+  );
+  return best;
+}
+
+const listNames = (names) => names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
 
 function runOf(results) {
   if (!results.length) return { kind: null, n: 0 };
@@ -155,7 +194,7 @@ export function preMatchFacts(teams, weeks, players, { seasons = [], today, max 
   const runs = both.map((id) => ({ id, ...runOf(resultsOf(id, all)) }));
   const hot = runs.filter((r) => r.kind === 'W' && r.n >= 3).sort((a, b) => b.n - a.n)[0];
   const cold = runs.filter((r) => r.kind === 'L' && r.n >= 3).sort((a, b) => b.n - a.n)[0];
-  if (hot) facts.push({ cat: 'form', weight: 62 + hot.n, text: name(hot.id) + ' is on a ' + hot.n + '-match winning run.' });
+  if (hot) facts.push({ cat: 'form', who: hot.id, weight: 62 + hot.n, text: name(hot.id) + ' is on a ' + hot.n + '-match winning run.' });
   if (cold) facts.push({ cat: 'form', weight: 55 + cold.n, text: name(cold.id) + ' has lost ' + cold.n + ' in a row — due a win?' });
 
   // Partnerships: each side's best duo on record, and team-mates for the first time.
@@ -193,6 +232,14 @@ export function preMatchFacts(teams, weeks, players, { seasons = [], today, max 
         if (!ever) firsts.push(name(side[i]) + ' & ' + name(side[j]));
       }
   });
+  // Bigger than a pair: three or four on the same side tonight who are on a run together.
+  const crew = bestGroupRun([red, blue], all);
+  if (crew) {
+    const sideName = red.includes(crew.group[0]) ? 'Red' : 'Blue';
+    facts.push({ cat: 'duo', weight: 66 + crew.n + crew.group.length, text: listNames(crew.group.map(name)) + ' have won their last ' + crew.n + ' together — and they’re all on ' + sideName + ' again.' });
+    // The group's run is the story; one of them on the same run would just repeat it.
+    for (let i = facts.length - 1; i >= 0; i--) if (facts[i].who != null && crew.group.includes(facts[i].who)) facts.splice(i, 1);
+  }
   if (firsts.length) facts.push({ cat: 'duo', weight: 54, text: 'First time on the same side: ' + firsts.slice(0, 2).join(', ') + (firsts.length > 2 ? ' and ' + (firsts.length - 2) + ' more pairs' : '') + '.' });
 
   // Milestones and storylines.
@@ -240,11 +287,40 @@ export function postMatchFacts(week, weeks, players, { seasons = [], max = 4 } =
     const now = runOf(resultsOf(id, post));
     const playedTonight = resultsOf(id, tonight).length > 0;
     if (!playedTonight) return;
-    if (now.kind === 'W' && now.n >= 3) facts.push({ cat: 'streak', weight: 55 + now.n, text: name(id) + ' has now won ' + now.n + ' in a row.' });
-    if (was.kind === 'W' && was.n >= 3 && now.kind === 'L') facts.push({ cat: 'streak', weight: 58 + was.n, text: name(id) + '’s ' + was.n + '-match winning run is over.' });
+    if (now.kind === 'W' && now.n >= 3) facts.push({ cat: 'streak', who: id, weight: 55 + now.n, text: name(id) + ' has now won ' + now.n + ' in a row.' });
+    if (was.kind === 'W' && was.n >= 3 && now.kind === 'L') facts.push({ cat: 'streak', who: id, weight: 58 + was.n, text: name(id) + '’s ' + was.n + '-match winning run is over.' });
     if (was.kind === 'L' && was.n >= 3 && now.kind === 'W') facts.push({ cat: 'streak', weight: 57 + was.n, text: name(id) + ' finally won, ending a ' + was.n + '-match losing run.' });
     if (now.kind === 'L' && now.n >= 4) facts.push({ cat: 'streak', weight: 45 + now.n, text: name(id) + ' has now lost ' + now.n + ' in a row.' });
   });
+
+  // Groups of three or four who were on the same side tonight: a shared run extended, or ended.
+  const sidesTonight = [];
+  (week.matches || []).forEach((m) => {
+    [m.red, m.blue].forEach((list) => {
+      const key = ids(list).sort((a, b) => a - b).join(',');
+      if (list && list.length >= 3 && !sidesTonight.some((x) => x.key === key)) sidesTonight.push({ key, ids: ids(list) });
+    });
+  });
+  const crewNow = bestGroupRun(sidesTonight.map((x) => x.ids), post);
+  if (crewNow && resultsOf(crewNow.group[0], tonight).length) {
+    const extended = groupResults(crewNow.group, tonight).length > 0;
+    if (extended) {
+      facts.push({ cat: 'duo', weight: 64 + crewNow.n + crewNow.group.length, text: listNames(crewNow.group.map(name)) + ' have now won ' + crewNow.n + ' in a row together.' });
+      for (let i = facts.length - 1; i >= 0; i--) if (facts[i].who != null && crewNow.group.includes(facts[i].who)) facts.splice(i, 1);
+    }
+  }
+  let ended = null;
+  sidesTonight.forEach(({ ids: side }) =>
+    groupsOf(side).forEach((group) => {
+      const before = runOf(groupResults(group, pre));
+      const after = runOf(groupResults(group, post));
+      if (before.kind === 'W' && before.n >= 3 && after.kind === 'L' && (!ended || before.n > ended.n || (before.n === ended.n && group.length > ended.group.length))) ended = { group, n: before.n };
+    })
+  );
+  if (ended) {
+    facts.push({ cat: 'duo', weight: 60 + ended.n + ended.group.length, text: listNames(ended.group.map(name)) + '’s ' + ended.n + '-match winning run together is over.' });
+    for (let i = facts.length - 1; i >= 0; i--) if (facts[i].who != null && ended.group.includes(facts[i].who)) facts.splice(i, 1);
+  }
 
   // Records: tonight against everything before.
   const scored = (list) => list.filter(({ m, o }) => (o === 'red' || o === 'blue') && m.redScore != null && m.blueScore != null);

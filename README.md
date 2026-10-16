@@ -114,9 +114,10 @@ matches you played that night.
   four facts, the strongest from each kind first. Before kick-off: **head to head** (these exact
   sides, or sides with most of these players, and who leads), **form guide** (each side's
   players' last five, the hottest and coldest runs), **partnerships** (each side's best duo on
-  record, team-mates for the first time) and **milestones** (a first recorded match, a 10th/25th/50th… match,
+  record, team-mates for the first time, and three or more on the same side who have won their
+  last few together) and **milestones** (a first recorded match, a 10th/25th/50th… match,
   someone back after a few nights out, top v bottom of the table). After the night: **streaks**
-  extended, ended or broken, **records** (biggest win, highest-scoring game, most goals in a
+  extended, ended or broken — for one player, or for three or more who shared the run — **records** (biggest win, highest-scoring game, most goals in a
   night), **table** movement (a new leader, the biggest climb or drop) and the **upset meter**.
   The images go to everyone, so no rating number ever appears: the upset meter compares the
   sides' ratings behind the scenes and says only that the lower-rated side won, with one to
