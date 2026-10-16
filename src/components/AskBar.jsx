@@ -142,6 +142,9 @@ export default function AskBar({ players, weeks, seasons = [], pickerKey, showVa
   const [thread, setThread] = useState([]); // [{ q, result }], oldest first
   const [openIdx, setOpenIdx] = useState(null); // an earlier answer opened back up
   const [recent, setRecent] = useState(readRecent);
+  // The starter chips show only while the box has focus: an empty box is a quiet line,
+  // and the suggestions appear when you reach for it.
+  const [focused, setFocused] = useState(false);
   const inputRef = useRef(null);
   const data = useMemo(() => ({ players, weeks, seasons, pickerKey, showValues, today: today || new Date().toISOString().slice(0, 10) }), [players, weeks, seasons, pickerKey, showValues, today]);
   const last = thread.length ? thread[thread.length - 1] : null;
@@ -186,7 +189,14 @@ export default function AskBar({ players, weeks, seasons = [], pickerKey, showVa
   const idle = !text.trim() && !thread.length;
 
   return (
-    <div className="tb-ask" data-open={text.trim() || thread.length ? '1' : '0'}>
+    <div
+      className="tb-ask"
+      data-open={text.trim() || thread.length ? '1' : '0'}
+      onBlur={(e) => {
+        // Focus moving to a chip or button inside the box keeps the chips up.
+        if (!e.currentTarget.contains(e.relatedTarget)) setFocused(false);
+      }}
+    >
       {thread.length > 0 && (
         <div className="tb-ask-thread">
           {thread.map((item, i) => {
@@ -218,6 +228,7 @@ export default function AskBar({ players, weeks, seasons = [], pickerKey, showVa
         <Icon name="search" size={16} />
         <input
           ref={inputRef}
+          onFocus={() => setFocused(true)}
           type="search"
           aria-label="Ask the results"
           placeholder={thread.length ? 'Ask a follow-up — e.g. and against?, what about with Priya?, streak?, since September?' : 'Ask the results — e.g. Jo with Sam, scores where Jo was POTM, who has the best record?'}
@@ -246,8 +257,9 @@ export default function AskBar({ players, weeks, seasons = [], pickerKey, showVa
         )}
       </div>
 
-      {idle && (chips.length > 0 || recent.length > 0) && (
-        <div className="tb-ask-starters">
+      {idle && focused && (chips.length > 0 || recent.length > 0) && (
+        // Pressing a chip must not blur the box first, or the chip is gone before the click lands.
+        <div className="tb-ask-starters" onPointerDown={(e) => e.preventDefault()}>
           {recent.length > 0 && (
             <div className="tb-ask-chips" aria-label="Recent questions">
               <span className="tb-ask-chiplabel">Recent</span>
