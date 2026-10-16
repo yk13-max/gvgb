@@ -50,11 +50,15 @@ function fontsReady() {
 // Measuring and drawing read the same numbers, so the canvas is exactly as tall as what
 // goes on it. Getting these out of step is how an image ends up with a band of dead
 // space at the bottom.
-const HEAD_H = 118;
-const LABEL_H = 26; // a section label plus the gap under it
-const MATCH_H = 62; // a 54pt row plus its gap
-const NIGHT_H = 76;
-const AWARD_H = 48; // a 42pt row plus its gap
+// Kept compact on purpose: a chat app crops a tall image in its preview, so the card
+// aims to read whole without anyone having to open it.
+const HEAD_H = 88;
+const LABEL_H = 22; // a section label plus the gap under it
+const MATCH_H = 46; // a 40pt row plus its gap
+const NIGHT_H = 58; // only drawn when there is more than one match to sum up
+const AWARD_H = 44; // a 40pt tile plus its gap; tiles sit two to a row
+const FACT_S = 0.9; // talking points a touch smaller than the results they explain
+const MAX_FACTS = 3;
 const LINE_H = 17; // the line-ups are reference, so they sit smaller than the results
 const GAP = 10;
 const SIDE_LABEL_W = 38; // room for "RED" / "BLUE" before the names
@@ -111,11 +115,13 @@ function draw(week, facts = []) {
   const groupH = (g) => GROUP_LABEL_H + (g.red.length + g.blue.length) * LINE_H + GROUP_GAP;
 
   const matchesH = LABEL_H + week.matches.length * MATCH_H + GAP;
-  const nightH = t.played > 0 ? NIGHT_H : 0;
-  const awardsH = awards.length ? LABEL_H + awards.length * AWARD_H + GAP : 0;
+  // One match's goals and winner are already in its row; the totals only add something
+  // when there are several matches to sum.
+  const nightH = t.played > 1 ? NIGHT_H : 0;
+  const awardsH = awards.length ? LABEL_H + Math.ceil(awards.length / 2) * AWARD_H + GAP : 0;
   const sidesH = groups.length ? LABEL_H + groups.reduce((sum, g) => sum + groupH(g), 0) - GROUP_GAP : 0;
   // Talking points: what the night meant, against everything before it.
-  const factLayout = facts.length ? layoutFacts(measure, facts, W - PAD * 2 - 12, 1, BODY) : [];
+  const factLayout = facts.length ? layoutFacts(measure, facts.slice(0, MAX_FACTS), W - PAD * 2 - 12 * FACT_S, FACT_S, BODY) : [];
   const factsH = factLayout.length ? LABEL_H + factsHeight(factLayout) + GAP : 0;
   const H = HEAD_H + matchesH + nightH + awardsH + factsH + sidesH + PAD;
 
@@ -130,16 +136,16 @@ function draw(week, facts = []) {
 
   // --- header ---
   g.textAlign = 'left';
-  g.font = 'bold 18px ' + DISPLAY;
+  g.font = 'bold 14px ' + DISPLAY;
   g.fillStyle = COL.brand;
-  g.fillText('FUFA', PAD, 38);
+  g.fillText('FUFA', PAD, 30);
   const brand = g.measureText('FUFA').width;
   g.fillStyle = COL.text;
-  g.fillText('RESULTS', PAD + brand + 8, 38);
+  g.fillText('RESULTS', PAD + brand + 6, 30);
 
-  g.font = 'bold 34px ' + DISPLAY;
+  g.font = 'bold 26px ' + DISPLAY;
   g.fillStyle = COL.text;
-  g.fillText(formatDate(week.date), PAD, 78);
+  g.fillText(formatDate(week.date), PAD, 58);
 
   const detail = [
     week.venue,
@@ -149,7 +155,7 @@ function draw(week, facts = []) {
   ].filter(Boolean);
   g.font = '500 12px ' + BODY;
   g.fillStyle = COL.muted;
-  g.fillText(detail.join('  ·  '), PAD, 100);
+  g.fillText(detail.join('  ·  '), PAD, 74);
 
   let y = HEAD_H;
 
@@ -169,13 +175,13 @@ function draw(week, facts = []) {
     g.textAlign = 'left';
     g.font = '600 11px ' + BODY;
     g.fillStyle = COL.text;
-    g.fillText('MATCH ' + (i + 1), PAD + 14, y + 24);
+    g.fillText('MATCH ' + (i + 1), PAD + 14, y + 17);
     g.font = '500 10px ' + BODY;
     g.fillStyle = COL.faint;
     g.fillText(
       o === 'red' ? 'Red win' : o === 'blue' ? 'Blue win' : o === 'draw' ? 'Draw' : o === 'off' ? 'Called off' : 'No score',
       PAD + 14,
-      y + 40
+      y + 31
     );
 
     if (o !== 'off' && o !== 'noscore') {
@@ -183,28 +189,28 @@ function draw(week, facts = []) {
       g.textAlign = 'right';
       g.font = 'bold 14px ' + DISPLAY;
       g.fillStyle = COL.red;
-      g.fillText('RED', mid - 54, y + 33);
+      g.fillText('RED', mid - 50, y + 25);
       g.textAlign = 'left';
       g.fillStyle = COL.blue;
-      g.fillText('BLUE', mid + 54, y + 33);
+      g.fillText('BLUE', mid + 50, y + 25);
 
       g.textAlign = 'center';
-      g.font = 'bold 28px ' + MONO;
+      g.font = 'bold 24px ' + MONO;
       g.fillStyle = o === 'red' ? COL.red : COL.text;
-      g.fillText(String(m.redScore), mid - 26, y + 36);
+      g.fillText(String(m.redScore), mid - 24, y + 28);
       g.fillStyle = COL.faint;
-      g.font = '400 18px ' + MONO;
-      g.fillText('–', mid, y + 34);
-      g.font = 'bold 28px ' + MONO;
+      g.font = '400 16px ' + MONO;
+      g.fillText('–', mid, y + 26);
+      g.font = 'bold 24px ' + MONO;
       g.fillStyle = o === 'blue' ? COL.blue : COL.text;
-      g.fillText(String(m.blueScore), mid + 26, y + 36);
+      g.fillText(String(m.blueScore), mid + 24, y + 28);
     }
     y += MATCH_H;
   });
   y += GAP;
 
   // --- the night in numbers ---
-  if (t.played > 0) {
+  if (t.played > 1) {
     const cells = [
       [t.goalsRed + '–' + t.goalsBlue, 'GOALS R–B'],
       [String(t.red), 'RED WINS'],
@@ -214,12 +220,12 @@ function draw(week, facts = []) {
     cells.forEach(([value, label], i) => {
       const cx = PAD + cw * i + cw / 2;
       g.textAlign = 'center';
-      g.font = 'bold 26px ' + MONO;
+      g.font = 'bold 22px ' + MONO;
       g.fillStyle = i === 1 ? COL.red : i === 2 ? COL.blue : COL.text;
-      g.fillText(value, cx, y + 34);
+      g.fillText(value, cx, y + 24);
       g.font = '600 10px ' + BODY;
       g.fillStyle = COL.faint;
-      g.fillText(label, cx, y + 52);
+      g.fillText(label, cx, y + 40);
     });
     y += NIGHT_H;
   }
@@ -227,32 +233,33 @@ function draw(week, facts = []) {
   // --- nominations ---
   if (awards.length) {
     y = sectionLabel(g, 'Nominations', y);
-    awards.forEach(([k, label]) => {
+    // Two tiles to a row: the award over the name, POTM in gold.
+    const tileW = (W - PAD * 2 - 8) / 2;
+    awards.forEach(([k, label], i) => {
       const potm = k === 'potm';
-      const rowH = AWARD_H - 6;
+      const x = PAD + (i % 2) * (tileW + 8);
+      const ty = y + Math.floor(i / 2) * AWARD_H;
+      const rowH = AWARD_H - 4;
       g.fillStyle = potm ? 'rgba(232,183,58,0.14)' : COL.panel;
-      g.fillRect(PAD, y, W - PAD * 2, rowH);
-      if (potm) {
-        g.fillStyle = COL.gold;
-        g.fillRect(PAD, y, 3, rowH);
-      }
+      g.fillRect(x, ty, tileW, rowH);
+      g.fillStyle = potm ? COL.gold : COL.line;
+      g.fillRect(x, ty, 3, rowH);
       g.textAlign = 'left';
-      g.font = '600 11px ' + BODY;
-      g.fillStyle = potm ? COL.gold : COL.muted;
-      g.fillText(label.toUpperCase(), PAD + 14, y + 26);
-      g.textAlign = 'right';
-      g.font = 'bold 20px ' + DISPLAY;
+      g.font = '600 9px ' + BODY;
+      g.fillStyle = potm ? COL.gold : COL.faint;
+      g.fillText((potm ? 'POTM' : label.replace('Best ', '')).toUpperCase(), x + 12, ty + 15);
+      g.font = 'bold 15px ' + DISPLAY;
       g.fillStyle = potm ? COL.gold : COL.text;
-      g.fillText(nameOf(week.awards[k]), W - PAD - 14, y + 28);
-      y += AWARD_H;
+      g.fillText(nameOf(week.awards[k]), x + 12, ty + 32);
     });
+    y += Math.ceil(awards.length / 2) * AWARD_H;
     y += GAP;
   }
 
   // --- talking points ---
   if (factLayout.length) {
     y = sectionLabel(g, 'Talking points', y);
-    y = drawFacts(g, factLayout, PAD, y, W - PAD * 2, 1, BODY);
+    y = drawFacts(g, factLayout, PAD, y, W - PAD * 2, FACT_S, BODY);
     y += GAP;
   }
 

@@ -1,7 +1,7 @@
 import { downloadBlob } from './download.js';
 import { ABBR, STATS, balanceScore, overall, ovrAvg, ovrTotal, statAvg } from './model.js';
 import { initials, shortName } from './names.js';
-import { drawFacts, factsHeight, layoutFacts } from './drawFacts.js';
+import { drawFacts, layoutFacts } from './drawFacts.js';
 
 const COLS = { red: '#c2402c', blue: '#2f66cf' };
 const LEAD = { red: '#e0644d', blue: '#5b8ee8' };
@@ -73,8 +73,9 @@ function drawSummary(g, W, top, teams) {
 }
 
 // The pre-match strip: talking points for the group chat, under everything else.
-const FS = 1.7; // the board is 760px wide and shown at phone width, so text is scaled up
-const FPAD = 24;
+const FS = 1.4; // the board is 760px wide and shown at phone width, so text is scaled up
+const FPAD = 22;
+const FGAP = 18; // between the two columns
 const FONT = 'Inter,sans-serif';
 
 // Board -> PNG, drawn directly so the export matches what's on screen.
@@ -82,11 +83,18 @@ function drawBoard(teams, pos, showRatings, showSummary, facts = []) {
   const W = 760;
   // Pin positions are a percentage of the pitch, so the pitch keeps its height and
   // the summary strip extends the canvas below it.
-  const H = 1118;
+  // Shorter than a real pitch's proportions: a chat app crops a tall image in its
+  // preview, and positions are percentages, so the pins simply sit closer.
+  const H = 860;
   const c = document.createElement('canvas');
   const measure = c.getContext('2d');
-  const factLayout = facts.length ? layoutFacts(measure, facts, W - FPAD * 2 - 12 * FS, FS, FONT) : [];
-  const factsH = factLayout.length ? FPAD + 22 * FS + factsHeight(factLayout) + FPAD / 2 : 0;
+  // The facts sit two to a row, so four of them take two rows rather than four.
+  const colW = (W - FPAD * 2 - FGAP) / 2;
+  const cells = facts.map((f) => layoutFacts(measure, [f], colW - 12 * FS, FS, FONT)[0]);
+  const rows = [];
+  for (let i = 0; i < cells.length; i += 2) rows.push(cells.slice(i, i + 2));
+  const rowsH = rows.reduce((sum, r) => sum + Math.max(...r.map((x) => x.h)), 0);
+  const factsH = cells.length ? FPAD + 20 * FS + rowsH + FPAD / 2 : 0;
   c.width = W;
   c.height = H + (showSummary ? SUMMARY_H : 0) + factsH;
   const g = c.getContext('2d');
@@ -139,7 +147,7 @@ function drawBoard(teams, pos, showRatings, showSummary, facts = []) {
   g.fillStyle = cols.red;
   g.fillText('RED', 16, H - 18);
   if (showSummary) drawSummary(g, W, H, teams);
-  if (factLayout.length) {
+  if (cells.length) {
     const top = H + (showSummary ? SUMMARY_H : 0);
     g.fillStyle = '#1f2833';
     g.fillRect(0, top, W, factsH);
@@ -154,7 +162,11 @@ function drawBoard(teams, pos, showRatings, showSummary, facts = []) {
     g.font = '700 ' + 11 * FS + 'px ' + FONT;
     g.fillStyle = 'rgba(255,255,255,0.5)';
     g.fillText('PRE-MATCH', FPAD, top + FPAD + 12 * FS);
-    drawFacts(g, factLayout, FPAD, top + FPAD + 22 * FS, W - FPAD * 2, FS, FONT);
+    let y = top + FPAD + 20 * FS;
+    rows.forEach((r) => {
+      r.forEach((cell, i) => drawFacts(g, [cell], FPAD + i * (colW + FGAP), y, colW, FS, FONT));
+      y += Math.max(...r.map((x) => x.h));
+    });
   }
   return c;
 }
@@ -163,7 +175,7 @@ function drawBoard(teams, pos, showRatings, showSummary, facts = []) {
 // faces the board uses first; stop waiting after a moment rather than block the share.
 function fontsReady() {
   if (!document.fonts || !document.fonts.load) return Promise.resolve();
-  const want = ['bold 15px "Barlow Condensed"', '600 12px Inter', '500 25px Inter', '700 17px Inter', 'bold 30px "JetBrains Mono"', '500 15px "JetBrains Mono"'];
+  const want = ['bold 15px "Barlow Condensed"', '600 12px Inter', '500 21px Inter', '700 14px Inter', 'bold 30px "JetBrains Mono"', '500 15px "JetBrains Mono"'];
   const loads = want.map((f) => document.fonts.load(f).catch(() => null));
   return Promise.race([Promise.all(loads), new Promise((r) => setTimeout(r, 1500))]);
 }
