@@ -4,6 +4,7 @@ import { AWARDS, lineupLabel, lineups, outcome, tally, weekPlayerIds } from './w
 import { formatDate } from './whatsapp.js';
 import { drawFacts, factsHeight, layoutFacts } from './drawFacts.js';
 import { postMatchFacts } from './facts.js';
+import { drawBadge, loadBadges } from './badges.js';
 
 // A night's results as one image: the scores, who was nominated, and the sides.
 //
@@ -52,15 +53,15 @@ function fontsReady() {
 // space at the bottom.
 // Kept compact on purpose: a chat app crops a tall image in its preview, so the card
 // aims to read whole without anyone having to open it.
-const HEAD_H = 88;
-const LABEL_H = 22; // a section label plus the gap under it
-const MATCH_H = 46; // a 40pt row plus its gap
-const NIGHT_H = 58; // only drawn when there is more than one match to sum up
-const AWARD_H = 44; // a 40pt tile plus its gap; tiles sit two to a row
-const FACT_S = 0.9; // talking points a touch smaller than the results they explain
+const HEAD_H = 70;
+const LABEL_H = 18; // a section label plus the gap under it
+const MATCH_H = 40; // a 35pt row plus its gap
+const NIGHT_H = 50; // only drawn when there is more than one match to sum up
+const AWARD_H = 40; // a 36pt tile plus its gap; tiles sit two to a row
+const FACT_S = 0.84; // talking points a touch smaller than the results they explain
 const MAX_FACTS = 3;
 const LINE_H = 17; // the line-ups are reference, so they sit smaller than the results
-const GAP = 10;
+const GAP = 8;
 const SIDE_LABEL_W = 38; // room for "RED" / "BLUE" before the names
 const GROUP_LABEL_H = 16; // "All 3 matches" above a line-up
 const GROUP_GAP = 8;
@@ -84,13 +85,18 @@ function wrapNames(g, names, maxWidth) {
 // Draws the label and returns the y the section's first row starts at.
 function sectionLabel(g, text, y) {
   g.textAlign = 'left';
-  g.font = '600 11px ' + BODY;
+  g.font = '600 9px ' + BODY;
   g.fillStyle = COL.faint;
-  g.fillText(text.toUpperCase(), PAD, y + 12);
+  g.fillText(text.toUpperCase(), PAD, y + 10);
   return y + LABEL_H;
 }
 
-function draw(week, facts = []) {
+function draw(week, facts = [], players = [], badges = {}) {
+  // Badges are looked up on today's roster: a week's line-up is a snapshot of names.
+  const clubFor = (id) => {
+    const p = players.find((x) => x.id === id);
+    return p && p.club ? p.club : null;
+  };
   const t = tally([week]);
   const squad = weekPlayerIds(week);
   const awards = AWARDS.filter(([k]) => week.awards && week.awards[k] != null);
@@ -136,16 +142,16 @@ function draw(week, facts = []) {
 
   // --- header ---
   g.textAlign = 'left';
-  g.font = 'bold 14px ' + DISPLAY;
+  g.font = 'bold 11px ' + DISPLAY;
   g.fillStyle = COL.brand;
-  g.fillText('FUFA', PAD, 30);
+  g.fillText('FUFA', PAD, 24);
   const brand = g.measureText('FUFA').width;
   g.fillStyle = COL.text;
-  g.fillText('RESULTS', PAD + brand + 6, 30);
+  g.fillText('RESULTS', PAD + brand + 5, 24);
 
-  g.font = 'bold 26px ' + DISPLAY;
+  g.font = 'bold 20px ' + DISPLAY;
   g.fillStyle = COL.text;
-  g.fillText(formatDate(week.date), PAD, 58);
+  g.fillText(formatDate(week.date), PAD, 46);
 
   const detail = [
     week.venue,
@@ -153,9 +159,9 @@ function draw(week, facts = []) {
     squad.length + ' players',
     week.matches.length + (week.matches.length === 1 ? ' match' : ' matches'),
   ].filter(Boolean);
-  g.font = '500 12px ' + BODY;
+  g.font = '500 11px ' + BODY;
   g.fillStyle = COL.muted;
-  g.fillText(detail.join('  ·  '), PAD, 74);
+  g.fillText(detail.join('  ·  '), PAD, 61);
 
   let y = HEAD_H;
 
@@ -173,37 +179,37 @@ function draw(week, facts = []) {
     // Left: which match, and how it went. Right of centre: the score itself. Nothing on
     // the far right — at phone width a third column is what makes rows crowded.
     g.textAlign = 'left';
-    g.font = '600 11px ' + BODY;
+    g.font = '600 10px ' + BODY;
     g.fillStyle = COL.text;
-    g.fillText('MATCH ' + (i + 1), PAD + 14, y + 17);
-    g.font = '500 10px ' + BODY;
+    g.fillText('MATCH ' + (i + 1), PAD + 12, y + 15);
+    g.font = '500 9px ' + BODY;
     g.fillStyle = COL.faint;
     g.fillText(
       o === 'red' ? 'Red win' : o === 'blue' ? 'Blue win' : o === 'draw' ? 'Draw' : o === 'off' ? 'Called off' : 'No score',
-      PAD + 14,
-      y + 31
+      PAD + 12,
+      y + 27
     );
 
     if (o !== 'off' && o !== 'noscore') {
       const mid = W / 2 + 36;
       g.textAlign = 'right';
-      g.font = 'bold 14px ' + DISPLAY;
+      g.font = 'bold 12px ' + DISPLAY;
       g.fillStyle = COL.red;
-      g.fillText('RED', mid - 50, y + 25);
+      g.fillText('RED', mid - 42, y + 22);
       g.textAlign = 'left';
       g.fillStyle = COL.blue;
-      g.fillText('BLUE', mid + 50, y + 25);
+      g.fillText('BLUE', mid + 42, y + 22);
 
       g.textAlign = 'center';
-      g.font = 'bold 24px ' + MONO;
+      g.font = 'bold 20px ' + MONO;
       g.fillStyle = o === 'red' ? COL.red : COL.text;
-      g.fillText(String(m.redScore), mid - 24, y + 28);
+      g.fillText(String(m.redScore), mid - 20, y + 24);
       g.fillStyle = COL.faint;
-      g.font = '400 16px ' + MONO;
-      g.fillText('–', mid, y + 26);
-      g.font = 'bold 24px ' + MONO;
+      g.font = '400 14px ' + MONO;
+      g.fillText('–', mid, y + 22);
+      g.font = 'bold 20px ' + MONO;
       g.fillStyle = o === 'blue' ? COL.blue : COL.text;
-      g.fillText(String(m.blueScore), mid + 24, y + 28);
+      g.fillText(String(m.blueScore), mid + 20, y + 24);
     }
     y += MATCH_H;
   });
@@ -220,12 +226,12 @@ function draw(week, facts = []) {
     cells.forEach(([value, label], i) => {
       const cx = PAD + cw * i + cw / 2;
       g.textAlign = 'center';
-      g.font = 'bold 22px ' + MONO;
+      g.font = 'bold 18px ' + MONO;
       g.fillStyle = i === 1 ? COL.red : i === 2 ? COL.blue : COL.text;
-      g.fillText(value, cx, y + 24);
-      g.font = '600 10px ' + BODY;
+      g.fillText(value, cx, y + 20);
+      g.font = '600 9px ' + BODY;
       g.fillStyle = COL.faint;
-      g.fillText(label, cx, y + 40);
+      g.fillText(label, cx, y + 34);
     });
     y += NIGHT_H;
   }
@@ -245,12 +251,15 @@ function draw(week, facts = []) {
       g.fillStyle = potm ? COL.gold : COL.line;
       g.fillRect(x, ty, 3, rowH);
       g.textAlign = 'left';
-      g.font = '600 9px ' + BODY;
+      g.font = '600 8px ' + BODY;
       g.fillStyle = potm ? COL.gold : COL.faint;
-      g.fillText((potm ? 'POTM' : label.replace('Best ', '')).toUpperCase(), x + 12, ty + 15);
-      g.font = 'bold 15px ' + DISPLAY;
+      g.fillText((potm ? 'POTM' : label.replace('Best ', '')).toUpperCase(), x + 11, ty + 13);
+      g.font = 'bold 13px ' + DISPLAY;
       g.fillStyle = potm ? COL.gold : COL.text;
-      g.fillText(nameOf(week.awards[k]), x + 12, ty + 32);
+      g.fillText(nameOf(week.awards[k]), x + 11, ty + 29);
+      // The club or country they support, at the right of the tile.
+      const club = clubFor(week.awards[k]);
+      if (club) drawBadge(g, club, badges[club], x + tileW - 18, ty + rowH / 2, 20);
     });
     y += Math.ceil(awards.length / 2) * AWARD_H;
     y += GAP;
@@ -299,7 +308,13 @@ function draw(week, facts = []) {
 export async function exportWeek(week, ctx = {}) {
   await fontsReady();
   const facts = ctx.facts === false || !ctx.weeks ? [] : postMatchFacts(week, ctx.weeks, ctx.players || [], { seasons: ctx.seasons || [] });
-  const canvas = draw(week, facts);
+  const players = ctx.players || [];
+  const nominees = Object.values(week.awards || {})
+    .filter((id) => id != null)
+    .map((id) => players.find((p) => p.id === id))
+    .filter(Boolean);
+  const badges = await loadBadges(nominees);
+  const canvas = draw(week, facts, players, badges);
   const name = 'fufa-results-' + (week.date || 'week') + '.png';
   canvas.toBlob((blob) => {
     if (!blob) return;
