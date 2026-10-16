@@ -350,7 +350,7 @@ const INTENT = {
   attendance: /\b(nights?|attendance|turn(ed|s)? out|turnout|regular|regulars|missed|absent|seen|showed up|turn up|appearances?)\b/,
   goals: /\b(goals?|scoring|scored|biggest|heaviest|clean sheets?|average goals|margin|conceded|thrash\w*|hammer\w*)\b/,
   scores: /\b(scores?|scorelines?|results?|what happened|how did|how was|recap|rundown)\b/,
-  ratings: /\b(ratings?|ovr|overall|rated|stats?|strongest|weakest|highest rated|lowest rated|pace|shooting|passing|defending|physical|dribbling|stamina|goalkeeping|vision|positioning|fastest|quickest|slowest)\b/,
+  ratings: /\b(ratings?|ovr|overall|rated|stats?|strongest|weakest|highest rated|lowest rated|pace|shooting|passing|defending|physical|dribbling|stamina|goalkeeping|vision|positioning|fastest|quickest|slowest|improved|improvement|improving|progress|progressed|dropped|declined|regressed|climbed|risen)\b/,
   partners: /\b(partners?|team ?mates?|best with|worst with|wins? (the )?most with|plays? (best |most |well )?with|line(s|d)? up with|alongside most|who does \w+ play with|combination)\b/,
   opponents: /\b(opponents?|rivals?|nemesis|bogey|beat(s|en)? (the )?most|lose[sd]? to|lost to (the )?most|loses? to|plays? against most|against most|who beats?)\b/,
   honours: /\b(honours?|honors?|winner|winners|champion|champions|won the (season|league|title)|trophy|title|season winner)\b/,
@@ -466,8 +466,17 @@ function rowsFor(weeks, roster) {
       run: runOf(list),
       ovr: overall(p),
       stats: p.stats,
+      firstOvr: null, // what they were rated at the oldest snapshot in the slice
       last: null,
     };
+    for (let i = weeks.length - 1; i >= 0; i--) {
+      const snap = weeks[i].ratings && weeks[i].ratings[id];
+      if (snap && snap.ovr != null) {
+        row.firstOvr = snap.ovr;
+        row.firstDate = weeks[i].date;
+        break;
+      }
+    }
     weeks.forEach((w) => {
       AWARDS.forEach(([k]) => {
         if (w.awards && w.awards[k] === id) {
@@ -711,6 +720,7 @@ function ratingsSection(p, weeks, players, showValues) {
     ['Position', p.pos + ((p.alt || []).length ? ' · also ' + p.alt.join(', ') : '')],
     ['Best at', top.slice(0, 3).map(([k, v]) => ABBR[k] + ' ' + v).join(' · ')],
     ['Weakest', top.slice(-2).map(([k, v]) => ABBR[k] + ' ' + v).join(' · ')],
+    ['All ten', STATS.map((k) => ABBR[k] + ' ' + (Number(p.stats[k]) || 0)).join(' · ')],
   ];
   // The oldest snapshot in the slice says what they were rated then.
   const snaps = weeks.filter((w) => w.ratings && w.ratings[p.id]);
@@ -785,11 +795,12 @@ function companySection(p, weeks, players, kind, text) {
 // --- answers about everyone --------------------------------------------------------------
 
 function ranking(rows, measure, dir, n, players, scopeLabel) {
-  const value = (r) => (measure.key === 'run' ? (r.run ? (r.run.kind === 'won' ? r.run.run : -r.run.run) : null) : measure.stat ? Number(r.stats[measure.stat]) || 0 : measure.key === 'pct' ? (r.won + r.lost >= 2 ? r.pct : null) : r[measure.key]);
+  const value = (r) => (measure.key === 'run' ? (r.run ? (r.run.kind === 'won' ? r.run.run : -r.run.run) : null) : measure.key === 'delta' ? (r.firstOvr == null ? null : r.ovr - r.firstOvr) : measure.stat ? Number(r.stats[measure.stat]) || 0 : measure.key === 'pct' ? (r.won + r.lost >= 2 ? r.pct : null) : r[measure.key]);
   const fmt = (r) => {
     const v = value(r);
     if (v == null) return '–';
     if (measure.key === 'run') return (r.run.kind === 'won' ? 'W' : 'L') + r.run.run;
+    if (measure.key === 'delta') return (v > 0 ? '+' : '') + v + ' · ' + r.firstOvr + ' → ' + r.ovr + ' since ' + r.firstDate;
     if (measure.key === 'pct') return fmtPct(v) + ' · ' + r.won + '–' + r.lost;
     if (measure.key === 'nights') return v + (scopeLabel ? ' / ' + scopeLabel : '');
     return String(v);
@@ -810,7 +821,9 @@ function ranking(rows, measure, dir, n, players, scopeLabel) {
   const topText = measure.key === 'nights' && topRow ? topRow.nights + ' of ' + plural(scopeLabel || 0, 'night') : top && top.value;
   const headline = !top || value(topRow) == null
     ? 'Nothing to rank by ' + label + ' yet.'
-    : (measure.key === 'pct' || measure.stat || measure.key === 'ovr' ? (asc ? 'Lowest ' : 'Best ') : asc ? 'Fewest ' : 'Most ') + label + ': ' + top.name + (measure.key === 'pct' || measure.key === 'run' || measure.stat || measure.key === 'ovr' ? ', ' + topText : ' with ' + topText) + '.';
+    : measure.key === 'delta'
+      ? (asc ? 'Biggest drop: ' : 'Most improved: ') + top.name + ', ' + topText + '.'
+      : (measure.key === 'pct' || measure.stat || measure.key === 'ovr' ? (asc ? 'Lowest ' : 'Best ') : asc ? 'Fewest ' : 'Most ') + label + ': ' + top.name + (measure.key === 'pct' || measure.key === 'run' || measure.stat || measure.key === 'ovr' ? ', ' + topText : ' with ' + topText) + '.';
   return { headline: headline.replace('Best win ratio', 'Best record').replace('Lowest win ratio', 'Worst record'), table: { title: cap(label), rows: sorted.slice(0, n || 12) } };
 }
 
@@ -860,14 +873,19 @@ function nightSummary(w, players, showValues) {
     const p = squad.find((x) => x.id === id) || players.find((x) => x.id === id);
     facts.push([k === 'potm' ? 'POTM' : label, p ? shortName(p.name) : 'Unknown']);
   });
-  if (showValues && w.ratings && Object.keys(w.ratings).length && w.matches[0]) {
-    const avg = (side) => {
-      const vals = (w.matches[0][side] || []).map((p) => w.ratings[p.id] && w.ratings[p.id].ovr).filter((v) => v != null);
+  if (showValues && w.ratings && Object.keys(w.ratings).length) {
+    const avg = (m, side) => {
+      const vals = (m[side] || []).map((p) => w.ratings[p.id] && w.ratings[p.id].ovr).filter((v) => v != null);
       return vals.length ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length) : null;
     };
-    const r = avg('red');
-    const b = avg('blue');
-    if (r != null && b != null) facts.push(['Sides rated (match 1)', 'Red ' + r + ' · Blue ' + b]);
+    const pairs = [];
+    (w.matches || []).forEach((m, i) => {
+      const r = avg(m, 'red');
+      const b = avg(m, 'blue');
+      if (r == null || b == null || pairs.some((x) => x.r === r && x.b === b)) return;
+      pairs.push({ i, r, b });
+    });
+    pairs.forEach(({ i, r, b }) => facts.push(['Sides rated' + (pairs.length > 1 ? ' (match ' + (i + 1) + ')' : ''), 'Red ' + r + ' · Blue ' + b + (r === b ? ' · level' : ' · ' + (r > b ? 'Red' : 'Blue') + ' by ' + Math.abs(r - b))]));
   }
   const headline = w.date + (w.venue ? ' at ' + w.venue : '') + ': ' + plural(list.length, 'match', 'matches') + (scored.length ? ' — Red ' + red + ', Blue ' + blue + ', scores ' + scored.map((m) => m.score).join(', ') : '') + '.';
   return { headline, facts, matches: list };
@@ -1150,7 +1168,18 @@ export function ask(text, data, context) {
     if (q.intent.goals) sections.push(goalsSection(answer.sided, who));
     if ((q.intent.awards || (q.award && !q.award.player)) && !(q.award && q.award.player) && answer.mode !== 'versus') sections.push(awardsSection(answer.ids, sliced, players, answer.who));
     if (q.intent.ratings && answer.mode === 'solo') sections.push(ratingsSection(answer.player, sliced, players, showValues));
-    if (q.intent.ratings && answer.mode !== 'solo') sections.push({ title: 'Ratings', line: showValues ? answer.ids.map((id) => nameOf(byId(id), players) + ' ' + overall(byId(id))).join(' · ') : 'Ratings are only shown when signed in.', facts: [] });
+    if (q.intent.ratings && answer.mode !== 'solo') {
+      const ps = answer.ids.map(byId).filter(Boolean);
+      const lineOf = () => {
+        const sorted = ps.slice().sort((a, b) => overall(b) - overall(a));
+        return sorted.map((p) => nameOf(p, players) + ' ' + overall(p)).join(' · ') + (sorted.length > 1 ? ' — ' + nameOf(sorted[0], players) + ' is the higher rated.' : '.');
+      };
+      sections.push({
+        title: 'Ratings',
+        line: showValues ? lineOf() : 'Ratings are only shown when signed in.',
+        facts: showValues ? STATS.map((k) => [ABBR[k], ps.map((p) => nameOf(p, players) + ' ' + (Number(p.stats[k]) || 0)).join(' · ')]) : [],
+      });
+    }
     if (q.intent.partners && answer.mode === 'solo') sections.push(companySection(answer.player, sliced, players, 'partners', q.left));
     if (q.intent.opponents && answer.mode === 'solo') sections.push(companySection(answer.player, sliced, players, 'opponents', q.left));
     // A follow-up that only asks for more leads with that, not the count the thread has.
@@ -1185,8 +1214,9 @@ export function ask(text, data, context) {
         headline = 'Ratings are only shown when signed in.';
         facts = [];
       } else {
-        const measure = q.stat ? { key: 'stat', stat: q.stat, label: q.stat.toLowerCase() } : { key: 'ovr', label: 'overall rating' };
-        const r = ranking(rows, measure, q.superlative === 'asc' || /\b(slowest|weakest|lowest)\b/.test(q.left) ? 'asc' : 'desc', q.topN, players);
+        const moved = /\b(improved|improvement|progress|progressed|changed|moved|risen|rise|climbed|dropped|drop|fallen|fell|declined|up|down)\b/.test(q.left);
+        const measure = moved ? { key: 'delta', label: 'improvement' } : q.stat ? { key: 'stat', stat: q.stat, label: q.stat.toLowerCase() } : { key: 'ovr', label: 'overall rating' };
+        const r = ranking(rows, measure, q.superlative === 'asc' || /\b(slowest|weakest|lowest|dropped|drop|fallen|fell|declined|down)\b/.test(q.left) ? 'asc' : 'desc', q.topN, players);
         headline = r.headline;
         facts = [];
         table = r.table;

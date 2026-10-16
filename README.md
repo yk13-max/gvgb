@@ -113,8 +113,14 @@ matches you played that night.
   out from everything recorded as you type. It picks out **who** is named (players by first
   name, surname, "Jo R" or nickname; clubs — "Arsenal fans"; positions — "which defender"),
   **which slice** of the data is meant, and **what** is being asked for; the words in between
-  don't matter. If a first name fits two players you're asked which. Viewers can ask too, but
-  anything about ratings answers "only shown when signed in".
+  don't matter. If a first name fits two players you're asked which. **Viewers can ask about
+  anything they can see** — results, nights, awards, partners, clubs — and a question about
+  ratings or stats answers "only shown when signed in", with no numbers behind it; a thread a
+  viewer started fills in the ratings the moment they sign in. **Password holders get the
+  lot**: a player's OVR, all ten stats, how they've moved since the earliest snapshot in the
+  slice, two or more players' stats side by side ("Sam and Jo ratings"), rankings by any stat
+  ("who has the highest pace?", "best goalkeeping among goalkeepers"), **who improved most** or
+  **dropped most** since the first snapshot, and how each line-up on a night was rated.
   - *Who.* One name: nights, matches, record, nominations, who they line up with and against
     most, last played. Two or more ("Jo with Sam", "how many games have Jo, Sam and Priya played
     together?"): nights all turned out, same-side matches and the record in them, opposite-side
