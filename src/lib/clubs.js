@@ -1,5 +1,5 @@
 // The clubs a player can support: everyone in the top five leagues this season
-// (2026/27). Each has a code, its colours and the pattern they are worn in, from
+// (2026/27), plus the Championship. Each has a code, its colours and the pattern they are worn in, from
 // which the app draws a small crest — no image files, no fetching, and nothing that
 // stops working when a club redesigns its badge.
 //
@@ -12,6 +12,7 @@ export const LEAGUES = [
   ['ITA', 'Serie A'],
   ['GER', 'Bundesliga'],
   ['FRA', 'Ligue 1'],
+  ['EFL', 'Championship'],
 ];
 
 // [code, name, league, first colour, second colour, pattern]
@@ -117,6 +118,31 @@ const LIST = [
   ['STR', 'Strasbourg', 'FRA', '#009FE3', '#FFFFFF', 'solid'],
   ['TOU', 'Toulouse', 'FRA', '#4B2E83', '#FFFFFF', 'solid'],
   ['EST', 'Troyes', 'FRA', '#1A3C8E', '#FFFFFF', 'solid'],
+  // Championship
+  ['BIR', 'Birmingham City', 'EFL', '#0000FF', '#FFFFFF', 'solid'],
+  ['BLB', 'Blackburn Rovers', 'EFL', '#009EE0', '#FFFFFF', 'halves'],
+  ['BWN', 'Bolton Wanderers', 'EFL', '#FFFFFF', '#263C7E', 'solid'],
+  ['BRC', 'Bristol City', 'EFL', '#E21C38', '#FFFFFF', 'solid'],
+  ['BUR', 'Burnley', 'EFL', '#6C1D45', '#99D6EA', 'solid'],
+  ['CAR', 'Cardiff City', 'EFL', '#0070B5', '#FFFFFF', 'solid'],
+  ['CHA', 'Charlton Athletic', 'EFL', '#D4021D', '#FFFFFF', 'solid'],
+  ['DER', 'Derby County', 'EFL', '#FFFFFF', '#000000', 'solid'],
+  ['LIN', 'Lincoln City', 'EFL', '#E31B23', '#FFFFFF', 'stripes'],
+  ['MID', 'Middlesbrough', 'EFL', '#E11B22', '#FFFFFF', 'solid'],
+  ['MLW', 'Millwall', 'EFL', '#001D5E', '#FFFFFF', 'solid'],
+  ['NOR', 'Norwich City', 'EFL', '#FFF200', '#00A650', 'solid'],
+  ['POR', 'Portsmouth', 'EFL', '#001489', '#FFFFFF', 'solid'],
+  ['PNE', 'Preston North End', 'EFL', '#FFFFFF', '#1B2A4B', 'solid'],
+  ['QPR', 'Queens Park Rangers', 'EFL', '#005CAB', '#FFFFFF', 'hoops'],
+  ['SHU', 'Sheffield United', 'EFL', '#EE2737', '#FFFFFF', 'stripes'],
+  ['SOU', 'Southampton', 'EFL', '#D71920', '#FFFFFF', 'stripes'],
+  ['STK', 'Stoke City', 'EFL', '#E03A3E', '#FFFFFF', 'stripes'],
+  ['SWA', 'Swansea City', 'EFL', '#FFFFFF', '#000000', 'solid'],
+  ['WAT', 'Watford', 'EFL', '#FBEE23', '#000000', 'solid'],
+  ['WBA', 'West Bromwich Albion', 'EFL', '#122F67', '#FFFFFF', 'stripes'],
+  ['WHU', 'West Ham United', 'EFL', '#7A263A', '#1BB1E7', 'solid'],
+  ['WOL', 'Wolverhampton Wanderers', 'EFL', '#FDB913', '#231F20', 'solid'],
+  ['WRX', 'Wrexham', 'EFL', '#CE1126', '#FFFFFF', 'solid'],
 ];
 
 export const CLUBS = LIST.map(([code, name, league, a, b, pattern]) => ({ code, name, league, a, b, pattern }));
