@@ -21,6 +21,7 @@ import { exportJSON, readBackupFile } from './lib/backup.js';
 import { savedPassword } from './lib/remote.js';
 import { buildDoc, parseDoc } from './lib/doc.js';
 import { exportBoard } from './lib/exportBoard.js';
+import { preMatchFacts } from './lib/facts.js';
 import { DEFAULT_STATS, balance, layout, relax } from './lib/model.js';
 import { samplePlayers } from './lib/samplePlayers.js';
 import { ALL, currentSeason, labelFor, seasonOptions, weeksIn } from './lib/seasons.js';
@@ -154,6 +155,14 @@ export default function App() {
   const [showStats, setShowStats] = useState(false);
   const [pngRatings, setPngRatings] = useState(true);
   const [pngSummary, setPngSummary] = useState(false);
+  // Talking points on the shared images. No ratings in them, so viewers get them too.
+  const [pngFacts, setPngFacts] = useState(true);
+  const shareBoard = () =>
+    exportBoard(teams, pos, {
+      ratings: showValues && pngRatings,
+      summary: showValues && pngSummary,
+      facts: pngFacts ? preMatchFacts(teams, history, players, { seasons, today: todayISO() }) : [],
+    });
   const [match, setMatch] = useState(start.match);
   const [sel, setSel] = useState(null);
   const [draft, setDraft] = useState(null);
@@ -642,6 +651,7 @@ export default function App() {
               <Switch checked={pngSummary} onChange={(e) => setPngSummary(e.target.checked)} label="PNG summary" />
             </>
           )}
+          <Switch checked={pngFacts} onChange={(e) => setPngFacts(e.target.checked)} label="PNG talking points" />
           <Button
             variant="secondary"
             size="sm"
@@ -656,7 +666,7 @@ export default function App() {
             size="sm"
             icon={<Icon name="download" size={15} />}
             disabled={!built}
-            onClick={() => exportBoard(teams, pos, { ratings: showValues && pngRatings, summary: showValues && pngSummary })}
+            onClick={shareBoard}
           >
             Export PNG
           </Button>
@@ -756,6 +766,7 @@ export default function App() {
 
       {page === 'history' ? (
         <History
+          pngFacts={pngFacts}
           weeks={seasonWeeks}
           allWeeks={history}
           seasons={seasons}
@@ -1013,7 +1024,7 @@ export default function App() {
                   disabled={!built}
                   onClick={() => {
                     setMenu(false);
-                    exportBoard(teams, pos, { ratings: showValues && pngRatings, summary: showValues && pngSummary });
+                    shareBoard();
                   }}
                 />
                 {showValues && (
@@ -1038,6 +1049,7 @@ export default function App() {
                     />
                   </>
                 )}
+                <Switch style={SWITCH_ROW} checked={pngFacts} onChange={(e) => setPngFacts(e.target.checked)} label="Talking points on the images" />
               </div>
             )}
 

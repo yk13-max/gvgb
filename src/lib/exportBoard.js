@@ -1,6 +1,7 @@
 import { downloadBlob } from './download.js';
 import { ABBR, STATS, balanceScore, overall, ovrAvg, ovrTotal, statAvg } from './model.js';
 import { initials, shortName } from './names.js';
+import { drawFacts, factsHeight, layoutFacts } from './drawFacts.js';
 
 const COLS = { red: '#c2402c', blue: '#2f66cf' };
 const LEAD = { red: '#e0644d', blue: '#5b8ee8' };
@@ -71,15 +72,23 @@ function drawSummary(g, W, top, teams) {
   });
 }
 
+// The pre-match strip: talking points for the group chat, under everything else.
+const FS = 1.7; // the board is 760px wide and shown at phone width, so text is scaled up
+const FPAD = 24;
+const FONT = 'Inter,sans-serif';
+
 // Board -> PNG, drawn directly so the export matches what's on screen.
-function drawBoard(teams, pos, showRatings, showSummary) {
+function drawBoard(teams, pos, showRatings, showSummary, facts = []) {
   const W = 760;
   // Pin positions are a percentage of the pitch, so the pitch keeps its height and
   // the summary strip extends the canvas below it.
   const H = 1118;
   const c = document.createElement('canvas');
+  const measure = c.getContext('2d');
+  const factLayout = facts.length ? layoutFacts(measure, facts, W - FPAD * 2 - 12 * FS, FS, FONT) : [];
+  const factsH = factLayout.length ? FPAD + 22 * FS + factsHeight(factLayout) + FPAD / 2 : 0;
   c.width = W;
-  c.height = H + (showSummary ? SUMMARY_H : 0);
+  c.height = H + (showSummary ? SUMMARY_H : 0) + factsH;
   const g = c.getContext('2d');
   g.fillStyle = '#1a222c';
   g.fillRect(0, 0, W, H);
@@ -130,6 +139,23 @@ function drawBoard(teams, pos, showRatings, showSummary) {
   g.fillStyle = cols.red;
   g.fillText('RED', 16, H - 18);
   if (showSummary) drawSummary(g, W, H, teams);
+  if (factLayout.length) {
+    const top = H + (showSummary ? SUMMARY_H : 0);
+    g.fillStyle = '#1f2833';
+    g.fillRect(0, top, W, factsH);
+    g.strokeStyle = 'rgba(255,255,255,0.16)';
+    g.lineWidth = 1;
+    g.beginPath();
+    g.moveTo(0, top + 0.5);
+    g.lineTo(W, top + 0.5);
+    g.stroke();
+    g.textAlign = 'left';
+    g.textBaseline = 'alphabetic';
+    g.font = '700 ' + 11 * FS + 'px ' + FONT;
+    g.fillStyle = 'rgba(255,255,255,0.5)';
+    g.fillText('PRE-MATCH', FPAD, top + FPAD + 12 * FS);
+    drawFacts(g, factLayout, FPAD, top + FPAD + 22 * FS, W - FPAD * 2, FS, FONT);
+  }
   return c;
 }
 
@@ -137,14 +163,14 @@ function drawBoard(teams, pos, showRatings, showSummary) {
 // faces the board uses first; stop waiting after a moment rather than block the share.
 function fontsReady() {
   if (!document.fonts || !document.fonts.load) return Promise.resolve();
-  const want = ['bold 15px "Barlow Condensed"', '600 12px Inter', 'bold 30px "JetBrains Mono"', '500 15px "JetBrains Mono"'];
+  const want = ['bold 15px "Barlow Condensed"', '600 12px Inter', '500 25px Inter', '700 17px Inter', 'bold 30px "JetBrains Mono"', '500 15px "JetBrains Mono"'];
   const loads = want.map((f) => document.fonts.load(f).catch(() => null));
   return Promise.race([Promise.all(loads), new Promise((r) => setTimeout(r, 1500))]);
 }
 
-export async function exportBoard(teams, pos, { ratings = true, summary = false } = {}) {
+export async function exportBoard(teams, pos, { ratings = true, summary = false, facts = [] } = {}) {
   await fontsReady();
-  const canvas = drawBoard(teams, pos, ratings, summary);
+  const canvas = drawBoard(teams, pos, ratings, summary, facts);
   const filename = 'fufa-teams.png';
   canvas.toBlob((blob) => {
     if (!blob) return;

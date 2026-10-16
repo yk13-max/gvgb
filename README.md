@@ -109,6 +109,18 @@ matches you played that night.
   no score. Editing is always one match: the one you opened.
 - The date on a match is what decides its week, so editing a match's date moves it between
   weeks, and a week with no matches left disappears.
+- **Talking points on the shared images.** Export PNG on the Balancer adds a **Pre-match**
+  strip under the pitch, and Share on a Results week adds **Talking points** to the card: up to
+  four facts, the strongest from each kind first. Before kick-off: **head to head** (these exact
+  sides, or sides with most of these players, and who leads), **form guide** (each side's
+  players' last five, the hottest and coldest runs), **partnerships** (each side's best duo on
+  record, team-mates for the first time) and **milestones** (a debut, a 10th/25th/50th… match,
+  someone back after a few nights out, top v bottom of the table). After the night: **streaks**
+  extended, ended or broken, **records** (biggest win, highest-scoring game, most goals in a
+  night), **table** movement (a new leader, the biggest climb or drop) and the **upset meter**.
+  The images go to everyone, so no rating number ever appears: the upset meter compares the
+  sides' ratings behind the scenes and says only that the lower-rated side won, with one to
+  three pips for how big a surprise it was. A **talking points** switch turns them off.
 - **Ask the results.** A question box at the top of Results answers in plain words, worked
   out from everything recorded as you type. It picks out **who** is named (players by first
   name, surname, "Jo R" or nickname; clubs — "Arsenal fans"; positions — "which defender"),

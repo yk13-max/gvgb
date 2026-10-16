@@ -2,6 +2,8 @@ import { downloadBlob } from './download.js';
 import { shortName } from './names.js';
 import { AWARDS, lineupLabel, lineups, outcome, tally, weekPlayerIds } from './weeks.js';
 import { formatDate } from './whatsapp.js';
+import { drawFacts, factsHeight, layoutFacts } from './drawFacts.js';
+import { postMatchFacts } from './facts.js';
 
 // A night's results as one image: the scores, who was nominated, and the sides.
 //
@@ -84,7 +86,7 @@ function sectionLabel(g, text, y) {
   return y + LABEL_H;
 }
 
-function draw(week) {
+function draw(week, facts = []) {
   const t = tally([week]);
   const squad = weekPlayerIds(week);
   const awards = AWARDS.filter(([k]) => week.awards && week.awards[k] != null);
@@ -112,7 +114,10 @@ function draw(week) {
   const nightH = t.played > 0 ? NIGHT_H : 0;
   const awardsH = awards.length ? LABEL_H + awards.length * AWARD_H + GAP : 0;
   const sidesH = groups.length ? LABEL_H + groups.reduce((sum, g) => sum + groupH(g), 0) - GROUP_GAP : 0;
-  const H = HEAD_H + matchesH + nightH + awardsH + sidesH + PAD;
+  // Talking points: what the night meant, against everything before it.
+  const factLayout = facts.length ? layoutFacts(measure, facts, W - PAD * 2 - 12, 1, BODY) : [];
+  const factsH = factLayout.length ? LABEL_H + factsHeight(factLayout) + GAP : 0;
+  const H = HEAD_H + matchesH + nightH + awardsH + factsH + sidesH + PAD;
 
   const c = document.createElement('canvas');
   c.width = W * SCALE;
@@ -244,6 +249,13 @@ function draw(week) {
     y += GAP;
   }
 
+  // --- talking points ---
+  if (factLayout.length) {
+    y = sectionLabel(g, 'Talking points', y);
+    y = drawFacts(g, factLayout, PAD, y, W - PAD * 2, 1, BODY);
+    y += GAP;
+  }
+
   // --- the sides ---
   if (groups.length) {
     y = sectionLabel(g, groups.length === 1 ? 'Line-up' : 'Line-ups', y);
@@ -275,9 +287,12 @@ function draw(week) {
   return c;
 }
 
-export async function exportWeek(week) {
+// `ctx` carries the rest of the history, so the card can say what the night meant:
+// streaks, records, table movement and upsets.
+export async function exportWeek(week, ctx = {}) {
   await fontsReady();
-  const canvas = draw(week);
+  const facts = ctx.facts === false || !ctx.weeks ? [] : postMatchFacts(week, ctx.weeks, ctx.players || [], { seasons: ctx.seasons || [] });
+  const canvas = draw(week, facts);
   const name = 'fufa-results-' + (week.date || 'week') + '.png';
   canvas.toBlob((blob) => {
     if (!blob) return;

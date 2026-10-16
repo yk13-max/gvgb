@@ -93,7 +93,7 @@ function RatingsPanel({ week, players }) {
   );
 }
 
-function WeekCard({ week, players, onAwards, onEditMatch, onDeleteMatch, onDeleteWeek, canEdit, showValues }) {
+function WeekCard({ week, players, shareCtx, onAwards, onEditMatch, onDeleteMatch, onDeleteWeek, canEdit, showValues }) {
   const [open, setOpen] = useState(false);
   const t = tally([week]);
   const named = weekPlayerIds(week);
@@ -124,7 +124,7 @@ function WeekCard({ week, players, onAwards, onEditMatch, onDeleteMatch, onDelet
             variant="secondary"
             size="sm"
             icon={<Icon name="share-2" size={15} />}
-            onClick={() => exportWeek(week)}
+            onClick={() => exportWeek(week, shareCtx)}
           >
             Share
           </Button>
@@ -265,7 +265,7 @@ function WeekCard({ week, players, onAwards, onEditMatch, onDeleteMatch, onDelet
   );
 }
 
-export default function History({ weeks, allWeeks, seasons, seasonKey, today, players, onAwards, onEditMatch, onDeleteMatch, onDeleteWeek, canEdit = true, showValues = true, seasonBar, seasonLabel }) {
+export default function History({ pngFacts = true, weeks, allWeeks, seasons, seasonKey, today, players, onAwards, onEditMatch, onDeleteMatch, onDeleteWeek, canEdit = true, showValues = true, seasonBar, seasonLabel }) {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
 
@@ -348,6 +348,7 @@ export default function History({ weeks, allWeeks, seasons, seasonKey, today, pl
             key={w.id}
             week={w}
             players={players}
+            shareCtx={{ weeks: allWeeks || weeks, players, seasons: seasons || [], facts: pngFacts }}
             canEdit={canEdit}
             showValues={showValues}
             onAwards={onAwards}
