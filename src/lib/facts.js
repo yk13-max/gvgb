@@ -14,7 +14,7 @@ import { outcome } from './weeks.js';
 
 export const CATEGORY = {
   h2h: { tag: 'Head to head', tone: 'gold' },
-  form: { tag: 'Form guide', tone: 'green' },
+  form: { tag: 'In form', tone: 'green' },
   duo: { tag: 'Partnerships', tone: 'violet' }, // pairs, and groups of three or four
   story: { tag: 'Milestone', tone: 'blue' },
   streak: { tag: 'Streak', tone: 'green' },
@@ -178,24 +178,39 @@ export function preMatchFacts(teams, weeks, players, { seasons = [], today, max 
   else if (close.n) facts.push({ cat: 'h2h', weight: 72, text: 'Familiar foes: sides with at least ' + close.min + ' of these ' + total + ' players have met ' + plural(close.n, 'time') + ' — ' + lead(close) + '.' });
   else if (all.length >= 5) facts.push({ cat: 'h2h', weight: 30, text: 'A fresh fixture: these sides have never lined up like this before.' });
 
-  // Form guide: each side's players' last five, and the hottest and coldest runs.
-  const formOf = (side) => side.reduce((acc, id) => {
-    const last = resultsOf(id, all).slice(-5);
-    acc.w += last.filter((x) => x === 'W').length;
-    acc.n += last.length;
-    return acc;
-  }, { w: 0, n: 0 });
-  const rf = formOf(red);
-  const bf = formOf(blue);
-  if (rf.n + bf.n >= 6) {
-    const better = rf.w / (rf.n || 1) >= bf.w / (bf.n || 1) ? 'Red' : 'Blue';
-    facts.push({ cat: 'form', weight: 60, text: 'Red’s players have won ' + rf.w + ' of their last ' + rf.n + ', Blue’s ' + bf.w + ' of ' + bf.n + ' — ' + better + ' come in hotter.' });
+  // In form: the player on each side with the most wins in their last five this season.
+  // Only someone with three or more counts as in form; a side with nobody is left out,
+  // and the fact is dropped altogether if neither side has anyone.
+  const seasonNow = currentSeason(seasons, today || new Date().toISOString().slice(0, 10));
+  const formList = chrono(seasonNow ? weeksIn(weeks || [], String(seasonNow.id), seasons) : weeks || []);
+  const inForm = (side) => {
+    let best = null;
+    side.forEach((id) => {
+      const res = resultsOf(id, formList);
+      const last = res.slice(-5);
+      const wins = last.filter((x) => x === 'W').length;
+      if (wins < 3) return;
+      const run = runOf(res);
+      const streak = run.kind === 'W' ? run.n : 0;
+      if (!best || wins > best.wins || (wins === best.wins && (streak > best.streak || (streak === best.streak && last.length < best.of)))) best = { id, wins, of: last.length, streak };
+    });
+    return best;
+  };
+  const describe = (f) =>
+    name(f.id) +
+    (f.wins === f.of
+      ? ', won their last ' + Math.max(f.streak, f.of)
+      : ', ' + f.wins + ' wins in their last ' + f.of + (f.streak >= 3 ? ' (the last ' + f.streak + ' in a row)' : ''));
+  const rf = inForm(red);
+  const bf = inForm(blue);
+  if (rf || bf) {
+    const text =
+      rf && bf
+        ? 'Red’s in-form player: ' + describe(rf) + '. Blue’s: ' + describe(bf) + '.'
+        : (rf ? 'Red' : 'Blue') + '’s in-form player: ' + describe(rf || bf) + '.';
+    const top = Math.max(rf ? rf.wins + rf.streak : 0, bf ? bf.wins + bf.streak : 0);
+    facts.push({ cat: 'form', who: rf && !bf ? rf.id : bf && !rf ? bf.id : null, weight: 58 + top, text });
   }
-  const runs = both.map((id) => ({ id, ...runOf(resultsOf(id, all)) }));
-  const hot = runs.filter((r) => r.kind === 'W' && r.n >= 3).sort((a, b) => b.n - a.n)[0];
-  const cold = runs.filter((r) => r.kind === 'L' && r.n >= 3).sort((a, b) => b.n - a.n)[0];
-  if (hot) facts.push({ cat: 'form', who: hot.id, weight: 62 + hot.n, text: name(hot.id) + ' is on a ' + hot.n + '-match winning run.' });
-  if (cold) facts.push({ cat: 'form', weight: 55 + cold.n, text: name(cold.id) + ' has lost ' + cold.n + ' in a row — due a win?' });
 
   // Partnerships: each side's best duo on record, and team-mates for the first time.
   const duo = (side) => {
