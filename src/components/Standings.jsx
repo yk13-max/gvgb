@@ -33,10 +33,29 @@ const GROUPS = [
       { key: 'pct', full: 'PCT', short: 'PCT', title: 'Win ratio: wins over wins plus losses', pct: true },
     ],
   },
+  {
+    label: 'Form',
+    cols: [{ key: 'form', full: 'Last 5', short: 'L5', title: 'Last five decided matches, oldest to newest', form: true }],
+  },
 ];
 const COLS = GROUPS.flatMap((g) => g.cols);
 
-const valueOf = (r, key) => (key === 'nights' ? r.played.length : key === 'name' ? r.name : r[key]);
+// Form sorts by wins in the last five, then by how recent they were.
+const formScore = (r) => (r.form.length ? r.formWins * 100 + r.form.reduce((s, x, i) => s + (x === 'W' ? i + 1 : 0), 0) : null);
+const valueOf = (r, key) => (key === 'nights' ? r.played.length : key === 'name' ? r.name : key === 'form' ? formScore(r) : r[key]);
+
+function Form({ form }) {
+  if (!form.length) return <span className="tb-form-none">–</span>;
+  return (
+    <span className="tb-form" aria-label={'Last ' + form.length + ': ' + form.join(' ')}>
+      {form.map((x, i) => (
+        <span key={i} className="tb-form-pip" data-r={x} aria-hidden="true">
+          {x}
+        </span>
+      ))}
+    </span>
+  );
+}
 const fmt = (key, v) => (key === 'pct' ? (v == null ? '–' : v.toFixed(3)) : v);
 
 // What the season adds up to for one player, shown under their row.
@@ -174,7 +193,7 @@ export default function Standings({ weeks, players, seasonBar, seasonLabel, onHo
               <th className="tb-league-rank" />
               <th className="tb-league-name" />
               {GROUPS.map((g) => (
-                <th key={g.label} className="tb-league-group" colSpan={g.cols.length} scope="colgroup">
+                <th key={g.label} className={'tb-league-group' + (g.label === 'Form' ? ' tb-league-formgroup' : '')} colSpan={g.cols.length} scope="colgroup">
                   {g.label}
                 </th>
               ))}
@@ -192,7 +211,7 @@ export default function Standings({ weeks, players, seasonBar, seasonLabel, onHo
                   col={c}
                   sort={sort}
                   onSort={onSort}
-                  className={'tb-league-n' + (c.total ? ' tb-league-total' : '') + (c.potm ? ' tb-league-potm' : '')}
+                  className={(c.form ? 'tb-league-form' : 'tb-league-n') + (c.total ? ' tb-league-total' : '') + (c.potm ? ' tb-league-potm' : '')}
                 >
                   <span className="tb-league-hfull">{c.full}</span>
                   <span className="tb-league-hshort">{c.short}</span>
@@ -226,12 +245,22 @@ export default function Standings({ weeks, players, seasonBar, seasonLabel, onHo
                     {r.club && <Crest code={r.club} size={14} className="tb-league-crest" />}
                     <span className="tb-league-full">{r.name}</span>
                     <span className="tb-league-short">{shortName(r.name)}</span>
+                    {/* On a phone the form column folds into this cell, under the name. */}
+                    <span className="tb-league-forminline" aria-hidden="true">
+                      <Form form={r.form} />
+                    </span>
                     <span className="tb-league-chev">
                       <Icon name={isOpen ? 'chevron-up' : 'chevron-down'} size={13} />
                     </span>
                   </td>
                   {COLS.map((c) => {
                     const v = valueOf(r, c.key);
+                    if (c.form)
+                      return (
+                        <td key={c.key} className="tb-league-form" data-sorted={sort.key === c.key ? '1' : '0'}>
+                          <Form form={r.form} />
+                        </td>
+                      );
                     return (
                       <td
                         key={c.key}

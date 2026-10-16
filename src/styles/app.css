@@ -2167,7 +2167,8 @@ td.tb-league-name {
 
 /* The rank-in-cell and the short name exist for the phone; the desktop has room. */
 .tb-league-rankinline,
-.tb-league-short {
+.tb-league-short,
+.tb-league-forminline {
   display: none;
 }
 
@@ -2176,6 +2177,81 @@ th.tb-league-n {
   text-align: right;
   font-family: var(--font-mono);
   width: 64px;
+}
+
+/* Form: the last five as W/L pips, oldest on the left. */
+.tb-league-form {
+  text-align: left;
+  white-space: nowrap;
+  padding-left: 12px !important;
+}
+
+.tb-form {
+  display: inline-flex;
+  gap: 3px;
+  vertical-align: middle;
+}
+
+.tb-form-pip {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  color: #fff;
+}
+
+.tb-form-pip[data-r='W'] {
+  background: var(--color-primary);
+}
+
+.tb-form-pip[data-r='L'] {
+  background: var(--team-red);
+}
+
+.tb-form-none {
+  font-family: var(--font-mono);
+  color: var(--color-text-tertiary);
+}
+
+td.tb-league-form[data-sorted='1'] {
+  background: var(--color-surface-sunken);
+}
+
+@media (max-width: 760px) {
+  /* On a phone the form leaves its own column and sits under the name in the pinned
+     cell, as five dots: the table keeps its width and the form never scrolls away. */
+  .tb-league-form,
+  .tb-league-formgroup {
+    display: none;
+  }
+
+  td.tb-league-name {
+    flex-wrap: wrap;
+    row-gap: 3px;
+  }
+
+  .tb-league-forminline {
+    display: block;
+    flex-basis: 100%;
+    padding-left: 16px; /* under the name, past the folded-in rank */
+    line-height: 0;
+  }
+
+  .tb-form {
+    gap: 2px;
+  }
+
+  .tb-form-pip {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    font-size: 0;
+  }
 }
 
 .tb-league-total {

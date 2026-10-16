@@ -25,6 +25,7 @@ export function standings(weeks, players) {
         games: 0, // matches actually played, scored or not
         won: 0, // from the side the player was on
         lost: 0,
+        recent: [], // 'W' / 'L' for each decided match, newest first
       });
     }
     return rows.get(id);
@@ -37,7 +38,8 @@ export function standings(weeks, players) {
     weekPlayerIds(w).forEach((p) => row(p.id, p.name).played.push(w.date));
     // A result counts for everyone who was on the pitch for it. Called off or unscored
     // matches count for nobody.
-    (w.matches || []).forEach((m) => {
+    // Later matches in a night come first, so `recent` stays newest first throughout.
+    (w.matches || []).slice().reverse().forEach((m) => {
       const o = outcome(m);
       if (o === 'off') return;
       [
@@ -52,6 +54,7 @@ export function standings(weeks, players) {
           if (o === 'red' || o === 'blue') {
             if (o === side) r.won += 1;
             else r.lost += 1;
+            r.recent.push(o === side ? 'W' : 'L');
           }
         });
       });
@@ -73,6 +76,9 @@ export function standings(weeks, players) {
   rows.forEach((r) => {
     const decided = r.won + r.lost;
     r.pct = decided ? r.won / decided : null;
+    // The last five, read left to right oldest to newest, the way a league table prints form.
+    r.form = r.recent.slice(0, 5).reverse();
+    r.formWins = r.form.filter((x) => x === 'W').length;
   });
 
   // A league table, the way a league prints one: best win ratio first. Nobody with no
