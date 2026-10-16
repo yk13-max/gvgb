@@ -757,6 +757,10 @@ export default function App() {
       {page === 'history' ? (
         <History
           weeks={seasonWeeks}
+          allWeeks={history}
+          seasons={seasons}
+          seasonKey={activeSeason}
+          today={todayISO()}
           players={players}
           seasonBar={seasonBar}
           seasonLabel={seasonLabel}

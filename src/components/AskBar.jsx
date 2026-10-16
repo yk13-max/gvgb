@@ -47,13 +47,30 @@ function Facts({ facts }) {
   );
 }
 
-function Answer({ result, scope, compact }) {
-  const [showMatches, setShowMatches] = useState(false);
+function Table({ table }) {
+  if (!table || !table.rows.length) return null;
+  return (
+    <ol className="tb-ask-table">
+      {table.rows.slice(0, 12).map((r, i) => (
+        <li key={r.name + i}>
+          <span className="tb-ask-trank">{i + 1}</span>
+          <span className="tb-ask-tname">{r.name}</span>
+          <span className="tb-ask-tvalue">{show(r.value)}</span>
+        </li>
+      ))}
+      {table.rows.length > 12 && <li className="tb-ask-more">and {table.rows.length - 12} more</li>}
+    </ol>
+  );
+}
+
+function Answer({ result, compact }) {
+  const [showMatches, setShowMatches] = useState(!!result.expand);
+  const bits = result.bits || [];
   return (
     <div className="tb-ask-answer" data-mode={result.mode} data-compact={compact ? '1' : '0'}>
       <div className="tb-ask-headline">{show(result.headline)}</div>
       {result.sub && !compact && <div className="tb-ask-sub">{show(result.sub)}</div>}
-      {scope && !compact && <div className="tb-ask-scope">In {scope} · change the season above for all time</div>}
+      {bits.length > 0 && !compact && <div className="tb-ask-scope">{bits.map(show).join(' · ')}</div>}
       {!compact && (
         <>
           <Facts facts={result.facts} />
@@ -71,21 +88,13 @@ function Answer({ result, scope, compact }) {
                 </div>
               )}
               <Facts facts={s.facts} />
+              {s.table && <Table table={s.table} />}
             </div>
           ))}
           {result.table && result.table.rows.length > 0 && (
             <div className="tb-ask-section">
               <div className="tb-ask-section-title">{result.table.title}</div>
-              <ol className="tb-ask-table">
-                {result.table.rows.slice(0, 12).map((r, i) => (
-                  <li key={r.name + i}>
-                    <span className="tb-ask-trank">{i + 1}</span>
-                    <span className="tb-ask-tname">{r.name}</span>
-                    <span className="tb-ask-tvalue">{show(r.value)}</span>
-                  </li>
-                ))}
-                {result.table.rows.length > 12 && <li className="tb-ask-more">and {result.table.rows.length - 12} more</li>}
-              </ol>
+              <Table table={result.table} />
             </div>
           )}
           {result.matches.length > 0 && (
@@ -126,35 +135,37 @@ function Answer({ result, scope, compact }) {
   );
 }
 
-export default function AskBar({ players, weeks, seasonLabel }) {
+// `weeks` is the whole history; the season picker's key sets the default slice, and a
+// question can widen or narrow it itself ("all time", "since September", "last night").
+export default function AskBar({ players, weeks, seasons = [], pickerKey, showValues = true, today }) {
   const [text, setText] = useState('');
   const [thread, setThread] = useState([]); // [{ q, result }], oldest first
   const [openIdx, setOpenIdx] = useState(null); // an earlier answer opened back up
   const [recent, setRecent] = useState(readRecent);
   const inputRef = useRef(null);
+  const data = useMemo(() => ({ players, weeks, seasons, pickerKey, showValues, today: today || new Date().toISOString().slice(0, 10) }), [players, weeks, seasons, pickerKey, showValues, today]);
   const last = thread.length ? thread[thread.length - 1] : null;
   const context = last ? last.result.subject : null;
-  const live = useMemo(() => ask(text, players, weeks, context), [text, players, weeks, context]);
-  const chips = useMemo(() => examples(players, weeks), [players, weeks]);
-  const scope = seasonLabel && seasonLabel !== 'All time' ? seasonLabel : null;
-  const next = useMemo(() => followUps(last ? last.result : null), [last]);
+  const live = useMemo(() => ask(text, data, context), [text, data, context]);
+  const chips = useMemo(() => examples(data), [data]);
+  const next = useMemo(() => followUps(last ? last.result : null, showValues), [last, showValues]);
 
-  // A changed season or roster changes every answer in the thread: recompute them in place.
+  // A changed season, slice or roster changes every answer in the thread: recompute them.
   useEffect(() => {
     setThread((t) => {
       let ctx = null;
       return t.map((item) => {
-        const result = ask(item.q, players, weeks, ctx);
+        const result = ask(item.q, data, ctx);
         ctx = result.kind === 'answer' ? result.subject : ctx;
         return { ...item, result };
       });
     });
-  }, [players, weeks]);
+  }, [data]);
 
   function commit(q) {
     const question = (q == null ? text : q).trim();
     if (!question) return;
-    const result = q == null ? live : ask(question, players, weeks, context);
+    const result = q == null ? live : ask(question, data, context);
     if (result.kind !== 'answer') {
       if (q != null) setText(question);
       return;
@@ -187,7 +198,7 @@ export default function AskBar({ players, weeks, seasonLabel }) {
                   <Icon name="message-circle" size={13} />
                   <span>{item.q}</span>
                 </button>
-                <Answer result={item.result} scope={scope} compact={!open} />
+                <Answer result={item.result} compact={!open} />
               </div>
             );
           })}
@@ -209,7 +220,7 @@ export default function AskBar({ players, weeks, seasonLabel }) {
           ref={inputRef}
           type="search"
           aria-label="Ask the results"
-          placeholder={thread.length ? 'Ask a follow-up — e.g. and against?, what about with Priya?, streak?' : 'Ask the results — e.g. Jo with Sam, Jo vs Sam, who has played the most nights?'}
+          placeholder={thread.length ? 'Ask a follow-up — e.g. and against?, what about with Priya?, streak?, since September?' : 'Ask the results — e.g. Jo with Sam, scores where Jo was POTM, who has the best record?'}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
@@ -262,7 +273,7 @@ export default function AskBar({ players, weeks, seasonLabel }) {
 
       {live.kind === 'nobody' && (
         <div className="tb-ask-note" role="status">
-          No player by that name. Try a first name, a nickname, or two names with “with” or “vs” between them — or ask about everyone: “who has played the most nights?”, “biggest win”.
+          Nothing to go on there. Try a name or two (“Jo with Sam”, “Sam vs Jo”), a club or position (“who supports Arsenal?”, “which defender has the best record?”), a night (“last night”, “4/9”), or everyone (“who has the most POTMs?”, “biggest win”).
         </div>
       )}
 
@@ -286,7 +297,7 @@ export default function AskBar({ players, weeks, seasonLabel }) {
 
       {live.kind === 'answer' && (
         <div className="tb-ask-live" role="status">
-          <Answer result={live} scope={scope} />
+          <Answer key={text} result={live} />
           <div className="tb-ask-hint">Press Enter to keep this answer and ask a follow-up.</div>
         </div>
       )}

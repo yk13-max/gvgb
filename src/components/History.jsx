@@ -265,7 +265,7 @@ function WeekCard({ week, players, onAwards, onEditMatch, onDeleteMatch, onDelet
   );
 }
 
-export default function History({ weeks, players, onAwards, onEditMatch, onDeleteMatch, onDeleteWeek, canEdit = true, showValues = true, seasonBar, seasonLabel }) {
+export default function History({ weeks, allWeeks, seasons, seasonKey, today, players, onAwards, onEditMatch, onDeleteMatch, onDeleteWeek, canEdit = true, showValues = true, seasonBar, seasonLabel }) {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
 
@@ -329,7 +329,7 @@ export default function History({ weeks, players, onAwards, onEditMatch, onDelet
         </div>
       </div>
 
-      {weeks.length > 0 && <AskBar players={players} weeks={weeks} seasonLabel={seasonLabel} />}
+      {(allWeeks || weeks).length > 0 && <AskBar players={players} weeks={allWeeks || weeks} seasons={seasons} pickerKey={seasonKey} showValues={showValues} today={today} />}
 
       {rows.length > 0 && (
         <div className="tb-histsummary">

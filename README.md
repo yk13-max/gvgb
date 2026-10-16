@@ -110,32 +110,49 @@ matches you played that night.
 - The date on a match is what decides its week, so editing a match's date moves it between
   weeks, and a week with no matches left disappears.
 - **Ask the results.** A question box at the top of Results answers in plain words, worked
-  out from the recorded matches as you type. Name one player for their nights, matches,
-  record, nominations, who they line up with and against most, and when they last played.
-  Name two or more ("Jo with Sam", "how many games have Jo, Sam and Priya played together?")
-  for the nights they all turned out, the matches on the same side and the record in them,
-  the matches on opposite sides, and for a pair the head-to-head. Put **vs**, **v** or
-  **against** between names or groups ("Sam vs Jo", "Sam and Tom against Jo and Priya") for
-  how often they have met and who won. The words around the names don't matter; first names,
-  surnames, "Jo R" and nicknames all work, and if a first name fits two players you're asked
-  which. Example questions, built from the players who have played most, sit under the box;
-  **Show the matches** lists every match the answer counted. Answers follow the season picker
-  and say so. Viewers can ask too.
+  out from everything recorded as you type. It picks out **who** is named (players by first
+  name, surname, "Jo R" or nickname; clubs — "Arsenal fans"; positions — "which defender"),
+  **which slice** of the data is meant, and **what** is being asked for; the words in between
+  don't matter. If a first name fits two players you're asked which. Viewers can ask too, but
+  anything about ratings answers "only shown when signed in".
+  - *Who.* One name: nights, matches, record, nominations, who they line up with and against
+    most, last played. Two or more ("Jo with Sam", "how many games have Jo, Sam and Priya played
+    together?"): nights all turned out, same-side matches and the record in them, opposite-side
+    matches, and for a pair the head-to-head. **vs**, **v** or **against** between names or groups
+    ("Sam vs Jo", "Sam and Tom against Jo and Priya"): meetings and who won. **he / she / they**
+    mean whoever was last asked about.
+  - *Which slice.* A season by name, **this season**, **last season**, **all time**; **since
+    September**, **in September**, **in 2026**, **before 4/9**; a night by date (**4/9**, **on 4th
+    September**) or **last night**, **last 3 nights**; a venue (**at Goals**); **6-a-side**; the
+    nights a player won an award (**scores where Karthi was best defender**, **how many times has
+    Sam been POTM**); the matches someone **won** or **lost** ("how many games has Sam lost with
+    Jo?"). Without any of these, answers follow the season picker, and the scope line under every
+    headline says exactly what was counted.
+  - *What.* The count by default. **streak / form**: current run, longest winning and losing
+    runs, last five as W/L pips. **nights**: attendance — nights of the total, missed, current
+    and longest run of consecutive nights, last turned out, nights since a date. **goals**: for
+    and against, per match, clean sheets, biggest win, heaviest defeat. **awards**: every
+    nomination with its nights. **ratings** (signed in): OVR, best and weakest stats, and how
+    they've moved since the first snapshot in the slice. **partners / opponents** ("who does Sam
+    win most with?", "who beats Sam most?", "Sam's best partner"): a table of everyone they've
+    lined up with or against and the record with each. **scores** opens the match list.
+  - *Everyone.* With no names the question is about the whole roster: **who has the most
+    POTMs?**, **who has won the most?**, **which defender has the best record?**, **top 3 by
+    wins**, **most clean sheets**, **who has played the fewest nights?**, **who hasn't played
+    since September?**, **hottest streak**, **biggest win**, **who has the highest pace?**
+    (signed in). **last night** or a date gives that night: scores, line-ups, nominations and,
+    signed in, how the sides were rated. **who supports Arsenal?** and **goalkeepers** list
+    people; **how many players** counts them; **how many nights have we played?** and a bare
+    season or period give an overview; **who won Spring 26?** and **honours** give a season's
+    honours, or its front runners while it's running.
 - **Follow-ups.** Press Enter to keep an answer, and the next question builds on it: after
-  "Sam with Jo", **and against?** is Sam vs Jo, **and together?** goes back, **what about with
-  Priya?** adds her, **and against Tom?** pits the group against him, and a plain new name starts
-  afresh. Earlier answers fold to a line you can tap open; **Start over** clears the thread.
-  Chips under the latest answer offer the natural next questions.
-- **More to ask.** Add a word to any question (or ask it as a follow-up): **streak** or
-  **form** gives the current run, the longest winning and losing runs and the last five as
-  W/L pips; **nights** gives attendance (nights of the total, missed, current and longest run of
-  consecutive nights, last turned out, and **since September** or **since 4/9** counts from a
-  date); **goals** gives goals for and against, per match, clean sheets, biggest win and
-  heaviest defeat. With no names at all the question is about everyone: **who has played the
-  most / fewest nights?**, **who hasn't played since September?**, **biggest win**, **hottest
-  streak**.
-- **Recent questions** are kept on the device (the last eight) and offered under the box next
-  time, alongside the examples.
+  "Sam with Jo since September", **and against?** is Sam vs Jo over the same period, **and
+  together?** goes back, **what about with Priya?** adds her, **and against Tom?** pits the
+  group against him, **streak?** is their run together, **scores when he was best defender**
+  filters to those nights, and a plain new name or a "who has the most…" starts afresh. Earlier
+  answers fold to a line you can tap open; **Start over** clears the thread. Chips under the
+  latest answer offer the natural next questions, and example questions built from the real data
+  sit under the box, with the last eight questions asked on this device.
 - **Line-ups once, not per match.** A session is usually several games between the same two
   sides. When any line-up repeats, the week card states each distinct line-up once — "All 3
   matches", "Matches 1, 2, 4", "Match 3" — and the match rows below keep to the scores. A
