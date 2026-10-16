@@ -121,6 +121,21 @@ matches you played that night.
   which. Example questions, built from the players who have played most, sit under the box;
   **Show the matches** lists every match the answer counted. Answers follow the season picker
   and say so. Viewers can ask too.
+- **Follow-ups.** Press Enter to keep an answer, and the next question builds on it: after
+  "Sam with Jo", **and against?** is Sam vs Jo, **and together?** goes back, **what about with
+  Priya?** adds her, **and against Tom?** pits the group against him, and a plain new name starts
+  afresh. Earlier answers fold to a line you can tap open; **Start over** clears the thread.
+  Chips under the latest answer offer the natural next questions.
+- **More to ask.** Add a word to any question (or ask it as a follow-up): **streak** or
+  **form** gives the current run, the longest winning and losing runs and the last five as
+  W/L pips; **nights** gives attendance (nights of the total, missed, current and longest run of
+  consecutive nights, last turned out, and **since September** or **since 4/9** counts from a
+  date); **goals** gives goals for and against, per match, clean sheets, biggest win and
+  heaviest defeat. With no names at all the question is about everyone: **who has played the
+  most / fewest nights?**, **who hasn't played since September?**, **biggest win**, **hottest
+  streak**.
+- **Recent questions** are kept on the device (the last eight) and offered under the box next
+  time, alongside the examples.
 - **Line-ups once, not per match.** A session is usually several games between the same two
   sides. When any line-up repeats, the week card states each distinct line-up once — "All 3
   matches", "Matches 1, 2, 4", "Match 3" — and the match rows below keep to the scores. A

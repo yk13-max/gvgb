@@ -1193,6 +1193,13 @@ a:hover {
   color: var(--color-text-primary);
 }
 
+.tb-ask-sub {
+  margin-top: 4px;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
 .tb-ask-scope {
   margin-top: 4px;
   font-family: var(--font-mono);
@@ -1292,6 +1299,196 @@ a:hover {
 
 .tb-ask-more {
   color: var(--color-text-tertiary);
+}
+
+/* The thread: earlier answers fold to their question and headline; the latest stays open
+   above the box, so a follow-up reads as a reply. */
+.tb-ask-thread {
+  display: flex;
+  flex-direction: column;
+}
+
+.tb-ask-turn {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tb-ask-q {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.tb-ask-q:disabled {
+  cursor: default;
+}
+
+.tb-ask-turn .tb-ask-answer {
+  border-top: 0;
+}
+
+.tb-ask-answer[data-compact='1'] {
+  padding-top: 4px;
+  padding-bottom: 10px;
+}
+
+.tb-ask-answer[data-compact='1'] .tb-ask-headline {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.tb-ask-next {
+  padding: 10px 14px 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tb-ask-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.tb-ask-starters {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tb-ask-chiplabel {
+  align-self: center;
+  font-family: var(--font-body);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  margin-right: 2px;
+}
+
+.tb-ask-chip[data-recent='1'] {
+  background: var(--color-surface);
+}
+
+.tb-ask-live {
+  position: relative;
+}
+
+.tb-ask-hint {
+  padding: 0 14px 12px;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--color-text-tertiary);
+}
+
+.tb-ask-section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--color-border);
+}
+
+.tb-ask-section-title {
+  font-family: var(--font-body);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--color-primary);
+}
+
+.tb-ask-section-line {
+  margin-top: 4px;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+}
+
+.tb-ask-section .tb-ask-facts {
+  margin-top: 10px;
+}
+
+.tb-ask-form {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.tb-ask-pip {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: #fff;
+  background: var(--slate-300);
+}
+
+.tb-ask-pip[data-r='W'] {
+  background: var(--color-primary);
+}
+
+.tb-ask-pip[data-r='L'] {
+  background: var(--team-red);
+}
+
+.tb-ask-table {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 2px 16px;
+}
+
+.tb-ask-table li {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  gap: 6px;
+  align-items: baseline;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+}
+
+.tb-ask-table li:first-child {
+  background: var(--color-primary-subtle);
+}
+
+.tb-ask-trank {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+.tb-ask-tvalue {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
 }
 
 @media (max-width: 640px) {
