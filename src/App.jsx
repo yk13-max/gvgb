@@ -23,6 +23,7 @@ import { savedPassword } from './lib/remote.js';
 import { buildDoc, parseDoc } from './lib/doc.js';
 import { exportBoard } from './lib/exportBoard.js';
 import { preMatchFacts } from './lib/facts.js';
+import { useTheme } from './lib/theme.js';
 import { DEFAULT_STATS, balance, layout, relax } from './lib/model.js';
 import { samplePlayers } from './lib/samplePlayers.js';
 import { ALL, currentSeason, labelFor, seasonOptions, weeksIn } from './lib/seasons.js';
@@ -194,6 +195,8 @@ export default function App() {
   const [dataMenu, setDataMenu] = useState(false);
   const [syncOpen, setSyncOpen] = useState(false);
   const [housekeeping, setHousekeeping] = useState(false);
+  const theme = useTheme();
+  const THEME_LOOK = { system: ['monitor', 'Theme: follows this device'], light: ['sun', 'Theme: light'], dark: ['moon', 'Theme: dark'] };
 
   useEffect(() => {
     const mq = window.matchMedia(NARROW);
@@ -720,6 +723,14 @@ export default function App() {
             <span className="tb-syncdot" />
             <span className="tb-syncword">{look.label}</span>
           </button>
+          <IconButton
+            icon={<Icon name={THEME_LOOK[theme.pref][0]} size={16} />}
+            aria-label={THEME_LOOK[theme.pref][1] + ' — change'}
+            title={THEME_LOOK[theme.pref][1]}
+            variant="secondary"
+            size="sm"
+            onClick={theme.cycle}
+          />
           {canEdit && (
             <IconButton
               icon={<Icon name="file-json" size={16} />}
@@ -991,6 +1002,19 @@ export default function App() {
           }
         >
           <div className="tb-menu">
+            <div className="tb-menu-group">
+              <div className="tb-menu-label">Theme</div>
+              <Segmented
+                className="tb-menu-seg"
+                options={[
+                  ['system', 'Auto'],
+                  ['light', 'Light'],
+                  ['dark', 'Dark'],
+                ]}
+                value={theme.pref}
+                onChange={theme.setPref}
+              />
+            </div>
             <div className="tb-menu-group">
               <div className="tb-menu-label">Shared data</div>
               <button

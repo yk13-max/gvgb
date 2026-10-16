@@ -14,3 +14,18 @@
 --color-success:var(--green-600);--color-success-subtle:var(--green-100);
 --focus-ring:0 0 0 3px oklch(54% 0.125 150 / 0.35);
 }
+/* Dark theme. The scales flip, so anything that says "the faint grey" or "the deep green
+   for text on a pale tint" keeps meaning that on a dark page; the semantic tokens that pair a
+   colour with white text (primary, danger) are set outright so their contrast holds. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --slate-0:oklch(15% 0.012 235);--slate-50:oklch(17.5% 0.013 235);--slate-100:oklch(25% 0.016 235);--slate-200:oklch(31% 0.017 235);--slate-300:oklch(39% 0.018 235);--slate-400:oklch(58% 0.02 235);--slate-500:oklch(66% 0.02 235);--slate-600:oklch(76% 0.016 235);--slate-700:oklch(84% 0.012 235);--slate-800:oklch(91% 0.008 235);--slate-900:oklch(96% 0.004 235);
+  --green-50:oklch(22% 0.045 150);--green-100:oklch(28% 0.06 150);--green-200:oklch(34% 0.075 150);--green-300:oklch(42% 0.09 150);--green-400:oklch(62% 0.12 150);--green-500:oklch(60% 0.13 150);--green-600:oklch(55% 0.13 150);--green-700:oklch(82% 0.11 150);--green-800:oklch(88% 0.08 150);--green-900:oklch(93% 0.05 150);
+  --amber-100:oklch(31% 0.06 95);--amber-400:oklch(70% 0.13 95);--amber-500:oklch(78% 0.15 95);--amber-700:oklch(84% 0.13 95);
+  --red-100:oklch(30% 0.07 25);--red-400:oklch(68% 0.15 25);--red-500:oklch(60% 0.18 25);--red-700:oklch(80% 0.11 25);
+  --color-bg:oklch(16% 0.012 235);--color-surface:oklch(21% 0.014 235);--color-surface-sunken:oklch(25.5% 0.016 235);
+  --color-on-dark:oklch(96% 0.004 235);
+  --color-primary:oklch(55% 0.13 150);--color-primary-hover:oklch(50% 0.12 150);--color-primary-active:oklch(45% 0.11 150);
+  --color-danger:oklch(56% 0.18 25);
+  --focus-ring:0 0 0 3px oklch(65% 0.13 150 / 0.45);
+}

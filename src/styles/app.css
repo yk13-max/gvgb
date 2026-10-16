@@ -6,6 +6,12 @@
   --team-blue: oklch(50% 0.15 255);
 }
 
+/* On a dark page the team colours lift a little, so a red name or score still reads. */
+:root[data-theme='dark'] {
+  --team-red: oklch(62% 0.17 27);
+  --team-blue: oklch(64% 0.14 255);
+}
+
 html,
 body {
   margin: 0;

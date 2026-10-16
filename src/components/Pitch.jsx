@@ -115,7 +115,7 @@ export default function Pitch({ teams, pos, showStats, showValues = true, sel, o
       className="tb-pitch"
       style={{
         position: 'relative',
-        background: 'var(--slate-900)',
+        background: 'oklch(18% 0.015 230)', // the pitch stays dark in both themes
         borderRadius: 'var(--radius-lg)',
         border: '1px solid var(--slate-700)',
         overflow: 'hidden',

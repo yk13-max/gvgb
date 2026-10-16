@@ -10,6 +10,15 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>FUFA · Team balancer</title>
+    <script>
+      // The theme before the first paint, so a dark-mode phone never flashes white.
+      (function () {
+        var t = 'system';
+        try { t = localStorage.getItem('fufa.tb.theme') || 'system'; } catch (e) {}
+        if (t !== 'light' && t !== 'dark') t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', t);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

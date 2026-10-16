@@ -352,7 +352,12 @@ moments after the organiser balances.
 
 Both are behind the password on the server too, since they carry every rating.
 
-The squad **view** (card or mini) and the three PNG switches belong to the browser, not the
+**Theme** — light, dark, or follow the device (the default), from the button beside the status
+chip, or the Theme row in the actions sheet on a phone. It is set before the page draws, so a
+phone in dark mode never flashes white, and in follow-the-device it switches when the phone does.
+The pitch, the honours cards and the shared images are dark in both themes.
+
+The squad **view** (card or mini), the theme and the PNG switches belong to the browser, not the
 group — flicking to mini view on a phone doesn't change what anyone else is looking at.
 
 ## Layouts
