@@ -198,7 +198,7 @@ export function preMatchFacts(teams, weeks, players, { seasons = [], today, max 
   // Milestones and storylines.
   both.forEach((id) => {
     const g = gamesOf(id, all);
-    if (g === 0 && all.length) facts.push({ cat: 'story', weight: 76, text: 'Debut night for ' + name(id) + ' — welcome to FUFA.' });
+    if (g === 0 && all.length) facts.push({ cat: 'story', weight: 76, text: name(id) + '’s first recorded match.' });
     else if (MILESTONES.includes(g + 1)) facts.push({ cat: 'story', weight: g + 1 >= 50 ? 88 : 70, text: name(id) + ' plays their ' + ordinal(g + 1) + ' match.' });
     const lastIdx = (weeks || []).findIndex((w) => (w.matches || []).some((m) => has(m.red, id) || has(m.blue, id)));
     if (lastIdx >= 3) facts.push({ cat: 'story', weight: 52 + lastIdx, text: name(id) + ' is back after ' + lastIdx + ' nights out.' });

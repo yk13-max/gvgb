@@ -55,11 +55,11 @@ const LABEL_H = 26; // a section label plus the gap under it
 const MATCH_H = 62; // a 54pt row plus its gap
 const NIGHT_H = 76;
 const AWARD_H = 48; // a 42pt row plus its gap
-const LINE_H = 22;
+const LINE_H = 17; // the line-ups are reference, so they sit smaller than the results
 const GAP = 10;
-const SIDE_LABEL_W = 46; // room for "RED" / "BLUE" before the names
-const GROUP_LABEL_H = 18; // "All 3 matches" above a line-up
-const GROUP_GAP = 10;
+const SIDE_LABEL_W = 38; // room for "RED" / "BLUE" before the names
+const GROUP_LABEL_H = 16; // "All 3 matches" above a line-up
+const GROUP_GAP = 8;
 
 // Wraps a list of names, breaking only between names — "Tom B" is one thing and must
 // not come apart across a line.
@@ -101,7 +101,7 @@ function draw(week, facts = []) {
   // one entry, not five; the match rows above carry the scores.
   const measure = document.createElement('canvas').getContext('2d');
   const names = (list) => list.map((p) => shortName(p.name));
-  measure.font = '400 16px ' + BODY;
+  measure.font = '400 13px ' + BODY;
   const sideW = W - PAD * 2 - SIDE_LABEL_W;
   const groups = lineups(week).map((g) => ({
     label: lineupLabel(g, week.matches.length),
@@ -270,13 +270,13 @@ function draw(week, facts = []) {
         ['BLUE', COL.blue, grp.blue],
       ].forEach(([side, color, lines]) => {
         g.textAlign = 'left';
-        g.font = 'bold 14px ' + DISPLAY;
+        g.font = 'bold 11px ' + DISPLAY;
         g.fillStyle = color;
-        g.fillText(side, PAD, y + 16);
-        g.font = '400 16px ' + BODY;
+        g.fillText(side, PAD, y + 13);
+        g.font = '400 13px ' + BODY;
         g.fillStyle = COL.text;
         lines.forEach((line) => {
-          g.fillText(line, PAD + SIDE_LABEL_W, y + 16);
+          g.fillText(line, PAD + SIDE_LABEL_W, y + 13);
           y += LINE_H;
         });
       });
