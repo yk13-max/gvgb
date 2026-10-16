@@ -13,6 +13,7 @@ import SeasonBar from './components/SeasonBar.jsx';
 import SeasonsDialog from './components/SeasonsDialog.jsx';
 import WeekAwardsDialog from './components/WeekAwardsDialog.jsx';
 import ShareDialog from './components/ShareDialog.jsx';
+import HousekeepingDialog from './components/HousekeepingDialog.jsx';
 import Standings from './components/Standings.jsx';
 import StatLadder from './components/StatLadder.jsx';
 import StatsTable from './components/StatsTable.jsx';
@@ -192,6 +193,7 @@ export default function App() {
   const [menu, setMenu] = useState(false); // the phone's actions sheet
   const [dataMenu, setDataMenu] = useState(false);
   const [syncOpen, setSyncOpen] = useState(false);
+  const [housekeeping, setHousekeeping] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia(NARROW);
@@ -1189,7 +1191,17 @@ export default function App() {
           onClose={() => setAwarding(null)}
         />
       )}
-      {syncOpen && <SyncDialog sync={sync} onClose={() => setSyncOpen(false)} />}
+      {syncOpen && (
+        <SyncDialog
+          sync={sync}
+          onClose={() => setSyncOpen(false)}
+          onHousekeeping={() => {
+            setSyncOpen(false);
+            setHousekeeping(true);
+          }}
+        />
+      )}
+      {housekeeping && sync.unlocked && <HousekeepingDialog sync={sync} onClose={() => setHousekeeping(false)} />}
       {managingSeasons && (
         <SeasonsDialog seasons={seasons} weeks={history} onChange={setSeasons} onClose={() => setManagingSeasons(false)} />
       )}

@@ -9,6 +9,7 @@
 // Rather than depend on which, try the tidy path first and remember whichever replies.
 const ENDPOINTS = ['/api/data', '/.netlify/functions/data'];
 const PW = 'fufa.tb.pw';
+const NAME = 'fufa.tb.name';
 
 let endpoint = null;
 
@@ -26,6 +27,25 @@ export function storePassword(pw) {
     else localStorage.removeItem(PW);
   } catch {
     // Without storage the password simply has to be entered again next time.
+  }
+}
+
+// Who is editing from this device, for the change log. Everyone shares one password, so
+// the name is the only way the log can say who did what; it is asked for once per device.
+export function savedName() {
+  try {
+    return localStorage.getItem(NAME) || '';
+  } catch {
+    return '';
+  }
+}
+
+export function storeName(name) {
+  try {
+    if (name && name.trim()) localStorage.setItem(NAME, name.trim().slice(0, 40));
+    else localStorage.removeItem(NAME);
+  } catch {
+    // Without storage the log just says "Someone".
   }
 }
 
@@ -87,7 +107,7 @@ export async function putRecord({ rev, doc, password }) {
   const r = await call('', {
     method: 'PUT',
     headers: { 'content-type': 'application/json', 'x-tb-password': password || '' },
-    body: JSON.stringify({ rev, doc }),
+    body: JSON.stringify({ rev, doc, by: savedName() }),
   });
   if (r.kind !== 'json') return r;
   const b = r.body || {};
@@ -108,4 +128,39 @@ export async function checkPassword(password) {
   if (r.status === 401) return { kind: 'unauthorized' };
   if (r.status === 503) return { kind: 'disabled', message: (r.body && r.body.message) || null };
   return { kind: 'error', status: r.status };
+}
+
+// --- housekeeping: the change log and backups (password holders only) -----------------
+
+const auth = (password) => ({ 'x-tb-password': password || '' });
+const failed = (r) => (r.kind !== 'json' ? r : r.status === 401 ? { kind: 'unauthorized' } : { kind: 'error', status: r.status, message: (r.body && r.body.message) || null });
+
+export async function getLog(password, limit = 100) {
+  const r = await call('?log=1&limit=' + limit, { headers: auth(password) });
+  if (r.kind !== 'json' || r.status !== 200) return failed(r);
+  return { kind: 'log', entries: (r.body && r.body.entries) || [] };
+}
+
+export async function getBackups(password) {
+  const r = await call('?backups=1', { headers: auth(password) });
+  if (r.kind !== 'json' || r.status !== 200) return failed(r);
+  return { kind: 'backups', list: (r.body && r.body.list) || [] };
+}
+
+export async function backupNow(password) {
+  const r = await call('?backup=now', { method: 'POST', headers: { ...auth(password), 'content-type': 'application/json' }, body: JSON.stringify({ by: savedName() }) });
+  if (r.kind !== 'json' || r.status !== 200) return failed(r);
+  return { kind: 'ok', backup: r.body.backup };
+}
+
+export async function restoreBackup(password, id, rev) {
+  const r = await call('?restore=' + encodeURIComponent(id), {
+    method: 'POST',
+    headers: { ...auth(password), 'content-type': 'application/json' },
+    body: JSON.stringify({ rev, by: savedName() }),
+  });
+  if (r.kind !== 'json') return r;
+  if (r.status === 200) return { kind: 'restored', rev: Number(r.body.rev) || 0, updatedAt: r.body.updatedAt || null, doc: r.body.doc || null };
+  if (r.status === 409) return { kind: 'conflict' };
+  return failed(r);
 }

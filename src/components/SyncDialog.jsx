@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button, Dialog, Icon, Input } from '../ds/index.js';
+import { savedName, storeName } from '../lib/remote.js';
 
 function ago(iso) {
   if (!iso) return null;
@@ -31,8 +32,9 @@ function Row({ children }) {
   return <div className="tb-sync-row">{children}</div>;
 }
 
-export default function SyncDialog({ sync, onClose }) {
+export default function SyncDialog({ sync, onClose, onHousekeeping }) {
   const [pw, setPw] = useState('');
+  const [name, setName] = useState(savedName);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
   const look = syncLook(sync);
@@ -45,6 +47,7 @@ export default function SyncDialog({ sync, onClose }) {
     const res = await sync.unlock(pw);
     setBusy(false);
     if (res.ok) {
+      storeName(name);
       setPw('');
       onClose();
     } else setErr(res.message);
@@ -139,7 +142,17 @@ export default function SyncDialog({ sync, onClose }) {
                     <Icon name="lock-open" size={14} /> Signed in on this device — your changes save automatically.
                   </span>
                 </Row>
+                <Input
+                  label="Your name, for the change log"
+                  placeholder="e.g. Karthi"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onBlur={() => storeName(name)}
+                />
                 <Row>
+                  <Button variant="secondary" size="sm" icon={<Icon name="history" size={15} />} onClick={() => { storeName(name); onHousekeeping(); }}>
+                    Backups & history
+                  </Button>
                   {sync.dirty && !sync.saving && (
                     <Button variant="primary" size="sm" onClick={() => sync.saveNow()}>
                       Save now
@@ -152,6 +165,12 @@ export default function SyncDialog({ sync, onClose }) {
               </>
             ) : (
               <form onSubmit={signIn} className="tb-sync-form">
+                <Input
+                  label="Your name, for the change log"
+                  placeholder="e.g. Karthi"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
                 <Input
                   label="Password"
                   type="password"

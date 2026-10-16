@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { checkPassword, getRecord, putRecord, savedPassword, storePassword } from './remote.js';
+import { backupNow, checkPassword, getBackups, getLog, getRecord, putRecord, restoreBackup, savedPassword, storePassword } from './remote.js';
 
 const SAVE_DELAY = 1200; // let a burst of typing settle before writing
 const MODE_KEY = 'fufa.tb.mode';
@@ -296,5 +296,32 @@ export function useSync({ onAdopt, canonical }) {
     flush();
   }, [flush]);
 
-  return { ...state, push, unlock, lock, refresh, resolve, saveNow };
+  // --- housekeeping ---------------------------------------------------------------
+  const loadLog = useCallback(() => getLog(pw.current), []);
+  const loadBackups = useCallback(() => getBackups(pw.current), []);
+  const makeBackup = useCallback(() => backupNow(pw.current), []);
+
+  // Restoring replaces what is here with the backup. Anything unsaved on this device is
+  // dropped (the dialog says so first); the server backs up the current copy before it
+  // restores, so nothing that was saved is lost.
+  const restore = useCallback(
+    async (id) => {
+      clearTimeout(timer.current);
+      let res = await restoreBackup(pw.current, id, rev.current);
+      if (res.kind === 'conflict') {
+        // Somebody saved a moment ago; restore on top of their revision instead.
+        const meta = await getRecord({ metaOnly: true });
+        if (meta.kind === 'record') res = await restoreBackup(pw.current, id, meta.rev);
+      }
+      if (res.kind === 'restored') {
+        held.current = false;
+        take({ rev: res.rev, updatedAt: res.updatedAt, doc: res.doc });
+        return { ok: true };
+      }
+      return { ok: false, message: res.kind === 'unauthorized' ? 'The password was rejected.' : res.kind === 'offline' ? 'Could not reach the site.' : 'The restore did not go through.' };
+    },
+    [take]
+  );
+
+  return { ...state, push, unlock, lock, refresh, resolve, saveNow, loadLog, loadBackups, makeBackup, restore };
 }

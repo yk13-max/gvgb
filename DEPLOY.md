@@ -34,7 +34,8 @@ the stored document — the data outlives the code.
   There is no login and nothing is private. Don't put anything in there you would mind the
   whole group seeing.
 - **Anyone with the password** can edit. It is one shared password, not an account per
-  person, so the history says what changed but never who changed it.
+  person, so the change log can only say who did something because each device is asked for a
+  name when it signs in. Treat the names as labels, not proof.
 - The password is checked by the function on every write. It is held in the browser's
   `localStorage` on each device that signs in, so it is typed once per phone. *Sign out*
   in the shared-data dialog removes it from that device. Changing `TB_PASSWORD` in Netlify
@@ -53,6 +54,11 @@ the drafted board. It is exactly what *Data → Export all data* writes to a fil
 - Every tab re-checks the revision every 20 seconds, and whenever it comes back to the
   foreground. With nothing unsaved locally it just takes the newer version.
 - Offline, changes queue in the browser and go up when the connection returns.
+- Each save is also summarised into a change log (`log` in the same blob store), and once a
+  week the first save keeps a backup of what it replaced (`backups` plus one `backup/<id>` key
+  each; the newest twelve are kept). Restoring a backup goes through the function, backs up
+  the current data first, and is logged. None of this needs setting up — it lives in the same
+  Netlify Blobs store as the document.
 
 ## Running it locally
 

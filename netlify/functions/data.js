@@ -8,7 +8,12 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 
 const STORE = 'fufa-team-balancer';
 const KEY = 'doc';
+const LOG = 'log'; // { entries: [{ rev, at, by, changes: [string] }] }, newest first
+const BACKUPS = 'backups'; // { list: [{ id, at, by, reason, rev, players, weeks }] }, newest first
 const MAX_BYTES = 2 * 1024 * 1024;
+const LOG_MAX = 300;
+const BACKUP_MAX = 12;
+const WEEK_MS = 7 * 24 * 3600 * 1000;
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -38,20 +43,187 @@ async function authorise(req) {
   return null;
 }
 
+
+// --- change summaries -------------------------------------------------------------------
+// Worked out here, from the stored document and the incoming one, so the log says what
+// actually changed whoever sent it. Dates stay ISO; the app formats them for reading.
+
+const byId = (list) => new Map((Array.isArray(list) ? list : []).map((x) => [x && x.id, x]));
+const names = (list, max = 3) => (list.length <= max ? list.join(', ') : list.slice(0, max).join(', ') + ' and ' + (list.length - max) + ' more');
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+export function summarise(before, after) {
+  const out = [];
+  if (!before) return ['Created the shared data'];
+  const bp = byId(before.players);
+  const ap = byId(after.players);
+  const added = [...ap.values()].filter((p) => !bp.has(p.id)).map((p) => p.name);
+  const removed = [...bp.values()].filter((p) => !ap.has(p.id)).map((p) => p.name);
+  if (added.length) out.push('Added ' + names(added));
+  if (removed.length) out.push('Removed ' + names(removed));
+  const renamed = [];
+  const rated = [];
+  const moved = [];
+  const clubs = [];
+  ap.forEach((p, id) => {
+    const o = bp.get(id);
+    if (!o) return;
+    if (o.name !== p.name) renamed.push(o.name + ' → ' + p.name);
+    if (!same(o.stats, p.stats)) rated.push(p.name);
+    if (o.pos !== p.pos || !same(o.alt, p.alt)) moved.push(p.name);
+    if ((o.club || null) !== (p.club || null)) clubs.push(p.name);
+  });
+  if (renamed.length) out.push('Renamed ' + names(renamed));
+  if (rated.length) out.push('Changed ratings for ' + names(rated));
+  if (moved.length) out.push('Changed positions for ' + names(moved));
+  if (clubs.length) out.push('Changed supported side for ' + names(clubs));
+
+  const bw = new Map((before.history || []).map((w) => [w.date, w]));
+  const aw = new Map((after.history || []).map((w) => [w.date, w]));
+  aw.forEach((w, date) => {
+    const o = bw.get(date);
+    if (!o) {
+      out.push('Recorded ' + (w.matches || []).length + ' match' + ((w.matches || []).length === 1 ? '' : 'es') + ' on ' + date);
+      return;
+    }
+    const om = byId(o.matches);
+    const nm = byId(w.matches);
+    const addedM = [...nm.keys()].filter((id) => !om.has(id)).length;
+    const removedM = [...om.keys()].filter((id) => !nm.has(id)).length;
+    const edited = [...nm.keys()].filter((id) => om.has(id) && !same(om.get(id), nm.get(id))).length;
+    if (addedM) out.push('Added ' + addedM + ' match' + (addedM === 1 ? '' : 'es') + ' on ' + date);
+    if (removedM) out.push('Removed ' + removedM + ' match' + (removedM === 1 ? '' : 'es') + ' on ' + date);
+    if (edited) out.push('Edited ' + edited + ' match' + (edited === 1 ? '' : 'es') + ' on ' + date);
+    if (!same(o.awards, w.awards)) out.push('Changed nominations for ' + date);
+  });
+  bw.forEach((w, date) => {
+    if (!aw.has(date)) out.push('Deleted the night of ' + date);
+  });
+
+  const bs = byId(before.seasons);
+  const as = byId(after.seasons);
+  as.forEach((s, id) => {
+    const o = bs.get(id);
+    if (!o) out.push('Added season ' + s.name);
+    else {
+      if (o.name !== s.name || o.start !== s.start) out.push('Edited season ' + s.name);
+      if (!same(o.honours, s.honours)) out.push('Named honours for ' + s.name);
+    }
+  });
+  bs.forEach((s, id) => {
+    if (!as.has(id)) out.push('Removed season ' + s.name);
+  });
+
+  if (!same(before.selected, after.selected)) {
+    const n = (after.selected || []).length;
+    out.push('Picked the squad (' + n + ' player' + (n === 1 ? '' : 's') + ')');
+  }
+  if (!same(before.board, after.board)) out.push((after.board && after.board.red && after.board.red.length ? 'Changed the board' : 'Cleared the board'));
+  if (before.teamSize !== after.teamSize) out.push('Switched to ' + after.teamSize + '-a-side');
+  if (!same(before.match, after.match)) out.push('Updated the fixture details');
+  return out;
+}
+
+const cleanBy = (v) => (typeof v === 'string' ? v.trim().slice(0, 40) : '') || 'Someone';
+
+// Autosave sends a save a moment after every change, so picking a squad would be a dozen
+// entries. Saves by the same person within ten minutes merge into one, keeping the latest
+// wording of anything said twice ("Picked the squad (9 players)" then "(10 players)").
+const MERGE_MS = 10 * 60 * 1000;
+const stem = (t) => t.replace(/\s*\(.*\)$/, '');
+
+async function appendLog(store, entry) {
+  const log = (await store.get(LOG, { type: 'json' })) || { entries: [] };
+  const entries = log.entries || [];
+  const last = entries[0];
+  if (last && !entry.restore && !last.restore && last.by === entry.by && Date.parse(entry.at) - Date.parse(last.at) < MERGE_MS) {
+    const merged = last.changes.filter((t) => !entry.changes.some((n) => stem(n) === stem(t)));
+    entries[0] = { ...last, rev: entry.rev, at: entry.at, changes: [...merged, ...entry.changes].slice(-30) };
+  } else entries.unshift(entry);
+  log.entries = entries.slice(0, LOG_MAX);
+  await store.setJSON(LOG, log);
+}
+
+// A copy of a stored record, kept under its own key with a line in the index. The
+// oldest go once there are more than BACKUP_MAX.
+async function saveBackup(store, record, by, reason) {
+  const index = (await store.get(BACKUPS, { type: 'json' })) || { list: [] };
+  const at = new Date().toISOString();
+  const id = at.replace(/[^0-9]/g, '').slice(0, 17) + '-' + record.rev;
+  await store.setJSON('backup/' + id, record);
+  const doc = record.doc || {};
+  const item = { id, at, by, reason, rev: record.rev, players: (doc.players || []).length, weeks: (doc.history || []).length };
+  const list = [item, ...(index.list || [])];
+  const keep = list.slice(0, BACKUP_MAX);
+  for (const old of list.slice(BACKUP_MAX)) await store.delete('backup/' + old.id);
+  await store.setJSON(BACKUPS, { list: keep });
+  return item;
+}
+
 export default async (req) => {
   const store = getStore({ name: STORE, consistency: 'strong' });
 
+  const params = new URL(req.url).searchParams;
+
+  // The change log and the backup list hold ratings and names of who changed what, so
+  // they are for password holders only.
+  if (req.method === 'GET' && (params.get('log') || params.get('backups'))) {
+    const denied = await authorise(req);
+    if (denied) return denied;
+    if (params.get('log')) {
+      const log = (await store.get(LOG, { type: 'json' })) || { entries: [] };
+      return json({ entries: (log.entries || []).slice(0, Number(params.get('limit')) || 100) });
+    }
+    const index = (await store.get(BACKUPS, { type: 'json' })) || { list: [] };
+    return json({ list: index.list || [] });
+  }
+
   if (req.method === 'GET') {
     const rec = await store.get(KEY, { type: 'json' });
-    const meta = new URL(req.url).searchParams.get('meta');
+    const meta = params.get('meta');
     if (!rec) return json({ rev: 0, updatedAt: null, doc: null });
     return json(meta ? { rev: rec.rev, updatedAt: rec.updatedAt } : rec);
   }
 
-  // A password check that writes nothing, so signing in can fail without touching the data.
   if (req.method === 'POST') {
     const denied = await authorise(req);
-    return denied || json({ ok: true });
+    if (denied) return denied;
+    let body = {};
+    try {
+      body = JSON.parse((await req.text()) || '{}');
+    } catch {
+      body = {};
+    }
+    const by = cleanBy(body.by);
+
+    // Back up now: a copy of what is stored, on demand.
+    if (params.get('backup')) {
+      const current = await store.get(KEY, { type: 'json' });
+      if (!current) return json({ error: 'nothing-to-back-up' }, 400);
+      const item = await saveBackup(store, current, by, 'manual');
+      return json({ ok: true, backup: item });
+    }
+
+    // Restore: the backup becomes the document as a new revision, so nothing is lost —
+    // what was there is itself backed up first, and the log says who restored what.
+    const restoreId = params.get('restore');
+    if (restoreId) {
+      const backup = await store.get('backup/' + restoreId, { type: 'json' });
+      if (!backup || !backup.doc) return json({ error: 'no-such-backup' }, 404);
+      const current = await store.get(KEY, { type: 'json' });
+      const rev = current ? Number(current.rev) || 0 : 0;
+      if (Number(body.rev) !== rev) {
+        return json({ error: 'conflict', rev, updatedAt: current ? current.updatedAt : null, doc: current ? current.doc : null }, 409);
+      }
+      if (current) await saveBackup(store, current, by, 'before-restore');
+      const next = { rev: rev + 1, updatedAt: new Date().toISOString(), doc: backup.doc };
+      await store.setJSON(KEY, next);
+      await appendLog(store, { rev: next.rev, at: next.updatedAt, by, changes: ['Restored the backup from ' + backup.updatedAt.slice(0, 10) + ' (revision ' + backup.rev + ')'], restore: true });
+      return json({ rev: next.rev, updatedAt: next.updatedAt, doc: next.doc });
+    }
+
+    // Otherwise a password check that writes nothing, so signing in can fail cleanly.
+    return json({ ok: true });
   }
 
   if (req.method === 'PUT') {
@@ -82,8 +254,17 @@ export default async (req) => {
       );
     }
 
+    // Once a week, the first save keeps a copy of what was there before it.
+    if (current) {
+      const index = (await store.get(BACKUPS, { type: 'json' })) || { list: [] };
+      const last = (index.list || []).find((b) => b.reason === 'weekly');
+      if (!last || Date.now() - Date.parse(last.at) >= WEEK_MS) await saveBackup(store, current, cleanBy(body.by), 'weekly');
+    }
+
     const next = { rev: rev + 1, updatedAt: new Date().toISOString(), doc };
     await store.setJSON(KEY, next);
+    const changes = summarise(current && current.doc, doc);
+    if (changes.length) await appendLog(store, { rev: next.rev, at: next.updatedAt, by: cleanBy(body.by), changes });
     return json({ rev: next.rev, updatedAt: next.updatedAt });
   }
 

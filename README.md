@@ -336,6 +336,22 @@ moments after the organiser balances.
   selection, the board and every recorded week pointing at the right people. It replaces what's
   there, so it says what the file holds and confirms first.
 
+**Backups & history** (in the shared-data dialog, signed in only) is the safety net:
+
+- **Changes** lists every save, newest first, with who made it and what changed in words —
+  "Added Ravi Shah", "Changed ratings for Sam O, Jo R", "Recorded 3 matches on Fri 04/09/26",
+  "Named honours for 2026/27". Everyone shares one password, so each device is asked once for a
+  name to put against its changes (it can be changed in the same dialog); without one the log
+  says "Someone". Saves by the same person within ten minutes merge into one entry, so picking a
+  squad tap by tap is one line, not twelve. The newest 300 entries are kept.
+- **Backups** are taken automatically by the server: once a week, the first save keeps a copy
+  of what was there before it. **Back up now** takes one on demand. The newest twelve are kept,
+  each with its date, who triggered it, and how many players and nights it holds. **Restore**
+  asks first, then makes that backup the shared data for everyone as a new revision — and backs
+  up what was there beforehand, so a restore can itself be undone. The restore is logged.
+
+Both are behind the password on the server too, since they carry every rating.
+
 The squad **view** (card or mini) and the three PNG switches belong to the browser, not the
 group — flicking to mini view on a phone doesn't change what anyone else is looking at.
 

@@ -3287,3 +3287,105 @@ td[data-zero='1'] {
   font-size: var(--text-2xs);
   color: var(--color-text-tertiary);
 }
+
+/* ---- Backups & change history ---------------------------------------------------- */
+
+.tb-hk {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: min(520px, 100%);
+}
+
+.tb-hk-tabs {
+  align-self: flex-start;
+}
+
+.tb-hk-tabs button {
+  padding: 0 12px;
+  width: auto;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+}
+
+.tb-hk-log,
+.tb-hk-backups {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 52vh;
+  overflow-y: auto;
+}
+
+.tb-hk-log > li,
+.tb-hk-backups > li {
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.tb-hk-log > li[data-restore='1'] {
+  border-color: var(--amber-400);
+}
+
+.tb-hk-log ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+}
+
+.tb-hk-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+.tb-hk-meta strong {
+  color: var(--color-text-primary);
+}
+
+.tb-hk-sub {
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--color-text-tertiary);
+}
+
+.tb-hk-tag {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--green-700);
+  background: var(--color-primary-subtle);
+  border-radius: var(--radius-full);
+  padding: 1px 7px;
+}
+
+.tb-hk-backups > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tb-hk-confirm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
