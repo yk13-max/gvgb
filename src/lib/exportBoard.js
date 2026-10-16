@@ -2,6 +2,64 @@ import { downloadBlob } from './download.js';
 import { ABBR, STATS, balanceScore, overall, ovrAvg, ovrTotal, statAvg } from './model.js';
 import { initials, shortName } from './names.js';
 import { drawFacts, layoutFacts } from './drawFacts.js';
+import { clubOf } from './clubs.js';
+import { drawCrestShield } from './crestShapes.js';
+import { ensureLogos, knownLogo } from './logos.js';
+
+// Real badges for the image, loaded so the canvas can use them: CORS-enabled, so a badge
+// that cannot be shared simply fails to load and the drawn shield stands in. A canvas is
+// never tainted, so the export always goes through.
+function loadImage(url, ms = 2500) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.referrerPolicy = 'no-referrer';
+    const t = setTimeout(() => resolve(null), ms);
+    img.onload = () => {
+      clearTimeout(t);
+      resolve(img);
+    };
+    img.onerror = () => {
+      clearTimeout(t);
+      resolve(null);
+    };
+    img.src = url;
+  });
+}
+
+async function loadBadges(players) {
+  const codes = [...new Set(players.map((p) => p.club).filter((c) => clubOf(c)))];
+  if (!codes.length) return {};
+  await ensureLogos(codes);
+  const out = {};
+  await Promise.all(
+    codes.map(async (code) => {
+      const url = knownLogo(code);
+      out[code] = url ? await loadImage(url) : null;
+    })
+  );
+  return out;
+}
+
+// A badge on the pin's shoulder: the real one when it loaded, the drawn shield if not.
+function drawBadge(g, code, img, cx, cy, size) {
+  const club = clubOf(code);
+  if (!club) return;
+  if (img) {
+    const k = Math.min(size / img.naturalWidth, size / img.naturalHeight);
+    const w = img.naturalWidth * k;
+    const h = img.naturalHeight * k;
+    // a soft disc behind it, so a badge with a transparent edge still reads on the pitch
+    g.beginPath();
+    g.arc(cx, cy, size * 0.62, 0, Math.PI * 2);
+    g.fillStyle = 'rgba(255,255,255,0.92)';
+    g.fill();
+    g.drawImage(img, cx - w / 2, cy - h / 2, w, h);
+  } else {
+    const w = size * 0.86;
+    drawCrestShield(g, club, cx - w / 2, cy - (w * 28) / 24 / 2, w);
+  }
+}
 
 const COLS = { red: '#c2402c', blue: '#2f66cf' };
 const LEAD = { red: '#e0644d', blue: '#5b8ee8' };
@@ -79,7 +137,7 @@ const FGAP = 18; // between the two columns
 const FONT = 'Inter,sans-serif';
 
 // Board -> PNG, drawn directly so the export matches what's on screen.
-function drawBoard(teams, pos, showRatings, showSummary, facts = []) {
+function drawBoard(teams, pos, showRatings, showSummary, facts = [], badges = {}) {
   const W = 760;
   // Pin positions are a percentage of the pitch, so the pitch keeps its height and
   // the summary strip extends the canvas below it.
@@ -139,6 +197,7 @@ function drawBoard(teams, pos, showRatings, showSummary, facts = []) {
       g.textAlign = 'center';
       g.textBaseline = 'middle';
       g.fillText(initials(p.name), x, y + 2);
+      if (p.club) drawBadge(g, p.club, badges[p.club], x + PIN * 0.98, y - PIN * 0.86, 30); // on the shoulder, clear of the initials
 
       const label = showRatings ? shortName(p.name) + '  ' + overall(p) : shortName(p.name);
       g.font = '700 22px Inter,sans-serif';
@@ -204,8 +263,8 @@ function fontsReady() {
 }
 
 export async function exportBoard(teams, pos, { ratings = true, summary = false, facts = [] } = {}) {
-  await fontsReady();
-  const canvas = drawBoard(teams, pos, ratings, summary, facts);
+  const [, badges] = await Promise.all([fontsReady(), loadBadges([...(teams.red || []), ...(teams.blue || [])])]);
+  const canvas = drawBoard(teams, pos, ratings, summary, facts, badges);
   const filename = 'fufa-teams.png';
   canvas.toBlob((blob) => {
     if (!blob) return;

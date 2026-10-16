@@ -133,3 +133,24 @@ export function dropLogo(code) {
   persist();
   notify();
 }
+
+// For the exported image: asks for any badges not yet known and waits for the answers,
+// giving up after `ms` so a slow lookup never holds up a share.
+export function ensureLogos(codes, ms = 2000) {
+  const want = [...new Set(codes.filter((c) => clubOf(c)))];
+  want.forEach(requestLogo);
+  const done = () => want.every((c) => knownLogo(c) !== undefined);
+  if (done()) return Promise.resolve();
+  return new Promise((resolve) => {
+    const fn = () => {
+      if (!done()) return;
+      listeners.delete(fn);
+      resolve();
+    };
+    listeners.add(fn);
+    setTimeout(() => {
+      listeners.delete(fn);
+      resolve();
+    }, ms);
+  });
+}

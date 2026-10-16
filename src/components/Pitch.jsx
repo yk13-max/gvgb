@@ -1,5 +1,6 @@
 import { ABBR, STATS, overall } from '../lib/model.js';
 import { initials, shortName } from '../lib/names.js';
+import Crest from './Crest.jsx';
 
 function Pin({ p, team, x, y, showStats, showValues, selected, onPointerDown }) {
   const col = team === 'red' ? 'var(--team-red)' : 'var(--team-blue)';
@@ -46,6 +47,8 @@ function Pin({ p, team, x, y, showStats, showValues, selected, onPointerDown }) 
         }}
       >
         {initials(p.name)}
+        {/* The club or country they support, tucked on the pin's shoulder. */}
+        {p.club && <Crest code={p.club} size={15} className="tb-pin-crest" />}
       </div>
       <div
         style={{

@@ -27,7 +27,8 @@ the squad, the stats table before you sort it, the line-ups — they read A–Z.
   and any number of "can also play" positions, plus any number of nicknames and, for fun, the
   club or country they **support** — any side in this season's Premier League, La Liga, Serie A, Bundesliga,
   Ligue 1 or Championship, or one of 89 national teams grouped by continent, picked in the player editor. The club's badge shows beside the
-  name on the squad, the player stats table, the league table and the honours cards. Badges are
+  name on the squad, the player stats table, the league table and the honours cards, and on each
+  player's pin on the board and in the exported team sheet. Badges are
   fetched from the club's Wikipedia article the first time a browser needs them (one request for
   every club on screen, cached for a month) and fall back to a shield drawn in the club's colours
   until they arrive, or if Wikipedia can't be reached. Add, edit and delete

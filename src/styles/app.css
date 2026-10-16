@@ -1936,6 +1936,14 @@ a:hover {
 }
 
 /* Invisible hit ring so pins stay tappable at their drawn size. */
+.tb-pin-crest {
+  position: absolute;
+  top: -6px;
+  right: -9px;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.45));
+}
+
 .tb-pin-badge::before {
   content: '';
   position: absolute;
