@@ -1,5 +1,6 @@
 import { ABBR, SHORT, STATS, balanceScore, countPos, overall, ovrAvg, ovrTotal, statAvg } from '../lib/model.js';
-import { INFLUENCE } from '../lib/strength.js';
+import { INFLUENCE, influencePoints } from '../lib/strength.js';
+import { formula } from '../lib/formula.js';
 
 function CompareRow({ k, r, b }) {
   const rw = (r / 100) * 100;
@@ -167,7 +168,7 @@ function Influence({ value, onChange, teams, strength }) {
       <div className="tb-influence-note">
         {value === 'off'
           ? 'Sides are split on ratings alone.'
-          : 'Each player counts as up to ' + INFLUENCE[value].points + ' points stronger or weaker by their record and last five. Ratings are not changed. Re-balance to use it.'}
+          : 'Each player counts as up to ' + influencePoints(value) + ' points stronger or weaker by their record and last ' + formula().results.form + '. Ratings are not changed. Re-balance to use it.'}
       </div>
       {counting ? (
         <div className="tb-influence-now">

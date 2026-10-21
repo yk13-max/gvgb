@@ -299,7 +299,7 @@ export function useSync({ onAdopt, canonical }) {
   // --- housekeeping ---------------------------------------------------------------
   const loadLog = useCallback(() => getLog(pw.current), []);
   const loadBackups = useCallback(() => getBackups(pw.current), []);
-  const makeBackup = useCallback(() => backupNow(pw.current), []);
+  const makeBackup = useCallback((reason) => backupNow(pw.current, reason), []);
 
   // Restoring replaces what is here with the backup. Anything unsaved on this device is
   // dropped (the dialog says so first); the server backs up the current copy before it

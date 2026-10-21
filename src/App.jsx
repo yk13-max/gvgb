@@ -19,7 +19,9 @@ import StatLadder from './components/StatLadder.jsx';
 import StatsTable from './components/StatsTable.jsx';
 import SyncDialog, { syncLook } from './components/SyncDialog.jsx';
 import { exportJSON, readBackupFile } from './lib/backup.js';
-import { savedPassword } from './lib/remote.js';
+import { savedName, savedPassword } from './lib/remote.js';
+import { cleanFormula, setFormula as useFormulaNow } from './lib/formula.js';
+import FormulaPage from './components/FormulaPage.jsx';
 import { buildDoc, parseDoc } from './lib/doc.js';
 import { exportBoard } from './lib/exportBoard.js';
 import { preMatchFacts } from './lib/facts.js';
@@ -63,6 +65,8 @@ function stateFromDoc(parsed) {
     teams: { red: parsed.board.red, blue: parsed.board.blue },
     pos: parsed.board.pos,
     seasons: parsed.seasons || [],
+    formula: parsed.formula || cleanFormula(null),
+    formulaPrev: parsed.formulaPrev || null,
   };
 }
 
@@ -187,6 +191,13 @@ export default function App() {
   const [influence, setInfluence] = useState(() => loadPrefs().influence);
   const [history, setHistory] = useState(start.history);
   const [seasons, setSeasons] = useState(start.seasons);
+  const [formula, setFormula] = useState(start.formula);
+  const [formulaPrev, setFormulaPrev] = useState(start.formulaPrev);
+  // Everything below reads the formula through the model, so it is made the active one
+  // before any of it renders.
+  useFormulaNow(formula);
+  // Remounts the pages that hold ratings in memos when the formula moves them.
+  const formulaKey = useMemo(() => JSON.stringify(formula.weights) + JSON.stringify(formula.suggest) + JSON.stringify(formula.switches.odds), [formula]);
   // Which season Results and the Table show. null means "whichever is current",
   // so a device that has never chosen follows the calendar as seasons are added.
   const [seasonKey, setSeasonKey] = useState(null);
@@ -217,8 +228,8 @@ export default function App() {
   // Everything the group shares, as one value. Anything not in here — the squad view, the
   // PNG switches, which page you are on — belongs to this browser alone.
   const doc = useMemo(
-    () => buildDoc({ players, history, teamSize, selected, match, teams, pos, seasons }),
-    [players, history, teamSize, selected, match, teams, pos, seasons]
+    () => buildDoc({ players, history, teamSize, selected, match, teams, pos, seasons, formula, formulaPrev }),
+    [players, history, teamSize, selected, match, teams, pos, seasons, formula, formulaPrev]
   );
 
   const applyDoc = useCallback((parsed) => {
@@ -231,6 +242,8 @@ export default function App() {
     setTeams(s.teams);
     setPos(s.pos);
     setSeasons(s.seasons);
+    setFormula(s.formula);
+    setFormulaPrev(s.formulaPrev);
     setSel(null);
     setDraft(null);
     setQueue([]);
@@ -310,6 +323,30 @@ export default function App() {
   function toggle(id) {
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
     resetBoard();
+  }
+
+  // A new team formula. Signed in to the hosted copy, what is stored is backed up first,
+  // so any change to how teams are made can be rolled back from Backups & history too.
+  async function saveFormula(next, note) {
+    if (sync.unlocked) {
+      const r = await sync.makeBackup('formula');
+      if (!r || r.kind !== 'ok') return { ok: false, message: 'The backup before saving did not go through, so nothing was changed. Try again in a moment.' };
+    }
+    setFormulaPrev(formula);
+    setFormula(cleanFormula({ ...next, meta: { note: note.trim(), by: savedName() || '', on: todayISO() } }));
+    return { ok: true };
+  }
+
+  async function undoFormula() {
+    if (!formulaPrev) return { ok: false };
+    if (sync.unlocked) {
+      const r = await sync.makeBackup('formula');
+      if (!r || r.kind !== 'ok') return { ok: false, message: 'The backup before undoing did not go through, so nothing was changed.' };
+    }
+    const back = formulaPrev;
+    setFormulaPrev(formula);
+    setFormula(back);
+    return { ok: true };
   }
 
   function removePlayer(id) {
@@ -422,7 +459,7 @@ export default function App() {
   // The shared document, written to a file. Byte for byte what the server holds, plus a
   // note of when it was taken.
   function exportAll() {
-    exportJSON({ players, history, teamSize, selected, match, teams, pos, seasons });
+    exportJSON({ players, history, teamSize, selected, match, teams, pos, seasons, formula, formulaPrev });
   }
 
   // Signed out, neither row exists: an export is every rating in one file, which is the
@@ -781,7 +818,21 @@ export default function App() {
         />
       </header>
 
-      {page === 'history' ? (
+      {page === 'formula' && canEdit ? (
+        <FormulaPage
+          formula={formula}
+          prev={formulaPrev}
+          players={players}
+          weeks={history}
+          selected={selected}
+          teamSize={teamSize}
+          teams={teams}
+          influence={influence}
+          onSave={saveFormula}
+          onUndo={undoFormula}
+          onBack={() => setPage(savedPassword() ? 'history' : 'awards')}
+        />
+      ) : page === 'history' ? (
         <History
           pngFacts={pngFacts}
           weeks={seasonWeeks}
@@ -799,7 +850,7 @@ export default function App() {
           onDeleteMatch={deleteMatch}
           onDeleteWeek={deleteWeek}
         />
-      ) : page === 'awards' ? (
+      ) : page === 'awards' || page === 'formula' ? (
         <Standings
           weeks={seasonWeeks}
           players={players}
@@ -819,7 +870,7 @@ export default function App() {
         />
       ) : page === 'ladder' ? (
         showValues ? (
-          <StatLadder players={players} selected={selected} canEdit={canEdit} onPatch={patchPlayer} />
+          <StatLadder key={formulaKey} players={players} selected={selected} canEdit={canEdit} onPatch={patchPlayer} />
         ) : (
           <div className="tb-page-stats">
             <div className="tb-histempty">Ratings are hidden until you sign in from the shared-data button.</div>
@@ -827,8 +878,9 @@ export default function App() {
         )
       ) : page === 'stats' ? (
         <div className="tb-statspage">
-        {showValues && <RatingSuggestions weeks={history} players={players} canEdit={canEdit} onPatch={patchPlayer} />}
+        {showValues && <RatingSuggestions key={formulaKey} weeks={history} players={players} canEdit={canEdit} onPatch={patchPlayer} />}
         <StatsTable
+          key={formulaKey}
           players={players}
           selected={selected}
           canEdit={canEdit}
@@ -1235,6 +1287,10 @@ export default function App() {
           onHousekeeping={() => {
             setSyncOpen(false);
             setHousekeeping(true);
+          }}
+          onFormula={() => {
+            setSyncOpen(false);
+            setPage('formula');
           }}
         />
       )}

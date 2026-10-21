@@ -32,7 +32,7 @@ function Row({ children }) {
   return <div className="tb-sync-row">{children}</div>;
 }
 
-export default function SyncDialog({ sync, onClose, onHousekeeping }) {
+export default function SyncDialog({ sync, onClose, onHousekeeping, onFormula }) {
   const [pw, setPw] = useState('');
   const [name, setName] = useState(savedName);
   const [busy, setBusy] = useState(false);
@@ -120,6 +120,13 @@ export default function SyncDialog({ sync, onClose, onHousekeeping }) {
             `npm run dev` or any plain static host — deploy it to Netlify and the whole group sees one set of data.
           </p>
         )}
+        {sync.mode === 'local' && (
+          <Row>
+            <Button variant="secondary" size="sm" icon={<Icon name="sliders-vertical" size={15} />} onClick={onFormula}>
+              Team formula
+            </Button>
+          </Row>
+        )}
 
         {sync.mode === 'remote' && !sync.conflict && (
           <>
@@ -152,6 +159,9 @@ export default function SyncDialog({ sync, onClose, onHousekeeping }) {
                 <Row>
                   <Button variant="secondary" size="sm" icon={<Icon name="history" size={15} />} onClick={() => { storeName(name); onHousekeeping(); }}>
                     Backups & history
+                  </Button>
+                  <Button variant="secondary" size="sm" icon={<Icon name="sliders-vertical" size={15} />} onClick={() => { storeName(name); onFormula(); }}>
+                    Team formula
                   </Button>
                   {sync.dirty && !sync.saving && (
                     <Button variant="primary" size="sm" onClick={() => sync.saveNow()}>

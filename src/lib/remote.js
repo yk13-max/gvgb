@@ -147,8 +147,8 @@ export async function getBackups(password) {
   return { kind: 'backups', list: (r.body && r.body.list) || [] };
 }
 
-export async function backupNow(password) {
-  const r = await call('?backup=now', { method: 'POST', headers: { ...auth(password), 'content-type': 'application/json' }, body: JSON.stringify({ by: savedName() }) });
+export async function backupNow(password, reason) {
+  const r = await call('?backup=' + (reason === 'formula' ? 'formula' : 'now'), { method: 'POST', headers: { ...auth(password), 'content-type': 'application/json' }, body: JSON.stringify({ by: savedName() }) });
   if (r.kind !== 'json' || r.status !== 200) return failed(r);
   return { kind: 'ok', backup: r.body.backup };
 }

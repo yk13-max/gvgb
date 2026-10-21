@@ -3,7 +3,7 @@ import { Button, Dialog, Icon } from '../ds/index.js';
 import { formatDate } from '../lib/whatsapp.js';
 
 // The change log and the backups, for password holders.
-const REASON = { weekly: 'Weekly', manual: 'Saved by hand', 'before-restore': 'Before a restore' };
+const REASON = { weekly: 'Weekly', manual: 'Saved by hand', 'before-restore': 'Before a restore', 'before-formula': 'Before a formula change' };
 
 const when = (iso) => {
   if (!iso) return '';

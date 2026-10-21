@@ -1,4 +1,4 @@
-export default function Switch({ checked, onChange, label, disabled, style }) {
+export default function Switch({ checked, onChange, label, name, disabled, style }) {
   const toggle = () => !disabled && onChange && onChange({ target: { checked: !checked } });
   return (
     <label
@@ -17,7 +17,7 @@ export default function Switch({ checked, onChange, label, disabled, style }) {
       <span
         role="switch"
         aria-checked={!!checked}
-        aria-label={typeof label === 'string' ? label : undefined}
+        aria-label={name || (typeof label === 'string' ? label : undefined)}
         tabIndex={disabled ? -1 : 0}
         onClick={toggle}
         onKeyDown={(e) => {

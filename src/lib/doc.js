@@ -2,6 +2,7 @@
 // behind /api/data, the localStorage cache, and an exported .json file. Whatever is in
 // the hosted store is the source of truth — the cache is a copy of what we last saw and
 // the file is a copy you can keep.
+import { cleanFormula } from './formula.js';
 import { normalizePlayer } from './model.js';
 import { toWeeks } from './weeks.js';
 
@@ -57,7 +58,7 @@ function cleanSeasons(list) {
     .filter((s) => Number.isInteger(s.id) && s.id > 0 && !seen.has(s.id) && seen.add(s.id));
 }
 
-export function buildDoc({ players, history, teamSize, selected, match, teams, pos, seasons }) {
+export function buildDoc({ players, history, teamSize, selected, match, teams, pos, seasons, formula, formulaPrev }) {
   const list = Array.isArray(players) ? players : [];
   const ids = new Set(list.map((p) => p.id));
   return {
@@ -70,6 +71,9 @@ export function buildDoc({ players, history, teamSize, selected, match, teams, p
     players: list,
     history: Array.isArray(history) ? history : [],
     seasons: cleanSeasons(seasons),
+    // How teams are made, and the one before the last change so it can be undone.
+    formula: cleanFormula(formula),
+    formulaPrev: formulaPrev ? cleanFormula(formulaPrev) : null,
   };
 }
 
@@ -131,6 +135,9 @@ export function parseDoc(data) {
     match: d.match && typeof d.match === 'object' ? cleanMatch(d.match) : null,
     board: readBoard(d.board, byId),
     seasons: cleanSeasons(d.seasons),
+    // A document from before the formula could be edited gets the formula as it was then.
+    formula: cleanFormula(d.formula),
+    formulaPrev: d.formulaPrev ? cleanFormula(d.formulaPrev) : null,
     // Written by version 2 documents, when the squad view was still shared. It is a per-device
     // preference now, so it is read for the sake of old files and never written back.
     mini: typeof d.mini === 'boolean' ? d.mini : null,

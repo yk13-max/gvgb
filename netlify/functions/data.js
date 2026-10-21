@@ -121,6 +121,20 @@ export function summarise(before, after) {
   if (!same(before.board, after.board)) out.push((after.board && after.board.red && after.board.red.length ? 'Changed the board' : 'Cleared the board'));
   if (before.teamSize !== after.teamSize) out.push('Switched to ' + after.teamSize + '-a-side');
   if (!same(before.match, after.match)) out.push('Updated the fixture details');
+  // The formula's own note says why; who saved it is already on the entry.
+  const bare = (f) => {
+    if (!f || typeof f !== 'object') return null;
+    const { meta, ...rest } = f;
+    return rest;
+  };
+  // A document from before formulas were stored picks up the default on its next save;
+  // that is not a change anyone made.
+  const had = before.formula || (after.formula && after.formula.meta);
+  if (had && !same(bare(before.formula), bare(after.formula))) {
+    const note = after.formula && after.formula.meta && after.formula.meta.note;
+    const undone = before.formulaPrev && after.formula && same(bare(before.formulaPrev), bare(after.formula));
+    out.push((undone ? 'Undid the last team formula change' : 'Changed the team formula') + (note && !undone ? ': ' + note : ''));
+  }
   return out;
 }
 
@@ -200,7 +214,7 @@ export default async (req) => {
     if (params.get('backup')) {
       const current = await store.get(KEY, { type: 'json' });
       if (!current) return json({ error: 'nothing-to-back-up' }, 400);
-      const item = await saveBackup(store, current, by, 'manual');
+      const item = await saveBackup(store, current, by, params.get('backup') === 'formula' ? 'before-formula' : 'manual');
       return json({ ok: true, backup: item });
     }
 
@@ -252,6 +266,13 @@ export default async (req) => {
         { error: 'conflict', rev, updatedAt: current ? current.updatedAt : null, doc: current ? current.doc : null },
         409
       );
+    }
+
+    // A tab still running a version of the app from before the formula could be edited
+    // saves documents without one. Keep the stored formula rather than let that wipe it.
+    if (current && current.doc && current.doc.formula && !('formula' in doc)) {
+      doc.formula = current.doc.formula;
+      doc.formulaPrev = current.doc.formulaPrev || null;
     }
 
     // Once a week, the first save keeps a copy of what was there before it.

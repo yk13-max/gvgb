@@ -111,6 +111,21 @@ the squad, the stats table before you sort it, the line-ups — they read A–Z.
   expected about 21%. Probably under-rated — try +8." **Apply** moves every stat by that amount,
   which moves OVR by exactly that much and keeps the player's shape; **Dismiss** hides it. Either
   way the suggestion stays hidden on that device until the player has played more matches.
+- **Team formula** (in the shared-data dialog, signed in only) — every number behind the above,
+  laid out like the "How teams are made" sheet and editable: how each stat feeds each
+  position's OVR (sliders that keep each position at 100%), how the balancer shares its
+  attention between level, stat mix and positions (one bar, two handles), the results nudge,
+  the search, and the rating suggestion thresholds. Four switches cover the known quirks:
+  leave keepers out of the stat mix, let the results nudge move the stats too, credit results
+  by how far they beat the odds rather than raw wins, and count FLEX (half a midfielder) and
+  second positions (a third, shared). While editing, a preview shows this week's squad split
+  under the saved formula and the edit, how often each would have picked the winner of every
+  recorded match (results only counted from matches before each one), and — on request — the
+  average and worst balance over every squad actually played plus 200 random ones. Saving
+  lists whose OVR would move, asks for a reason for the change history, and takes a backup
+  first; **Undo last save** swaps back, and **Start from the original** resets the edit to the
+  formula as first shipped. The formula is part of the shared data, so every device balances
+  the same way.
 
 ### Match history
 
@@ -365,6 +380,7 @@ moments after the organiser balances.
   each with its date, who triggered it, and how many players and nights it holds. **Restore**
   asks first, then makes that backup the shared data for everyone as a new revision — and backs
   up what was there beforehand, so a restore can itself be undone. The restore is logged.
+  Saving a new team formula takes one too ("Before a formula change").
 
 Both are behind the password on the server too, since they carry every rating.
 
@@ -415,6 +431,8 @@ src/
   ds/           FUFA design system primitives (Button, Icon, Input, Select, Switch, Dialog…)
   lib/
     model.js        stats model, position-weighted OVR, balancing algorithm, pitch placement
+    formula.js      the team formula: its defaults, cleaning, the active one, and editor helpers
+    strength.js     results nudge, rating suggestions, and the past-results check
     parseList.js    WhatsApp signup-list parser and fuzzy roster matching
     whatsapp.js     teams + match details -> chat-ready text
     exportBoard.js  board -> PNG
@@ -429,7 +447,7 @@ src/
                     roster was last saved
   components/   RosterPanel, PlayerCard, PlayerEditor, Pitch, Metrics, StatsTable,
                 StatLadder, History, ImportDialog, ShareDialog, RecordResultDialog,
-                WeekAwardsDialog
+                WeekAwardsDialog, FormulaPage
   styles/       design tokens + the shell's responsive layout
   App.jsx       state, balancing, pin drag/swap, view switching, the phone actions sheet
 netlify/

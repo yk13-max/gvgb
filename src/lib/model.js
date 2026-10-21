@@ -1,18 +1,9 @@
 // FUFA team balancer: stats model, position-weighted overall, balancing algorithm.
 import { cleanClub } from './clubs.js';
+import { formula } from './formula.js';
+import { STATS } from './stats.js';
 
-export const STATS = [
-  'Pace',
-  'Shooting',
-  'Passing',
-  'Defending',
-  'Physical',
-  'Dribbling',
-  'Stamina',
-  'Goalkeeping',
-  'Vision',
-  'Positioning',
-];
+export { STATS };
 
 export const ABBR = {
   Pace: 'PAC',
@@ -32,16 +23,13 @@ export const POSITIONS = ['Goalkeeper', 'Defender', 'Midfielder', 'Striker', 'An
 
 export const SHORT = { Goalkeeper: 'GK', Defender: 'DEF', Midfielder: 'MID', Striker: 'ST', Any: 'FLEX' };
 
-// Each row sums to 1. Goalkeeping carries the keeper's rating and stays a token weight
-// outfield — in 5-a-side someone usually ends up in goal, but it shouldn't sway their OVR.
-// Positioning counts for every role; vision is weighted towards the players who create.
-export const WEIGHTS = {
-  Goalkeeper: { Pace: 0.05, Shooting: 0.02, Passing: 0.08, Defending: 0.12, Physical: 0.1, Dribbling: 0.02, Stamina: 0.06, Goalkeeping: 0.38, Vision: 0.05, Positioning: 0.12 },
-  Defender: { Pace: 0.14, Shooting: 0.02, Passing: 0.1, Defending: 0.24, Physical: 0.18, Dribbling: 0.03, Stamina: 0.08, Goalkeeping: 0.01, Vision: 0.05, Positioning: 0.15 },
-  Midfielder: { Pace: 0.09, Shooting: 0.08, Passing: 0.22, Defending: 0.06, Physical: 0.07, Dribbling: 0.13, Stamina: 0.09, Goalkeeping: 0.01, Vision: 0.15, Positioning: 0.1 },
-  Striker: { Pace: 0.17, Shooting: 0.24, Passing: 0.02, Defending: 0.01, Physical: 0.09, Dribbling: 0.14, Stamina: 0.07, Goalkeeping: 0.01, Vision: 0.08, Positioning: 0.17 },
-  Any: { Pace: 0.11, Shooting: 0.11, Passing: 0.11, Defending: 0.11, Physical: 0.11, Dribbling: 0.11, Stamina: 0.11, Goalkeeping: 0.01, Vision: 0.11, Positioning: 0.11 },
-};
+// How each stat feeds a position's OVR, as whole percentages that add to 100. They live in
+// the team formula, so the organisers can change them; the defaults are in formula.js.
+// Goalkeeping carries the keeper's rating and stays a token weight outfield.
+export function weightsFor(pos) {
+  const w = formula().weights;
+  return w[pos] || w.Any;
+}
 
 export const DEFAULT_STAT = 60;
 
@@ -62,8 +50,10 @@ export function normalizePlayer(p) {
 }
 
 export function overall(p) {
-  const w = WEIGHTS[p.pos] || WEIGHTS.Any;
-  return Math.round(STATS.reduce((s, k) => s + (Number(p.stats[k]) || 0) * w[k], 0));
+  const w = weightsFor(p.pos);
+  // Each weight as a fraction, summed in the same order as always: the same sum to the
+  // last bit, so nobody's rating moves by a rounding hair when nothing has been changed.
+  return Math.round(STATS.reduce((s, k) => s + (Number(p.stats[k]) || 0) * (w[k] / 100), 0));
 }
 
 function avg(list, fn) {
@@ -88,20 +78,68 @@ export function countPos(t, pos) {
   return t.filter((p) => p.pos === pos).length;
 }
 
-function cost(a, b, sf = overall) {
-  let c = Math.abs(ovrAvg(a, sf) - ovrAvg(b, sf)) * 1.6;
+const OUTFIELD = ['Defender', 'Midfielder', 'Striker'];
+
+// How much of each outfield position a player counts as when the sides' shapes are
+// compared. Normally their main position, whole. With the FLEX switch on, a FLEX player
+// counts as half a midfielder, and a player with second positions counts two-thirds for
+// their main one with the last third shared across the others.
+export function posShare(p) {
+  const out = { Defender: 0, Midfielder: 0, Striker: 0 };
+  if (!formula().switches.flex) {
+    if (p.pos in out) out[p.pos] = 1;
+    return out;
+  }
+  if (p.pos === 'Any') {
+    out.Midfielder = 0.5;
+    return out;
+  }
+  if (!(p.pos in out)) return out;
+  const alts = (p.alt || []).filter((a) => a in out && a !== p.pos);
+  out[p.pos] = alts.length ? 2 / 3 : 1;
+  alts.forEach((a) => {
+    out[a] += 1 / 3 / alts.length;
+  });
+  return out;
+}
+
+function shapeOf(t, pos) {
+  return t.reduce((s, p) => s + posShare(p)[pos], 0);
+}
+
+// A side's average on one stat, as the balancer sees it. The switches can leave listed
+// keepers out, and let the results nudge move every stat as well as the OVR.
+function mixAvg(t, k, sf) {
+  const sw = formula().switches;
+  const list = sw.keepersOut ? t.filter((p) => p.pos !== 'Goalkeeper') : t;
+  const nudge = sw.nudgeStats && sf !== overall;
+  return avg(list, (p) => (Number(p.stats[k]) || 0) + (nudge ? sf(p) - overall(p) : 0));
+}
+
+// What a split costs, in three parts: the gap in average strength, the gap on each stat,
+// and how differently the sides are shaped. The weights are the team formula's.
+export function costParts(a, b, sf = overall) {
+  const w = formula().cost;
+  const level = Math.abs(ovrAvg(a, sf) - ovrAvg(b, sf)) * w.level;
+  let mix = 0;
   STATS.forEach((k) => {
-    c += Math.abs(statAvg(a, k) - statAvg(b, k)) * 0.35;
+    mix += Math.abs(mixAvg(a, k, sf) - mixAvg(b, k, sf)) * w.mix;
   });
-  ['Defender', 'Midfielder', 'Striker'].forEach((pos) => {
-    c += Math.abs(countPos(a, pos) - countPos(b, pos)) * 3.5;
+  let positions = 0;
+  OUTFIELD.forEach((pos) => {
+    positions += Math.abs(shapeOf(a, pos) - shapeOf(b, pos)) * w.positions;
   });
-  return c;
+  return { level, mix, positions };
+}
+
+function cost(a, b, sf = overall) {
+  const c = costParts(a, b, sf);
+  return c.level + c.mix + c.positions;
 }
 
 // Balance delta as a 0-100 readout: 100 = perfectly level sides.
 export function balanceScore(a, b, sf = overall) {
-  return Math.max(0, Math.round(100 - cost(a, b, sf) * 1.2));
+  return Math.max(0, Math.round(100 - cost(a, b, sf) * formula().cost.scale));
 }
 
 // Each side must field a keeper: best two goalkeepers, falling back to anyone who
@@ -124,14 +162,14 @@ function pickKeepers(players, sf = overall) {
 
 // One go at a split: deal the outfield players out greedily, then swap pairs while any
 // swap helps. Fast, but it can stop at a split that is only locally best.
-function attempt(rest0, gks, size, sf, mix) {
+function attempt(rest0, gks, size, sf, mix, rng) {
   const red = [gks[0]];
   const blue = [gks[1]];
   const rest = rest0.slice();
   if (mix === 'light') {
     // Light shuffle within equal-strength neighbours, as the balancer always has.
     for (let i = 0; i < rest.length - 1; i++) {
-      if (Math.abs(sf(rest[i]) - sf(rest[i + 1])) <= 3 && Math.random() < 0.5) {
+      if (Math.abs(sf(rest[i]) - sf(rest[i + 1])) <= 3 && rng() < 0.5) {
         const t = rest[i];
         rest[i] = rest[i + 1];
         rest[i + 1] = t;
@@ -139,7 +177,7 @@ function attempt(rest0, gks, size, sf, mix) {
     }
   } else if (mix === 'full') {
     for (let i = rest.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
+      const j = Math.floor(rng() * (i + 1));
       const t = rest[i];
       rest[i] = rest[j];
       rest[j] = t;
@@ -178,13 +216,13 @@ function attempt(rest0, gks, size, sf, mix) {
   return { red, blue, c: bestC };
 }
 
-const ATTEMPTS = 32;
-const NEAR = 0.3; // splits this close to the best are as good as each other
-
 // Many starts, the best kept. A single greedy-then-swap pass can settle on a split that
 // a different start beats, so the balancer tries a few dozen and picks among the best —
-// at random among near-equals, so Reshuffle still gives a genuinely different split.
-export function balance(pool, size, seed, sf = overall) {
+// at random among near-equals, so Reshuffle still gives a genuinely different split. How
+// many starts, and how near counts as equal, are the team formula's. `rng` is only passed
+// by previews that need the same answer twice.
+export function balance(pool, size, seed, sf = overall, rng = Math.random) {
+  const { starts, near: margin } = formula().search;
   const players = pool.slice();
   if (players.length < 2) return { red: players.slice(0, 1), blue: [] };
   const [gkA, gkB] = pickKeepers(players, sf);
@@ -192,17 +230,17 @@ export function balance(pool, size, seed, sf = overall) {
   const gks = [flip ? gkB : gkA, flip ? gkA : gkB];
   const rest = players.filter((p) => p !== gkA && p !== gkB).sort((x, y) => sf(y) - sf(x));
   const tries = [];
-  for (let k = 0; k < ATTEMPTS; k++) tries.push(attempt(rest, gks, size, sf, k === 0 ? 'light' : 'full'));
+  for (let k = 0; k < starts; k++) tries.push(attempt(rest, gks, size, sf, k === 0 ? 'light' : 'full', rng));
   const best = Math.min(...tries.map((t) => t.c));
   const seen = new Set();
   const near = tries.filter((t) => {
-    if (t.c > best + NEAR) return false;
+    if (t.c > best + margin) return false;
     const key = t.red.map((p) => p.id).sort((x, y) => x - y).join(',');
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
   });
-  const pick = near[Math.floor(Math.random() * near.length)];
+  const pick = near[Math.floor(rng() * near.length)];
   return { red: pick.red, blue: pick.blue };
 }
 
