@@ -4548,3 +4548,32 @@ td[data-trend='bad'] {
     align-items: center;
   }
 }
+
+/* The formula code form, under the cover. */
+.fx-lock {
+  max-width: 360px;
+  margin: 20px 16px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+.fx-lock .fx-note {
+  width: 100%;
+  margin: 0;
+}
+.fx-lock .fx-note input {
+  font-family: var(--font-mono);
+  letter-spacing: 0.2em;
+  font-size: var(--text-lg);
+}
+.fx-lock .fx-err,
+.fx-lock .fx-muted {
+  margin: 0;
+}
+@media (max-width: 760px) {
+  .fx-lock {
+    margin: 16px 12px 24px;
+    max-width: none;
+  }
+}

@@ -5,6 +5,7 @@
 // are strongly consistent so a save never checks itself against a stale revision.
 import { getStore } from '@netlify/blobs';
 import { createHash, timingSafeEqual } from 'node:crypto';
+import { cleanFormula } from '../../src/lib/formula.js';
 
 const STORE = 'fufa-team-balancer';
 const KEY = 'doc';
@@ -42,6 +43,39 @@ async function authorise(req) {
   }
   return null;
 }
+
+// The team formula sits behind a second code, TB_FORMULA_PASSWORD, on top of the group's
+// password. A short numeric code is easy to guess one try at a time, so wrong tries are
+// counted: ten in fifteen minutes and it stops answering until the window has passed.
+const FAILS = 'formula-fails';
+const FAIL_WINDOW = 15 * 60 * 1000;
+const FAIL_MAX = 10;
+
+async function formulaDenied(req, store) {
+  const secret = process.env.TB_FORMULA_PASSWORD;
+  if (!secret) {
+    return json({ error: 'no-formula-password', message: 'TB_FORMULA_PASSWORD is not set on this site, so the team formula is locked.' }, 403);
+  }
+  const now = Date.now();
+  const fails = ((await store.get(FAILS, { type: 'json' })) || { at: [] }).at.filter((t) => now - t < FAIL_WINDOW);
+  if (fails.length >= FAIL_MAX) {
+    return json({ error: 'formula-throttled', message: 'Too many wrong codes. Try again in 15 minutes.' }, 429);
+  }
+  if (!sameSecret(req.headers.get('x-tb-formula'), secret)) {
+    await store.setJSON(FAILS, { at: [...fails, now] });
+    await new Promise((r) => setTimeout(r, 400));
+    return json({ error: 'formula-unauthorized', message: 'That code was not accepted.' }, 403);
+  }
+  return null;
+}
+
+// Two formulas compared by what they do: a missing one is the default, and who saved it
+// doesn't count.
+const formulaKey = (f) => {
+  const { meta, ...rest } = cleanFormula(f);
+  return JSON.stringify(rest);
+};
+const prevKey = (f) => (f ? formulaKey(f) : null);
 
 
 // --- change summaries -------------------------------------------------------------------
@@ -210,6 +244,12 @@ export default async (req) => {
     }
     const by = cleanBy(body.by);
 
+    // Check the team formula code without writing anything.
+    if (params.get('formula')) {
+      const no = await formulaDenied(req, store);
+      return no || json({ ok: true });
+    }
+
     // Back up now: a copy of what is stored, on demand.
     if (params.get('backup')) {
       const current = await store.get(KEY, { type: 'json' });
@@ -273,6 +313,16 @@ export default async (req) => {
     if (current && current.doc && current.doc.formula && !('formula' in doc)) {
       doc.formula = current.doc.formula;
       doc.formulaPrev = current.doc.formulaPrev || null;
+    }
+
+    // Changing the formula, or its undo slot, needs the second code as well.
+    const before = current && current.doc ? current.doc : {};
+    if (formulaKey(before.formula) !== formulaKey(doc.formula) || prevKey(before.formulaPrev) !== prevKey(doc.formulaPrev)) {
+      const no = await formulaDenied(req, store);
+      if (no) {
+        const b = await no.json();
+        return json({ ...b, error: 'formula-locked', reason: b.error }, 403);
+      }
     }
 
     // Once a week, the first save keeps a copy of what was there before it.

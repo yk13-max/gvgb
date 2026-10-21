@@ -111,7 +111,8 @@ the squad, the stats table before you sort it, the line-ups — they read A–Z.
   expected about 21%. Probably under-rated — try +8." **Apply** moves every stat by that amount,
   which moves OVR by exactly that much and keeps the player's shape; **Dismiss** hides it. Either
   way the suggestion stays hidden on that device until the player has played more matches.
-- **Team formula** (in the shared-data dialog, signed in only) — every number behind the above,
+- **Team formula** (in the shared-data dialog, signed in only, behind its own code —
+  `TB_FORMULA_PASSWORD`, see [DEPLOY.md](DEPLOY.md)) — every number behind the above,
   laid out like the "How teams are made" sheet and editable: how each stat feeds each
   position's OVR (sliders that keep each position at 100%), how the balancer shares its
   attention between level, stat mix and positions (one bar, two handles), the results nudge,

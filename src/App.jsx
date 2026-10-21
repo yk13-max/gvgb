@@ -22,6 +22,7 @@ import { exportJSON, readBackupFile } from './lib/backup.js';
 import { savedName, savedPassword } from './lib/remote.js';
 import { cleanFormula, setFormula as useFormulaNow } from './lib/formula.js';
 import FormulaPage from './components/FormulaPage.jsx';
+import FormulaLock from './components/FormulaLock.jsx';
 import { buildDoc, parseDoc } from './lib/doc.js';
 import { exportBoard } from './lib/exportBoard.js';
 import { preMatchFacts } from './lib/facts.js';
@@ -263,6 +264,14 @@ export default function App() {
     canonical: useCallback((raw) => {
       const parsed = parseDoc(raw);
       return parsed.error ? null : JSON.stringify(buildDoc(stateFromDoc(parsed)));
+    }, []),
+    // A formula change the server turned away: put back the formula it holds, and let
+    // everything else in that save go through.
+    onFormulaLocked: useCallback((raw) => {
+      const parsed = parseDoc(raw);
+      if (parsed.error) return;
+      setFormula(parsed.formula);
+      setFormulaPrev(parsed.formulaPrev);
     }, []),
   });
 
@@ -617,6 +626,22 @@ export default function App() {
       />
     ) : null;
 
+  const formulaPage = (
+    <FormulaPage
+      formula={formula}
+      prev={formulaPrev}
+      players={players}
+      weeks={history}
+      selected={selected}
+      teamSize={teamSize}
+      teams={teams}
+      influence={influence}
+      onSave={saveFormula}
+      onUndo={undoFormula}
+      onBack={() => setPage(savedPassword() ? 'history' : 'awards')}
+    />
+  );
+
   return (
     <div className="tb-shell">
       <header className="tb-head">
@@ -819,19 +844,15 @@ export default function App() {
       </header>
 
       {page === 'formula' && canEdit ? (
-        <FormulaPage
-          formula={formula}
-          prev={formulaPrev}
-          players={players}
-          weeks={history}
-          selected={selected}
-          teamSize={teamSize}
-          teams={teams}
-          influence={influence}
-          onSave={saveFormula}
-          onUndo={undoFormula}
-          onBack={() => setPage(savedPassword() ? 'history' : 'awards')}
-        />
+        // With no shared store there is nothing to protect: the formula lives in this
+        // browser alone. On a hosted copy it needs the formula code as well.
+        sync.mode === 'remote' ? (
+          <FormulaLock sync={sync} onBack={() => setPage('history')}>
+            {formulaPage}
+          </FormulaLock>
+        ) : (
+          formulaPage
+        )
       ) : page === 'history' ? (
         <History
           pngFacts={pngFacts}

@@ -10,6 +10,7 @@
 const ENDPOINTS = ['/api/data', '/.netlify/functions/data'];
 const PW = 'fufa.tb.pw';
 const NAME = 'fufa.tb.name';
+const FORMULA = 'fufa.tb.fpw';
 
 let endpoint = null;
 
@@ -27,6 +28,25 @@ export function storePassword(pw) {
     else localStorage.removeItem(PW);
   } catch {
     // Without storage the password simply has to be entered again next time.
+  }
+}
+
+// The second code, for the team formula. Kept on the device like the password, and
+// forgotten with it on sign-out.
+export function savedFormulaCode() {
+  try {
+    return localStorage.getItem(FORMULA) || '';
+  } catch {
+    return '';
+  }
+}
+
+export function storeFormulaCode(code) {
+  try {
+    if (code) localStorage.setItem(FORMULA, code);
+    else localStorage.removeItem(FORMULA);
+  } catch {
+    // Without storage the code simply has to be entered again next time.
   }
 }
 
@@ -106,7 +126,7 @@ export async function getRecord({ metaOnly } = {}) {
 export async function putRecord({ rev, doc, password }) {
   const r = await call('', {
     method: 'PUT',
-    headers: { 'content-type': 'application/json', 'x-tb-password': password || '' },
+    headers: { 'content-type': 'application/json', 'x-tb-password': password || '', 'x-tb-formula': savedFormulaCode() },
     body: JSON.stringify({ rev, doc, by: savedName() }),
   });
   if (r.kind !== 'json') return r;
@@ -117,6 +137,20 @@ export async function putRecord({ rev, doc, password }) {
     return { kind: 'conflict', rev: Number(b.rev) || 0, updatedAt: b.updatedAt || null, doc: b.doc || null };
   }
   if (r.status === 503) return { kind: 'disabled', message: b.message || null };
+  if (r.status === 403 && b.error === 'formula-locked') return { kind: 'formula-locked', message: b.message || null };
+  return { kind: 'error', status: r.status, message: b.message || null };
+}
+
+// Checks the team formula code (with the group's password) without writing anything.
+export async function checkFormulaCode(password, code) {
+  const r = await call('?formula=check', { method: 'POST', headers: { 'x-tb-password': password || '', 'x-tb-formula': code || '' } });
+  if (r.kind !== 'json') return r;
+  const b = r.body || {};
+  if (r.status === 200) return { kind: 'ok' };
+  if (r.status === 401) return { kind: 'unauthorized' };
+  if (r.status === 403 && b.error === 'no-formula-password') return { kind: 'not-set', message: b.message };
+  if (r.status === 403) return { kind: 'wrong', message: b.message };
+  if (r.status === 429) return { kind: 'throttled', message: b.message };
   return { kind: 'error', status: r.status, message: b.message || null };
 }
 

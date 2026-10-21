@@ -15,9 +15,11 @@ site has built in — there is no database to create and nothing else to sign up
    | Key | Value |
    | --- | --- |
    | `TB_PASSWORD` | whatever you want the organisers to type |
+   | `TB_FORMULA_PASSWORD` | a second code for the team formula page |
 
-   Until this is set the site is readable but nothing can be saved, and the app says so
-   rather than silently dropping changes.
+   Until `TB_PASSWORD` is set the site is readable but nothing can be saved, and the app says
+   so rather than silently dropping changes. Until `TB_FORMULA_PASSWORD` is set the team
+   formula page stays locked for everyone; everything else works as normal.
 3. **Redeploy** so the function picks the variable up (*Deploys → Trigger deploy*). Netlify
    does not re-run functions with new environment variables until the next deploy.
 4. **Seed it.** Open the site, click the status chip in the header, sign in with the
@@ -40,6 +42,13 @@ the stored document — the data outlives the code.
   `localStorage` on each device that signs in, so it is typed once per phone. *Sign out*
   in the shared-data dialog removes it from that device. Changing `TB_PASSWORD` in Netlify
   signs everyone out at their next save.
+- **The team formula** needs the group password *and* `TB_FORMULA_PASSWORD`. The page asks
+  for the code, the server checks it, and any save that changes the formula without it is
+  turned away (the rest of that save still goes through). The code is kept on the device
+  until sign-out and re-checked each time the page opens, so changing it in Netlify locks
+  every device out of the formula until they enter the new one. Ten wrong codes in fifteen
+  minutes and the check stops answering until the window passes. Restoring a backup from
+  *Backups & history* only needs the group password, and can bring back an older formula.
 
 ## How saving works
 
@@ -72,6 +81,7 @@ the password in a `.env` file at the repo root (it is gitignored):
 
 ```
 TB_PASSWORD=letmein
+TB_FORMULA_PASSWORD=1357
 ```
 
 `npm run dev` runs Vite on its own with no function behind it. That is a supported way to

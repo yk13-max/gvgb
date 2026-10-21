@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { backupNow, checkPassword, getBackups, getLog, getRecord, putRecord, restoreBackup, savedPassword, storePassword } from './remote.js';
+import { backupNow, checkFormulaCode, checkPassword, getBackups, getLog, getRecord, putRecord, restoreBackup, savedPassword, storeFormulaCode, storePassword } from './remote.js';
 
 const SAVE_DELAY = 1200; // let a burst of typing settle before writing
 const MODE_KEY = 'fufa.tb.mode';
@@ -32,7 +32,7 @@ const RETRY_MS = [1000, 3000, 8000];
 // doesn't, the app is a read-only window on whatever the organiser last saved. Either way
 // the document arriving from the server wins over what was loaded from the cache, and a
 // save that would land on top of someone else's is refused rather than merged.
-export function useSync({ onAdopt, canonical }) {
+export function useSync({ onAdopt, canonical, onFormulaLocked: formulaLockedCb }) {
   const [state, setState] = useState(() => ({
     mode: 'loading', // loading | local (no backend) | remote
     assume: rememberedMode(), // what 'loading' will most likely turn out to be
@@ -50,6 +50,8 @@ export function useSync({ onAdopt, canonical }) {
 
   const adopt = useRef(onAdopt);
   adopt.current = onAdopt;
+  const onFormulaLocked = useRef(formulaLockedCb);
+  onFormulaLocked.current = formulaLockedCb;
   const canon = useRef(canonical);
   canon.current = canonical;
 
@@ -128,6 +130,15 @@ export function useSync({ onAdopt, canonical }) {
     }
     if (res.kind === 'disabled') {
       patch({ saving: false, disabled: true, dirty: true, error: res.message });
+      return;
+    }
+    // A formula change without a good code. Forget the code, and hand the stored formula
+    // back to the app so everything else in this save can still go through.
+    if (res.kind === 'formula-locked') {
+      storeFormulaCode('');
+      const cur = await getRecord();
+      patch({ saving: false, dirty: true, formulaLocked: true, error: 'The team formula change was not saved: ' + (res.message || 'the formula code was not accepted.') });
+      if (cur.kind === 'record' && cur.doc && onFormulaLocked.current) onFormulaLocked.current(cur.doc);
       return;
     }
     // Offline, or the function erred. Keep the change and try again on the next tick.
@@ -254,9 +265,24 @@ export function useSync({ onAdopt, canonical }) {
     [patch, schedule]
   );
 
+  // The team formula's second code: checked against the server, kept on the device if good.
+  const checkFormula = useCallback(async (code) => {
+    const res = await checkFormulaCode(pw.current, code);
+    if (res.kind === 'ok') {
+      storeFormulaCode(code);
+      patch({ formulaLocked: false });
+      return { ok: true };
+    }
+    if (res.kind === 'wrong') storeFormulaCode('');
+    if (res.kind === 'offline') return { ok: false, message: 'Could not reach the site to check it. Try again in a moment.' };
+    if (res.kind === 'unauthorized') return { ok: false, message: 'Sign in with the group password first.' };
+    return { ok: false, message: res.message || 'Something went wrong checking that code.' };
+  }, [patch]);
+
   const lock = useCallback(() => {
     pw.current = '';
     storePassword('');
+    storeFormulaCode('');
     patch({ unlocked: false, error: null });
   }, [patch]);
 
@@ -323,5 +349,5 @@ export function useSync({ onAdopt, canonical }) {
     [take]
   );
 
-  return { ...state, push, unlock, lock, refresh, resolve, saveNow, loadLog, loadBackups, makeBackup, restore };
+  return { ...state, push, unlock, lock, refresh, resolve, saveNow, loadLog, loadBackups, makeBackup, restore, checkFormula };
 }
