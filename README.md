@@ -144,7 +144,11 @@ matches you played that night.
   weeks, and a week with no matches left disappears.
 - **Talking points on the shared images.** Export PNG on the Balancer adds a **Pre-match**
   strip under the pitch, and Share on a Results week adds **Talking points** to the card: up to
-  eight facts on the team sheet and four on the results card, the strongest from each kind first. The pre-match strip opens with a **favourite**
+  eight facts on the team sheet and four on the results card, the strongest from each kind first.
+  The team sheet never gets taller than 2:3 (a tall phone photo), so WhatsApp shows it with
+  little or no cropping: with talking points on, the pitch is drawn a little shorter and rows
+  of talking points are added, strongest first, only while they still fit — usually four,
+  fewer with the ratings summary strip turned on. The pre-match strip opens with a **favourite**
   meter: a red/blue bar split by each side's chance of winning, with the favourite named in words
   — *slight favourites*, *favourites*, *clear favourites*, or *too close to call*. The chance
   comes from the sides' average strength, measured the way the balancer made them (ratings, plus

@@ -82,7 +82,8 @@ const FPAD = 22;
 const FGAP = 18; // between the two columns
 const FONT = 'Inter,sans-serif';
 
-const FAV_H = 74 * FS;
+const FAV_H = 46 * FS;
+const MAX_RATIO = 1.5; // height to width, at most
 
 // The favourite, as a tug of war across the top of the talking points: the bar splits at
 // each side's chance, so the favourite's colour fills more of it, and the other side is
@@ -93,18 +94,21 @@ function drawFavourite(g, fav, x, y, w) {
   g.textAlign = 'left';
   g.textBaseline = 'alphabetic';
   g.fillStyle = tone;
-  g.fillRect(x, y + 2 * s, 3 * s, FAV_H - 14 * s);
+  g.fillRect(x, y + 2 * s, 3 * s, FAV_H - 12 * s);
+  // One line of words, then the bar: the tag and who it is side by side.
   g.font = '700 ' + 10 * s + 'px ' + FONT;
-  g.fillText('FAVOURITE', x + 12 * s, y + 12 * s);
-  g.font = '700 ' + 15 * s + 'px ' + FONT;
+  const tag = 'FAVOURITE';
+  g.fillText(tag, x + 12 * s, y + 13 * s);
+  const after = x + 12 * s + g.measureText(tag).width + 10 * s;
+  g.font = '700 ' + 14 * s + 'px ' + FONT;
   g.fillStyle = '#ffffff';
   const lead = fav.side ? (fav.side === 'red' ? 'Red' : 'Blue') + ' · ' : '';
-  g.fillText(lead + fav.how, x + 12 * s, y + 33 * s);
+  g.fillText(lead + fav.how, after, y + 14 * s);
 
   const bx = x + 12 * s;
   const bw = w - 12 * s;
-  const by = y + 44 * s;
-  const bh = 14 * s;
+  const by = y + 22 * s;
+  const bh = 12 * s;
   const cut = bx + bw * Math.max(0.04, Math.min(0.96, fav.p));
   const pill = (x0, x1, r0, r1, colour) => {
     g.fillStyle = colour;
@@ -147,18 +151,31 @@ function drawBoard(teams, pos, showRatings, showSummary, facts = [], badges = {}
   // Pin positions are a percentage of the pitch, so the pitch keeps its height and
   // the summary strip extends the canvas below it.
   // Shorter than a real pitch's proportions: a chat app crops a tall image in its
-  // preview, and positions are percentages, so the pins simply sit closer.
-  const H = 860;
+  // preview, and positions are percentages, so the pins simply sit closer. Shorter
+  // again when talking points go underneath, to leave them room.
+  const strip = facts.length > 0 || !!fav;
+  const H = strip ? 780 : 860;
   const c = document.createElement('canvas');
   const measure = c.getContext('2d');
-  // The facts sit two to a row, so four of them take two rows rather than four.
+  // The facts sit two to a row, so four of them take two rows rather than four. The
+  // whole image stays within MAX_RATIO (2:3, a tall phone photo) so WhatsApp shows it
+  // without much cropping: rows are added, strongest first, while they still fit.
   const colW = (W - FPAD * 2 - FGAP) / 2;
   const cells = facts.map((f) => layoutFacts(measure, [f], colW - 12 * FS, FS, FONT)[0]);
-  const rows = [];
-  for (let i = 0; i < cells.length; i += 2) rows.push(cells.slice(i, i + 2));
-  const rowsH = rows.reduce((sum, r) => sum + Math.max(...r.map((x) => x.h)), 0);
   const favH = fav ? FAV_H : 0;
-  const factsH = cells.length || fav ? FPAD + 20 * FS + favH + rowsH + FPAD / 2 : 0;
+  const head = FPAD + 20 * FS + favH;
+  const foot = FPAD / 2;
+  let room = W * MAX_RATIO - H - (showSummary ? SUMMARY_H : 0) - head - foot;
+  const rows = [];
+  for (let i = 0; i < cells.length; i += 2) {
+    const r = cells.slice(i, i + 2);
+    const h = Math.max(...r.map((x) => x.h));
+    if (h > room) break;
+    rows.push(r);
+    room -= h;
+  }
+  const rowsH = rows.reduce((sum, r) => sum + Math.max(...r.map((x) => x.h)), 0);
+  const factsH = strip ? head + rowsH + foot : 0;
   c.width = W;
   c.height = H + (showSummary ? SUMMARY_H : 0) + factsH;
   const g = c.getContext('2d');
@@ -235,7 +252,7 @@ function drawBoard(teams, pos, showRatings, showSummary, facts = [], badges = {}
   g.fillStyle = cols.red;
   g.fillText('RED', 16, H - 18);
   if (showSummary) drawSummary(g, W, H, teams);
-  if (cells.length || fav) {
+  if (strip) {
     const top = H + (showSummary ? SUMMARY_H : 0);
     g.fillStyle = '#1f2833';
     g.fillRect(0, top, W, factsH);
