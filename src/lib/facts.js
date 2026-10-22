@@ -8,6 +8,7 @@
 // was — the image goes to everyone, password or not.
 import { formula } from './formula.js';
 import { overall } from './model.js';
+import { clubOf } from './clubs.js';
 import { firstName, shortName } from './names.js';
 import { currentSeason, seasonOf, weeksIn } from './seasons.js';
 import { standings } from './standings.js';
@@ -22,7 +23,23 @@ export const CATEGORY = {
   record: { tag: 'Record', tone: 'gold' },
   table: { tag: 'Table', tone: 'blue' },
   upset: { tag: 'Upset meter', tone: 'red' },
+  rival: { tag: 'Rivalry', tone: 'red' },
+  honours: { tag: 'Honours', tone: 'gold' },
+  due: { tag: 'Due a win', tone: 'blue' },
+  club: { tag: 'Club colours', tone: 'violet' },
+  exp: { tag: 'Experience', tone: 'green' },
 };
+
+// Derbies and grudge matches between sides people can pick as the team they support.
+const DERBIES = [
+  ['ARS', 'TOT'], ['LIV', 'EVE'], ['MUN', 'MCI'], ['MUN', 'LIV'], ['CHE', 'TOT'], ['NEW', 'SUN'], ['AVL', 'BIR'],
+  ['WHU', 'MLW'], ['SOU', 'POR'], ['LEE', 'MUN'], ['NFO', 'DER'], ['BRC', 'CAR'], ['CRY', 'BHA'], ['WBA', 'WOL'],
+  ['RMA', 'BAR'], ['RMA', 'ATM'], ['BET', 'SEV'], ['MIL', 'INT'], ['ROM', 'LAZ'], ['JUV', 'INT'], ['JUV', 'TOR'],
+  ['BVB', 'FCB'], ['BVB', 'S04'], ['PSG', 'MAR'], ['LYO', 'ASM'], ['MAR', 'LYO'],
+  ['N-ENG', 'N-SCO'], ['N-ENG', 'N-GER'], ['N-ENG', 'N-ARG'], ['N-ARG', 'N-BRA'], ['N-ESP', 'N-POR'], ['N-NED', 'N-GER'],
+  ['N-IND', 'N-PAK'], ['N-WAL', 'N-ENG'], ['N-IRL', 'N-ENG'], ['N-MAR', 'N-ALG'], ['N-EGY', 'N-ALG'], ['N-KOR', 'N-JPN'], ['N-USA', 'N-MEX'],
+];
+const isDerby = (a, b) => DERBIES.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
 
 const MILESTONES = [10, 25, 50, 75, 100, 150, 200, 250, 300, 400, 500];
 const ordinal = (n) => {
@@ -144,7 +161,7 @@ function pick(facts, max) {
 
 // --- before kick-off -------------------------------------------------------------------
 
-export function preMatchFacts(teams, weeks, players, { seasons = [], today, max = 4 } = {}) {
+export function preMatchFacts(teams, weeks, players, { seasons = [], today, max = 8 } = {}) {
   const red = ids(teams && teams.red);
   const blue = ids(teams && teams.blue);
   if (!red.length || !blue.length) return [];
@@ -278,6 +295,110 @@ export function preMatchFacts(teams, weeks, players, { seasons = [], today, max 
     const bs = sideOf(bottom.id);
     if (ts && bs && ts !== bs) facts.push({ cat: 'story', weight: 74, text: 'Top v bottom: league leader ' + name(top.id) + ' faces bottom-placed ' + name(bottom.id) + '.' });
     else if (ts) facts.push({ cat: 'story', weight: 50, text: 'League leader ' + name(top.id) + ' lines up for ' + (ts === 'red' ? 'Red' : 'Blue') + '.' });
+  }
+
+  // Rivalry: the most one-sided personal record among players facing each other tonight.
+  let rival = null;
+  red.forEach((r) =>
+    blue.forEach((bl) => {
+      let rw = 0;
+      let bw = 0;
+      all.forEach(({ m, o }) => {
+        if (o !== 'red' && o !== 'blue') return;
+        const rSide = has(m.red, r) ? 'red' : has(m.blue, r) ? 'blue' : null;
+        const bSide = has(m.red, bl) ? 'red' : has(m.blue, bl) ? 'blue' : null;
+        if (!rSide || !bSide || rSide === bSide) return;
+        if (o === rSide) rw += 1;
+        else bw += 1;
+      });
+      const n = rw + bw;
+      if (n < 4) return;
+      const top = Math.max(rw, bw);
+      if (top / n < 0.75) return;
+      const score = top * 2 - n + n / 10;
+      if (!rival || score > rival.score) rival = rw >= bw ? { a: r, b: bl, w: rw, n, score } : { a: bl, b: r, w: bw, n, score };
+    })
+  );
+  if (rival) {
+    const text =
+      rival.w === rival.n
+        ? name(rival.a) + ' has never lost to ' + name(rival.b) + ' in ' + rival.n + ' meetings. Tonight they’re on opposite sides again.'
+        : name(rival.a) + ' has won ' + rival.w + ' of ' + rival.n + ' against ' + name(rival.b) + '. A chance for revenge tonight.';
+    facts.push({ cat: 'rival', weight: 60 + rival.n, text });
+  }
+
+  // Honours: player-of-the-match awards each side brings.
+  const potm = new Map();
+  (weeks || []).forEach((w) => {
+    const id = w.awards && w.awards.potm;
+    if (id != null) potm.set(id, (potm.get(id) || 0) + 1);
+  });
+  const haul = (side) => side.reduce((sum, id) => sum + (potm.get(id) || 0), 0);
+  const rh = haul(red);
+  const bh = haul(blue);
+  if (rh + bh >= 3) {
+    const star = both.filter((id) => potm.get(id)).sort((x, y) => potm.get(y) - potm.get(x))[0];
+    const most = potm.get(star);
+    const lead = rh === bh ? 'Both sides bring ' + plural(rh, 'player-of-the-match award') : (rh > bh ? 'Red' : 'Blue') + ' bring ' + plural(Math.max(rh, bh), 'player-of-the-match award') + ' to ' + (rh > bh ? 'Blue' : 'Red') + '’s ' + Math.min(rh, bh);
+    facts.push({ cat: 'honours', weight: 52 + Math.min(12, rh + bh), text: lead + (most >= 2 ? '. ' + name(star) + ' has the most on the pitch, with ' + most + '.' : '.') });
+  }
+
+  // Due a win: the longest losing run on the pitch, three or more.
+  let due = null;
+  both.forEach((id) => {
+    const run = runOf(resultsOf(id, all));
+    if (run.kind === 'L' && run.n >= 3 && (!due || run.n > due.n)) due = { id, n: run.n };
+  });
+  if (due) facts.push({ cat: 'due', weight: 50 + due.n * 2, text: name(due.id) + ' has lost their last ' + due.n + '. Surely due a win.' });
+
+  // Club colours: a derby across the halfway line, fans of the same side split up, or a
+  // side that is mostly one club's supporters.
+  const byId = new Map([...(players || []), ...(teams.red || []), ...(teams.blue || [])].map((p) => [p.id, p]));
+  const club = (id) => (byId.get(id) && byId.get(id).club) || null;
+  const clubName = (code) => (clubOf(code) ? clubOf(code).name : code);
+  let derby = null;
+  let split = null;
+  red.forEach((r) =>
+    blue.forEach((bl) => {
+      const a = club(r);
+      const c = club(bl);
+      if (!a || !c) return;
+      if (!derby && isDerby(a, c)) derby = { r, bl, a, c };
+      if (!split && a === c) split = { code: a };
+    })
+  );
+  if (derby) facts.push({ cat: 'club', weight: 62, text: 'Derby day: ' + name(derby.r) + ' (' + clubName(derby.a) + ') v ' + name(derby.bl) + ' (' + clubName(derby.c) + ').' });
+  else if (split) {
+    const fans = both.filter((id) => club(id) === split.code);
+    const onRed = fans.filter((id) => red.includes(id)).map(name);
+    const onBlue = fans.filter((id) => blue.includes(id)).map(name);
+    facts.push({ cat: 'club', weight: 52, text: 'Divided loyalties: ' + clubName(split.code) + ' fans ' + listNames([...onRed, ...onBlue]) + ' on opposite sides.' });
+  }
+  [
+    ['Red', red],
+    ['Blue', blue],
+  ].forEach(([label, side]) => {
+    const counts = new Map();
+    side.forEach((id) => club(id) && counts.set(club(id), (counts.get(club(id)) || 0) + 1));
+    counts.forEach((n, code) => {
+      if (n >= 3) facts.push({ cat: 'club', weight: 48 + n, text: label + ' has a ' + clubName(code) + ' feel: ' + listNames(side.filter((id) => club(id) === code).map(name)) + ' are all fans.' });
+    });
+  });
+
+  // Experience: matches on record between each side's players, when one side has clearly more.
+  const exp = (side) => side.reduce((sum, id) => sum + gamesOf(id, all), 0);
+  const re = exp(red);
+  const be = exp(blue);
+  if (re + be >= 30 && Math.max(re, be) >= Math.min(re, be) * 1.3) {
+    facts.push({ cat: 'exp', weight: 46, text: (re > be ? 'Red' : 'Blue') + ' bring ' + Math.max(re, be) + ' matches of experience to ' + (re > be ? 'Blue' : 'Red') + '’s ' + Math.min(re, be) + '.' });
+  }
+
+  // Table: the season's top four leaning to one side.
+  if (rows.length >= 6) {
+    const top4 = rows.slice(0, 4).map((r) => r.id);
+    const nr = top4.filter((id) => red.includes(id)).length;
+    const nb = top4.filter((id) => blue.includes(id)).length;
+    if (Math.max(nr, nb) >= 3) facts.push({ cat: 'table', weight: 56, text: (Math.max(nr, nb) === 4 ? 'All four' : 'Three') + ' of the table’s top four are on ' + (nr > nb ? 'Red' : 'Blue') + ' tonight.' });
   }
 
   return pick(facts, max);

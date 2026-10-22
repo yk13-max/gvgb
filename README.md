@@ -144,7 +144,7 @@ matches you played that night.
   weeks, and a week with no matches left disappears.
 - **Talking points on the shared images.** Export PNG on the Balancer adds a **Pre-match**
   strip under the pitch, and Share on a Results week adds **Talking points** to the card: up to
-  four facts, the strongest from each kind first. The pre-match strip opens with a **favourite**
+  eight facts on the team sheet and four on the results card, the strongest from each kind first. The pre-match strip opens with a **favourite**
   meter: a red/blue bar split by each side's chance of winning, with the favourite named in words
   — *slight favourites*, *favourites*, *clear favourites*, or *too close to call*. The chance
   comes from the sides' average strength, measured the way the balancer made them (ratings, plus
@@ -152,7 +152,13 @@ matches you played that night.
   sides, or sides with most of these players, and who leads), **in form** (the player on each side with the most wins in their last five this season — three or more to count, and left out when nobody qualifies), **partnerships** (each side's best duo on
   record, team-mates for the first time, and three or more on the same side who have won their
   last few together) and **milestones** (a first recorded match, a 10th/25th/50th… match,
-  someone back after a few nights out, top v bottom of the table). After the night: **streaks**
+  someone back after a few nights out, top v bottom of the table), **rivalry** (the most
+  one-sided record between two players facing each other, four meetings or more),
+  **honours** (player-of-the-match awards each side brings), **due a win** (the longest losing
+  run on the pitch, three or more), **club colours** (a derby across the halfway line, fans of
+  the same club split up, or three fans of one club on a side), **experience** (matches on
+  record per side, when one side has clearly more) and the **table** (three or four of the top
+  four on one side). After the night: **streaks**
   extended, ended or broken — for one player, or for three or more who shared the run — **records** (biggest win, highest-scoring game, most goals in a
   night), **table** movement (a new leader, the biggest climb or drop) and the **upset meter**.
   The images go to everyone, so no rating number ever appears: the upset meter compares the

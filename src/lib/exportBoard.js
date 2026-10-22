@@ -75,7 +75,9 @@ function drawSummary(g, W, top, teams) {
 }
 
 // The pre-match strip: talking points for the group chat, under everything else.
-const FS = 1.4; // the board is 760px wide and shown at phone width, so text is scaled up
+// The board is 760px wide and shown at phone width, so text is scaled up — a little, so up
+// to eight talking points fit without making the image too tall for a chat preview.
+const FS = 1.15;
 const FPAD = 22;
 const FGAP = 18; // between the two columns
 const FONT = 'Inter,sans-serif';
