@@ -80,8 +80,67 @@ const FPAD = 22;
 const FGAP = 18; // between the two columns
 const FONT = 'Inter,sans-serif';
 
+const FAV_H = 74 * FS;
+
+// The favourite, as a tug of war across the top of the talking points: the bar splits at
+// each side's chance, so the favourite's colour fills more of it, and the other side is
+// dimmed. Words, never numbers — the image goes to everyone.
+function drawFavourite(g, fav, x, y, w) {
+  const s = FS;
+  const tone = fav.side ? LEAD[fav.side] : '#e8b73a';
+  g.textAlign = 'left';
+  g.textBaseline = 'alphabetic';
+  g.fillStyle = tone;
+  g.fillRect(x, y + 2 * s, 3 * s, FAV_H - 14 * s);
+  g.font = '700 ' + 10 * s + 'px ' + FONT;
+  g.fillText('FAVOURITE', x + 12 * s, y + 12 * s);
+  g.font = '700 ' + 15 * s + 'px ' + FONT;
+  g.fillStyle = '#ffffff';
+  const lead = fav.side ? (fav.side === 'red' ? 'Red' : 'Blue') + ' · ' : '';
+  g.fillText(lead + fav.how, x + 12 * s, y + 33 * s);
+
+  const bx = x + 12 * s;
+  const bw = w - 12 * s;
+  const by = y + 44 * s;
+  const bh = 14 * s;
+  const cut = bx + bw * Math.max(0.04, Math.min(0.96, fav.p));
+  const pill = (x0, x1, r0, r1, colour) => {
+    g.fillStyle = colour;
+    g.beginPath();
+    g.moveTo(x0 + r0, by);
+    g.lineTo(x1 - r1, by);
+    g.arcTo(x1, by, x1, by + bh, r1);
+    g.arcTo(x1, by + bh, x0, by + bh, r1);
+    g.lineTo(x0 + r0, by + bh);
+    g.arcTo(x0, by + bh, x0, by, r0);
+    g.arcTo(x0, by, x1, by, r0);
+    g.fill();
+  };
+  const dim = (side) => (fav.side && fav.side !== side ? 0.45 : 1);
+  g.globalAlpha = dim('red');
+  pill(bx, cut, bh / 2, 0.01, COLS.red);
+  g.globalAlpha = dim('blue');
+  pill(cut, bx + bw, 0.01, bh / 2, COLS.blue);
+  g.globalAlpha = 1;
+  // halfway, so a lean is visible even when it is small
+  g.fillStyle = 'rgba(255,255,255,0.55)';
+  g.fillRect(bx + bw / 2 - 1, by - 3 * s, 2, bh + 6 * s);
+  // the marker where the two chances meet
+  g.fillStyle = '#ffffff';
+  g.fillRect(cut - 2 * s, by - 4 * s, 4 * s, bh + 8 * s);
+  g.font = '700 ' + 9 * s + 'px ' + FONT;
+  g.fillStyle = 'rgba(255,255,255,0.92)';
+  g.textBaseline = 'middle';
+  // A name only goes in its segment when there is room beside the marker for it.
+  if (cut - bx > g.measureText('RED').width + 16 * s) g.fillText('RED', bx + 8 * s, by + bh / 2 + 0.5);
+  g.textAlign = 'right';
+  if (bx + bw - cut > g.measureText('BLUE').width + 16 * s) g.fillText('BLUE', bx + bw - 8 * s, by + bh / 2 + 0.5);
+  g.textAlign = 'left';
+  g.textBaseline = 'alphabetic';
+}
+
 // Board -> PNG, drawn directly so the export matches what's on screen.
-function drawBoard(teams, pos, showRatings, showSummary, facts = [], badges = {}) {
+function drawBoard(teams, pos, showRatings, showSummary, facts = [], badges = {}, fav = null) {
   const W = 760;
   // Pin positions are a percentage of the pitch, so the pitch keeps its height and
   // the summary strip extends the canvas below it.
@@ -96,7 +155,8 @@ function drawBoard(teams, pos, showRatings, showSummary, facts = [], badges = {}
   const rows = [];
   for (let i = 0; i < cells.length; i += 2) rows.push(cells.slice(i, i + 2));
   const rowsH = rows.reduce((sum, r) => sum + Math.max(...r.map((x) => x.h)), 0);
-  const factsH = cells.length ? FPAD + 20 * FS + rowsH + FPAD / 2 : 0;
+  const favH = fav ? FAV_H : 0;
+  const factsH = cells.length || fav ? FPAD + 20 * FS + favH + rowsH + FPAD / 2 : 0;
   c.width = W;
   c.height = H + (showSummary ? SUMMARY_H : 0) + factsH;
   const g = c.getContext('2d');
@@ -173,7 +233,7 @@ function drawBoard(teams, pos, showRatings, showSummary, facts = [], badges = {}
   g.fillStyle = cols.red;
   g.fillText('RED', 16, H - 18);
   if (showSummary) drawSummary(g, W, H, teams);
-  if (cells.length) {
+  if (cells.length || fav) {
     const top = H + (showSummary ? SUMMARY_H : 0);
     g.fillStyle = '#1f2833';
     g.fillRect(0, top, W, factsH);
@@ -189,6 +249,10 @@ function drawBoard(teams, pos, showRatings, showSummary, facts = [], badges = {}
     g.fillStyle = 'rgba(255,255,255,0.5)';
     g.fillText('PRE-MATCH', FPAD, top + FPAD + 12 * FS);
     let y = top + FPAD + 20 * FS;
+    if (fav) {
+      drawFavourite(g, fav, FPAD, y, W - FPAD * 2);
+      y += favH;
+    }
     rows.forEach((r) => {
       r.forEach((cell, i) => drawFacts(g, [cell], FPAD + i * (colW + FGAP), y, colW, FS, FONT));
       y += Math.max(...r.map((x) => x.h));
@@ -206,9 +270,9 @@ function fontsReady() {
   return Promise.race([Promise.all(loads), new Promise((r) => setTimeout(r, 1500))]);
 }
 
-export async function exportBoard(teams, pos, { ratings = true, summary = false, facts = [] } = {}) {
+export async function exportBoard(teams, pos, { ratings = true, summary = false, facts = [], favourite = null } = {}) {
   const [, badges] = await Promise.all([fontsReady(), loadBadges([...(teams.red || []), ...(teams.blue || [])])]);
-  const canvas = drawBoard(teams, pos, ratings, summary, facts, badges);
+  const canvas = drawBoard(teams, pos, ratings, summary, facts, badges, favourite);
   const filename = 'fufa-teams.png';
   canvas.toBlob((blob) => {
     if (!blob) return;

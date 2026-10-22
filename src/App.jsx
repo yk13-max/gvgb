@@ -25,7 +25,7 @@ import FormulaPage from './components/FormulaPage.jsx';
 import FormulaLock from './components/FormulaLock.jsx';
 import { buildDoc, parseDoc } from './lib/doc.js';
 import { exportBoard } from './lib/exportBoard.js';
-import { preMatchFacts } from './lib/facts.js';
+import { favourite, preMatchFacts } from './lib/facts.js';
 import { useTheme } from './lib/theme.js';
 import { strengthOf } from './lib/strength.js';
 import RatingSuggestions from './components/RatingSuggestions.jsx';
@@ -171,6 +171,8 @@ export default function App() {
       ratings: showValues && pngRatings,
       summary: showValues && pngSummary,
       facts: pngFacts ? preMatchFacts(teams, history, players, { seasons, today: todayISO() }) : [],
+      // Judged the way the sides were made: ratings, plus results when the balancer counts them.
+      favourite: pngFacts ? favourite(teams, strengthOf(history, players, influence)) : null,
     });
   const [match, setMatch] = useState(start.match);
   const [sel, setSel] = useState(null);

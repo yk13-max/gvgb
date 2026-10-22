@@ -144,7 +144,11 @@ matches you played that night.
   weeks, and a week with no matches left disappears.
 - **Talking points on the shared images.** Export PNG on the Balancer adds a **Pre-match**
   strip under the pitch, and Share on a Results week adds **Talking points** to the card: up to
-  four facts, the strongest from each kind first. Before kick-off: **head to head** (these exact
+  four facts, the strongest from each kind first. The pre-match strip opens with a **favourite**
+  meter: a red/blue bar split by each side's chance of winning, with the favourite named in words
+  — *slight favourites*, *favourites*, *clear favourites*, or *too close to call*. The chance
+  comes from the sides' average strength, measured the way the balancer made them (ratings, plus
+  results when those are counted), on the team formula's odds scale. Before kick-off: **head to head** (these exact
   sides, or sides with most of these players, and who leads), **in form** (the player on each side with the most wins in their last five this season — three or more to count, and left out when nobody qualifies), **partnerships** (each side's best duo on
   record, team-mates for the first time, and three or more on the same side who have won their
   last few together) and **milestones** (a first recorded match, a 10th/25th/50th… match,
@@ -153,7 +157,8 @@ matches you played that night.
   night), **table** movement (a new leader, the biggest climb or drop) and the **upset meter**.
   The images go to everyone, so no rating number ever appears: the upset meter compares the
   sides' ratings behind the scenes and says only that the lower-rated side won, with one to
-  three pips for how big a surprise it was. A **talking points** switch turns them off.
+  three pips for how big a surprise it was, and the favourite meter shows a bar and words but
+  never a percentage. A **talking points** switch turns them off.
 - **Ask the results.** A question box at the top of Results answers in plain words, worked
   out from everything recorded as you type. It picks out **who** is named (players by first
   name, surname, "Jo R" or nickname; clubs — "Arsenal fans"; positions — "which defender"),

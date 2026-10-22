@@ -6,6 +6,7 @@
 // Ratings never appear as numbers. The upset meter compares the sides' ratings behind
 // the scenes and says only that the lower-rated side won, and how much of a surprise that
 // was — the image goes to everyone, password or not.
+import { formula } from './formula.js';
 import { overall } from './model.js';
 import { firstName, shortName } from './names.js';
 import { currentSeason, seasonOf, weeksIn } from './seasons.js';
@@ -280,6 +281,22 @@ export function preMatchFacts(teams, weeks, players, { seasons = [], today, max 
   }
 
   return pick(facts, max);
+}
+
+// Who the formula expects to win, for the meter at the top of the team sheet's talking
+// points. The chance comes from the sides' average strength — ratings, nudged by results
+// when the balancer is counting them — on the team formula's odds scale. Only the side and
+// a word for how clear it is ever reach the image; the chance itself sets the meter.
+export function favourite(teams, sf = overall) {
+  const red = (teams && teams.red) || [];
+  const blue = (teams && teams.blue) || [];
+  if (!red.length || !blue.length) return null;
+  const avg = (t) => t.reduce((s, p) => s + sf(p), 0) / t.length;
+  const p = 1 / (1 + Math.exp(-(avg(red) - avg(blue)) / formula().suggest.odds));
+  const edge = Math.abs(p - 0.5);
+  const side = edge < 0.04 ? null : p > 0.5 ? 'red' : 'blue';
+  const how = !side ? 'Too close to call' : edge < 0.1 ? 'Slight favourites' : edge < 0.2 ? 'Favourites' : 'Clear favourites';
+  return { side, p, how };
 }
 
 // --- after the night ---------------------------------------------------------------------
