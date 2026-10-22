@@ -82,67 +82,105 @@ const FPAD = 22;
 const FGAP = 18; // between the two columns
 const FONT = 'Inter,sans-serif';
 
-const FAV_H = 46 * FS;
 const MAX_RATIO = 1.5; // height to width, at most
+const SIDE = 130; // the favourite column beside the pitch
 
-// The favourite, as a tug of war across the top of the talking points: the bar splits at
-// each side's chance, so the favourite's colour fills more of it, and the other side is
-// dimmed. Words, never numbers — the image goes to everyone.
-function drawFavourite(g, fav, x, y, w) {
-  const s = FS;
+function wrapWords(g, text, width) {
+  const out = [];
+  let line = '';
+  text.split(' ').forEach((w) => {
+    const next = line ? line + ' ' + w : w;
+    if (line && g.measureText(next).width > width) {
+      out.push(line);
+      line = w;
+    } else line = next;
+  });
+  if (line) out.push(line);
+  return out;
+}
+
+// The favourite, as a column beside the pitch: who it is in words at the top, and under
+// it a bar that runs the length of the pitch, Blue's end at the top and Red's at the
+// bottom like the sides themselves, split at each side's chance. The side that isn't
+// favourite is dimmed. Words, never numbers — the image goes to everyone.
+function drawFavourite(g, fav, x, y, w, h) {
   const tone = fav.side ? LEAD[fav.side] : '#e8b73a';
+  const pad = 14;
+  g.fillStyle = '#1f2833';
+  g.fillRect(x, y, w, h);
+  g.strokeStyle = 'rgba(255,255,255,0.16)';
+  g.lineWidth = 1;
+  g.beginPath();
+  g.moveTo(x + 0.5, y);
+  g.lineTo(x + 0.5, y + h);
+  g.stroke();
+
   g.textAlign = 'left';
   g.textBaseline = 'alphabetic';
   g.fillStyle = tone;
-  g.fillRect(x, y + 2 * s, 3 * s, FAV_H - 12 * s);
-  // One line of words, then the bar: the tag and who it is side by side.
-  g.font = '700 ' + 10 * s + 'px ' + FONT;
-  const tag = 'FAVOURITE';
-  g.fillText(tag, x + 12 * s, y + 13 * s);
-  const after = x + 12 * s + g.measureText(tag).width + 10 * s;
-  g.font = '700 ' + 14 * s + 'px ' + FONT;
+  g.font = '700 12px ' + FONT;
+  g.fillText('FAVOURITE', x + pad, y + 30);
+  const who = fav.side ? (fav.side === 'red' ? 'RED' : 'BLUE') : 'LEVEL';
+  let size = 40;
+  g.font = 'bold ' + size + 'px "Barlow Condensed",sans-serif';
+  while (size > 24 && g.measureText(who).width > w - pad * 2) {
+    size -= 2;
+    g.font = 'bold ' + size + 'px "Barlow Condensed",sans-serif';
+  }
+  g.fillText(who, x + pad, y + 70);
+  g.font = '600 16px ' + FONT;
   g.fillStyle = '#ffffff';
-  const lead = fav.side ? (fav.side === 'red' ? 'Red' : 'Blue') + ' · ' : '';
-  g.fillText(lead + fav.how, after, y + 14 * s);
+  // Broken by hand where the column would split a phrase badly.
+  const lines = fav.side ? wrapWords(g, fav.how, w - pad * 2) : ['Too close', 'to call'];
+  lines.forEach((l, i) => g.fillText(l, x + pad, y + 96 + i * 21));
 
-  const bx = x + 12 * s;
-  const bw = w - 12 * s;
-  const by = y + 22 * s;
-  const bh = 12 * s;
-  const cut = bx + bw * Math.max(0.04, Math.min(0.96, fav.p));
-  const pill = (x0, x1, r0, r1, colour) => {
+  const bw = 22;
+  const bx = x + (w - bw) / 2;
+  const top = y + 96 + lines.length * 21 + 34;
+  const bottom = y + h - 44;
+  const bh = bottom - top;
+  // Blue holds the top of the bar, Red the bottom: the split sits at Blue's share.
+  const cut = top + bh * Math.max(0.04, Math.min(0.96, 1 - fav.p));
+  const seg = (y0, y1, colour, round) => {
+    const r = bw / 2;
     g.fillStyle = colour;
     g.beginPath();
-    g.moveTo(x0 + r0, by);
-    g.lineTo(x1 - r1, by);
-    g.arcTo(x1, by, x1, by + bh, r1);
-    g.arcTo(x1, by + bh, x0, by + bh, r1);
-    g.lineTo(x0 + r0, by + bh);
-    g.arcTo(x0, by + bh, x0, by, r0);
-    g.arcTo(x0, by, x1, by, r0);
+    if (round === 'top') {
+      g.moveTo(bx, y1);
+      g.lineTo(bx, y0 + r);
+      g.arcTo(bx, y0, bx + r, y0, r);
+      g.arcTo(bx + bw, y0, bx + bw, y0 + r, r);
+      g.lineTo(bx + bw, y1);
+    } else {
+      g.moveTo(bx, y0);
+      g.lineTo(bx + bw, y0);
+      g.lineTo(bx + bw, y1 - r);
+      g.arcTo(bx + bw, y1, bx + bw - r, y1, r);
+      g.arcTo(bx, y1, bx, y1 - r, r);
+      g.lineTo(bx, y0);
+    }
+    g.closePath();
     g.fill();
   };
-  const dim = (side) => (fav.side && fav.side !== side ? 0.45 : 1);
-  g.globalAlpha = dim('red');
-  pill(bx, cut, bh / 2, 0.01, COLS.red);
+  const dim = (sideName) => (fav.side && fav.side !== sideName ? 0.45 : 1);
   g.globalAlpha = dim('blue');
-  pill(cut, bx + bw, 0.01, bh / 2, COLS.blue);
+  seg(top, cut, COLS.blue, 'top');
+  g.globalAlpha = dim('red');
+  seg(cut, bottom, COLS.red, 'bottom');
   g.globalAlpha = 1;
   // halfway, so a lean is visible even when it is small
   g.fillStyle = 'rgba(255,255,255,0.55)';
-  g.fillRect(bx + bw / 2 - 1, by - 3 * s, 2, bh + 6 * s);
+  g.fillRect(bx - 6, top + bh / 2 - 1, bw + 12, 2);
   // the marker where the two chances meet
   g.fillStyle = '#ffffff';
-  g.fillRect(cut - 2 * s, by - 4 * s, 4 * s, bh + 8 * s);
-  g.font = '700 ' + 9 * s + 'px ' + FONT;
-  g.fillStyle = 'rgba(255,255,255,0.92)';
-  g.textBaseline = 'middle';
-  // A name only goes in its segment when there is room beside the marker for it.
-  if (cut - bx > g.measureText('RED').width + 16 * s) g.fillText('RED', bx + 8 * s, by + bh / 2 + 0.5);
-  g.textAlign = 'right';
-  if (bx + bw - cut > g.measureText('BLUE').width + 16 * s) g.fillText('BLUE', bx + bw - 8 * s, by + bh / 2 + 0.5);
+  g.fillRect(bx - 8, cut - 2.5, bw + 16, 5);
+  g.textAlign = 'center';
+  g.font = 'bold 18px "Barlow Condensed",sans-serif';
+  g.fillStyle = COLS.blue;
+  g.fillText('BLUE', x + w / 2, top - 10);
+  g.fillStyle = COLS.red;
+  g.fillText('RED', x + w / 2, bottom + 24);
   g.textAlign = 'left';
-  g.textBaseline = 'alphabetic';
 }
 
 // Board -> PNG, drawn directly so the export matches what's on screen.
@@ -153,8 +191,11 @@ function drawBoard(teams, pos, showRatings, showSummary, facts = [], badges = {}
   // Shorter than a real pitch's proportions: a chat app crops a tall image in its
   // preview, and positions are percentages, so the pins simply sit closer. Shorter
   // again when talking points go underneath, to leave them room.
-  const strip = facts.length > 0 || !!fav;
-  const H = strip ? 780 : 860;
+  // With the favourite on, the pitch narrows and the favourite stands in a column to
+  // its right, the full height of the pitch, leaving the strip below for talking points.
+  const strip = facts.length > 0;
+  const H = strip || fav ? 780 : 860;
+  const PW = fav ? W - SIDE : W;
   const c = document.createElement('canvas');
   const measure = c.getContext('2d');
   // The facts sit two to a row, so four of them take two rows rather than four. The
@@ -162,8 +203,7 @@ function drawBoard(teams, pos, showRatings, showSummary, facts = [], badges = {}
   // without much cropping: rows are added, strongest first, while they still fit.
   const colW = (W - FPAD * 2 - FGAP) / 2;
   const cells = facts.map((f) => layoutFacts(measure, [f], colW - 12 * FS, FS, FONT)[0]);
-  const favH = fav ? FAV_H : 0;
-  const head = FPAD + 20 * FS + favH;
+  const head = FPAD + 20 * FS;
   const foot = FPAD / 2;
   let room = W * MAX_RATIO - H - (showSummary ? SUMMARY_H : 0) - head - foot;
   const rows = [];
@@ -180,23 +220,23 @@ function drawBoard(teams, pos, showRatings, showSummary, facts = [], badges = {}
   c.height = H + (showSummary ? SUMMARY_H : 0) + factsH;
   const g = c.getContext('2d');
   g.fillStyle = '#1a222c';
-  g.fillRect(0, 0, W, H);
+  g.fillRect(0, 0, PW, H);
   g.strokeStyle = 'rgba(255,255,255,0.28)';
   g.lineWidth = 2;
-  const m = W * 0.025;
-  const r = { x: m, y: H * 0.025, w: W - 2 * m, h: H - 2 * (H * 0.025) };
+  const m = PW * 0.025;
+  const r = { x: m, y: H * 0.025, w: PW - 2 * m, h: H - 2 * (H * 0.025) };
   g.strokeRect(r.x, r.y, r.w, r.h);
   g.beginPath();
   g.moveTo(r.x, H / 2);
   g.lineTo(r.x + r.w, H / 2);
   g.stroke();
   g.beginPath();
-  g.arc(W / 2, H / 2, W * 0.11, 0, Math.PI * 2);
+  g.arc(PW / 2, H / 2, PW * 0.11, 0, Math.PI * 2);
   g.stroke();
   [1, -1].forEach((s) => {
     const top = s === 1 ? r.y : r.y + r.h;
-    g.strokeRect(W * 0.22, s === 1 ? top : top - H * 0.13, W * 0.56, H * 0.13);
-    g.strokeRect(W * 0.36, s === 1 ? top : top - H * 0.055, W * 0.28, H * 0.055);
+    g.strokeRect(PW * 0.22, s === 1 ? top : top - H * 0.13, PW * 0.56, H * 0.13);
+    g.strokeRect(PW * 0.36, s === 1 ? top : top - H * 0.055, PW * 0.28, H * 0.055);
   });
   const cols = COLS;
   // Pins sized for a phone: the image is shown at about half its width, so these read
@@ -206,7 +246,7 @@ function drawBoard(teams, pos, showRatings, showSummary, facts = [], badges = {}
   ['red', 'blue'].forEach((t) =>
     teams[t].forEach((p) => {
       const c0 = pos[p.id] || { x: 50, y: t === 'red' ? 70 : 30 };
-      const x = (c0.x / 100) * W;
+      const x = (c0.x / 100) * PW;
       const y = (c0.y / 100) * H;
       g.beginPath();
       g.arc(x, y, PIN, 0, Math.PI * 2);
@@ -226,7 +266,7 @@ function drawBoard(teams, pos, showRatings, showSummary, facts = [], badges = {}
       g.font = '700 22px Inter,sans-serif';
       const tw = g.measureText(label).width + 16;
       // Kept on the canvas: a pin near the edge pulls its name inwards.
-      const lx = Math.max(tw / 2 + 4, Math.min(W - tw / 2 - 4, x));
+      const lx = Math.max(tw / 2 + 4, Math.min(PW - tw / 2 - 4, x));
       const ly = Math.min(H - 18, y + PIN + 20);
       g.fillStyle = 'rgba(10,14,20,0.72)';
       const rx = lx - tw / 2;
@@ -251,6 +291,7 @@ function drawBoard(teams, pos, showRatings, showSummary, facts = [], badges = {}
   g.fillText('BLUE', 16, 26);
   g.fillStyle = cols.red;
   g.fillText('RED', 16, H - 18);
+  if (fav) drawFavourite(g, fav, PW, 0, SIDE, H);
   if (showSummary) drawSummary(g, W, H, teams);
   if (strip) {
     const top = H + (showSummary ? SUMMARY_H : 0);
@@ -268,10 +309,6 @@ function drawBoard(teams, pos, showRatings, showSummary, facts = [], badges = {}
     g.fillStyle = 'rgba(255,255,255,0.5)';
     g.fillText('PRE-MATCH', FPAD, top + FPAD + 12 * FS);
     let y = top + FPAD + 20 * FS;
-    if (fav) {
-      drawFavourite(g, fav, FPAD, y, W - FPAD * 2);
-      y += favH;
-    }
     rows.forEach((r) => {
       r.forEach((cell, i) => drawFacts(g, [cell], FPAD + i * (colW + FGAP), y, colW, FS, FONT));
       y += Math.max(...r.map((x) => x.h));

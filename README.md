@@ -147,10 +147,12 @@ matches you played that night.
   eight facts on the team sheet and four on the results card, the strongest from each kind first.
   The team sheet never gets taller than 2:3 (a tall phone photo), so WhatsApp shows it with
   little or no cropping: with talking points on, the pitch is drawn a little shorter and rows
-  of talking points are added, strongest first, only while they still fit — usually four,
-  fewer with the ratings summary strip turned on. The pre-match strip opens with a **favourite**
-  meter: a red/blue bar split by each side's chance of winning, with the favourite named in words
-  — *slight favourites*, *favourites*, *clear favourites*, or *too close to call*. The chance
+  of talking points are added under it, strongest first, only while they still fit — usually
+  six, fewer with the ratings summary strip turned on. The team sheet also carries a **favourite**
+  meter in a column to the right of the (narrower) pitch: the favourite named in words —
+  *slight favourites*, *favourites*, *clear favourites*, or *too close to call* — over a
+  bar that runs the height of the pitch, Blue's end at the top and Red's at the bottom, split by
+  each side's chance of winning. The chance
   comes from the sides' average strength, measured the way the balancer made them (ratings, plus
   results when those are counted), on the team formula's odds scale. Before kick-off: **head to head** (these exact
   sides, or sides with most of these players, and who leads), **in form** (the player on each side with the most wins in their last five this season — three or more to count, and left out when nobody qualifies), **partnerships** (each side's best duo on
