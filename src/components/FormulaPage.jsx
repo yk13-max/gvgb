@@ -1,7 +1,7 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Dialog, Icon, Switch } from '../ds/index.js';
 import {
-  DEFAULT_FORMULA,
+  defaultFor,
   POSITION_KEYS,
   RANGES,
   bare,
@@ -530,7 +530,13 @@ function ResultsPreview({ saved, draft, weeks, players, changed }) {
 
 // --- the page -----------------------------------------------------------------------------
 
-export default function FormulaPage({ formula, prev, players, weeks, selected, teamSize, influence, onSave, onUndo, onBack }) {
+export default function FormulaPage({ formulas, prevs, players, weeks: allWeeks, selected, teamSize, influence, onSave, onUndo, onBack }) {
+  // Which format's formula is open: the one on the board, to start with.
+  const [size, setSize] = useState(teamSize === 6 ? 6 : 5);
+  const formula = formulas[size];
+  const prev = prevs[size];
+  // Previews look only at matches played in this format.
+  const weeks = useMemo(() => allWeeks.filter((w) => (w.teamSize === 6 ? 6 : 5) === size), [allWeeks, size]);
   const saved = useMemo(() => cleanFormula(bare(formula)), [formula]);
   const [draft, setDraft] = useState(saved);
   const [pos, setPos] = useState('Defender');
@@ -569,7 +575,7 @@ export default function FormulaPage({ formula, prev, players, weeks, selected, t
     return out.sort((x, y) => Math.abs(y.b - y.a) - Math.abs(x.b - x.a) || x.p.name.localeCompare(y.p.name));
   }, [players, saved, view]);
 
-  const squad = useMemo(() => previewSquad(players, selected, teamSize, weeks), [players, selected, teamSize, weeks]);
+  const squad = useMemo(() => previewSquad(players, selected, size, weeks), [players, selected, size, weeks]);
 
   const sugA = useMemo(() => withFormula(saved, () => ratingSuggestions(weeks, players)).length, [saved, weeks, players]);
   const sugB = useMemo(() => withFormula(view, () => ratingSuggestions(weeks, players)).length, [view, weeks, players]);
@@ -588,8 +594,11 @@ export default function FormulaPage({ formula, prev, players, weeks, selected, t
   // The plain-words effects table for section 4, worked out from the draft's numbers.
   const effects = (f) => {
     const c = f.cost;
+    const mean = STATS.reduce((sum, k) => sum + f.stress[k], 0) / STATS.length || 1;
     return [
       ['One side 1 point higher on a single stat (on average)', c.mix],
+      ['One side 1 point higher on pace', (c.mix * f.stress.Pace) / mean],
+      ['One side 1 point higher on stamina', (c.mix * f.stress.Stamina) / mean],
       ['One side 1 point higher in average strength only', c.level],
       ['One side 1 point higher in every stat (so also +1 OVR)', c.level + c.mix * STATS.length],
       ['One extra defender and one fewer midfielder on a side', c.positions * 2],
@@ -610,7 +619,7 @@ export default function FormulaPage({ formula, prev, players, weeks, selected, t
     setBusy(true);
     setErr(null);
     justSaved.current = draft;
-    const r = confirm === 'undo' ? await onUndo() : await onSave(draft, note);
+    const r = confirm === 'undo' ? await onUndo(size) : await onSave(draft, note, size);
     setBusy(false);
     if (r && r.ok) {
       setConfirm(null);
@@ -637,6 +646,27 @@ export default function FormulaPage({ formula, prev, players, weeks, selected, t
         <div className="fx-kicker">FUFA · Team formula</div>
         <h1>How teams are made</h1>
         <p className="fx-sub">Every number that decides the sides, laid out step by step. Move anything to see what it would do; nothing changes for the group until you save.</p>
+        <div className="fx-format" role="group" aria-label="Format">
+          {[5, 6].map((n) => (
+            <button
+              key={n}
+              type="button"
+              aria-pressed={size === n}
+              disabled={changed && size !== n}
+              title={changed && size !== n ? 'Save or discard your changes first' : undefined}
+              onClick={() => setSize(n)}
+            >
+              {n}-a-side
+              {n === teamSize ? <span className="fx-format-now">on the board</span> : null}
+            </button>
+          ))}
+        </div>
+        <p className="fx-format-note">
+          {size === 5
+            ? 'Five a side has its own formula, leaning on pace and stamina. It is used whenever the board is set to 5-a-side, and the ratings shown everywhere follow it.'
+            : 'Used whenever the board is set to 6-a-side, and the ratings shown everywhere follow it.'}
+          {changed ? ' Save or discard to switch format.' : ''}
+        </p>
         <div className="fx-meta">
           {meta && meta.on ? (
             <span>
@@ -651,13 +681,13 @@ export default function FormulaPage({ formula, prev, players, weeks, selected, t
             </span>
           ) : (
             <span>
-              <b>{isDefault(saved) ? 'The original formula' : 'Formula in use'}</b>
+              <b>{isDefault(saved, size) ? 'The original ' + size + '-a-side formula' : size + '-a-side formula in use'}</b>
             </span>
           )}
         </div>
         <div className="fx-cover-actions">
-          {!sameFormula(draft, DEFAULT_FORMULA) && (
-            <Button variant="secondary" size="sm" icon={<Icon name="rotate-ccw" size={15} />} onClick={() => setDraft(cleanFormula(DEFAULT_FORMULA))}>
+          {!sameFormula(draft, defaultFor(size)) && (
+            <Button variant="secondary" size="sm" icon={<Icon name="rotate-ccw" size={15} />} onClick={() => setDraft(defaultFor(size))}>
               Start from the original
             </Button>
           )}
@@ -835,10 +865,31 @@ export default function FormulaPage({ formula, prev, players, weeks, selected, t
               dp={2}
               onChange={(x) => patch('cost', 'scale', x)}
             />
+            <h3 className="fx-h3">Which stats matter most in the mix</h3>
+            <p className="fx-muted">
+              How much a gap in each stat counts, against the others. ×2 counts double. Only the proportions matter, so leaning on one stat takes weight from the rest
+              rather than making the mix count for more overall.
+            </p>
+            <div className="fx-weights fx-stress">
+              {STATS.map((k) => (
+                <Slider
+                  key={k}
+                  label={k}
+                  value={draft.stress[k]}
+                  saved={saved.stress[k]}
+                  min={0}
+                  max={3}
+                  step={0.25}
+                  dp={2}
+                  unit="×"
+                  onChange={(x) => patch('stress', k, x)}
+                />
+              ))}
+            </div>
             <Formula
               lines={[
                 [{ k: 'cost' }, ' = ', v('cost', 'level', 2), ' × |average strength gap|'],
-                ['     + ', v('cost', 'mix', 3), ' × Σ over 10 stats |average stat gap|'],
+                ['     + ', v('cost', 'mix', 3), ' × Σ over 10 stats emphasis × |average stat gap|'],
                 ['     + ', v('cost', 'positions', 2), ' × Σ DEF, MID, ST |players out of step|'],
                 [''],
                 [{ k: 'balance' }, ' = 100 − ', v('cost', 'scale', 2), ' × cost'],
@@ -982,7 +1033,7 @@ export default function FormulaPage({ formula, prev, players, weeks, selected, t
         <aside className="fx-preview" id="fx-preview">
           <div className="fx-card">
             <h3>This week’s teams</h3>
-            <TeamsPreview saved={saved} draft={view} squad={squad} weeks={weeks} players={players} influence={influence} changed={changed} />
+            <TeamsPreview saved={saved} draft={view} squad={squad} weeks={allWeeks} players={players} influence={influence} changed={changed} />
           </div>
           <div className="fx-card">
             <h3>Past results</h3>
@@ -990,7 +1041,7 @@ export default function FormulaPage({ formula, prev, players, weeks, selected, t
           </div>
           <div className="fx-card">
             <h3>Across all squads</h3>
-            <Benchmark saved={saved} draft={view} players={players} weeks={weeks} teamSize={teamSize} influence={influence} changed={changed} />
+            <Benchmark saved={saved} draft={view} players={players} weeks={weeks} teamSize={size} influence={influence} changed={changed} />
           </div>
         </aside>
       </div>
@@ -1021,7 +1072,7 @@ export default function FormulaPage({ formula, prev, players, weeks, selected, t
       {confirm && (
         <Dialog
           open
-          title={confirm === 'undo' ? 'Undo the last formula change?' : 'Save the new formula?'}
+          title={confirm === 'undo' ? 'Undo the last ' + size + '-a-side change?' : 'Save the new ' + size + '-a-side formula?'}
           onClose={() => !busy && setConfirm(null)}
           footer={
             <>
@@ -1043,7 +1094,7 @@ export default function FormulaPage({ formula, prev, players, weeks, selected, t
             ) : (
               <>
                 <p>
-                  {changes.length} change{changes.length === 1 ? '' : 's'}. Everyone’s teams are made with this from the next balance.
+                  {changes.length} change{changes.length === 1 ? '' : 's'}. Everyone’s {size}-a-side teams are made with this from the next balance.
                 </p>
                 {movers.length > 0 ? (
                   <>

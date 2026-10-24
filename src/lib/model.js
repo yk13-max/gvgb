@@ -121,9 +121,13 @@ function mixAvg(t, k, sf) {
 export function costParts(a, b, sf = overall) {
   const w = formula().cost;
   const level = Math.abs(ovrAvg(a, sf) - ovrAvg(b, sf)) * w.level;
+  // Each stat's gap counts by its stress, scaled to average 1, so leaning on pace and
+  // stamina takes weight from the other stats rather than adding to the mix as a whole.
+  const stress = formula().stress;
+  const mean = STATS.reduce((sum, k) => sum + stress[k], 0) / STATS.length || 1;
   let mix = 0;
   STATS.forEach((k) => {
-    mix += Math.abs(mixAvg(a, k, sf) - mixAvg(b, k, sf)) * w.mix;
+    mix += Math.abs(mixAvg(a, k, sf) - mixAvg(b, k, sf)) * w.mix * (stress[k] / mean);
   });
   let positions = 0;
   OUTFIELD.forEach((pos) => {

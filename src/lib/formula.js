@@ -1,6 +1,7 @@
 // The team formula: every number and switch that decides how strong a player counts and
-// how a split is judged. It travels with the shared document so every device balances the
-// same way, and lives here as the one value the model and the results nudge read from.
+// how a split is judged. There is one per format — 5-a-side and 6-a-side — and both travel
+// with the shared document so every device balances the same way. The one for the format
+// on the board is the active one, which the model and the results nudge read from.
 //
 // The model reads the active formula rather than taking it as an argument, so the many
 // places that ask for a player's OVR don't all need threading through. Previews that need
@@ -20,6 +21,9 @@ export const DEFAULT_FORMULA = {
   // What a split costs: per point of average-strength gap, per point of gap on each stat,
   // per extra DEF/MID/ST on one side. `scale` turns cost into the 0–100 balance score.
   cost: { level: 1.6, mix: 0.35, positions: 3.5, scale: 1.2 },
+  // How much each stat's gap counts within the stat mix, relative to the others. Only the
+  // proportions matter: they are scaled to average 1, so the mix's share stays its share.
+  stress: Object.fromEntries(STATS.map((k) => [k, 1])),
   results: { light: 4, strong: 8, draws: 6, record: 0.6, form: 5 },
   search: { starts: 32, near: 0.3 },
   suggest: { games: 8, z: 2, odds: 4, size: 20, cap: 8 },
@@ -34,6 +38,7 @@ export const RANGES = {
   cost: { level: [0, 6], mix: [0, 1.5], positions: [0, 12], scale: [0.4, 3] },
   results: { light: [0, 10], strong: [0, 16], draws: [0, 20], record: [0, 1], form: [3, 10] },
   search: { starts: [4, 96], near: [0, 2] },
+  stress: Object.fromEntries(STATS.map((k) => [k, [0, 3]])),
   suggest: { games: [3, 30], z: [1, 3.5], odds: [1, 10], size: [5, 40], cap: [2, 16] },
 };
 
@@ -85,6 +90,7 @@ export function cleanFormula(raw) {
   const out = {
     weights,
     cost: cleanGroup(f.cost, 'cost'),
+    stress: cleanGroup(f.stress, 'stress'),
     results: cleanGroup(f.results, 'results'),
     search: cleanGroup(f.search, 'search'),
     suggest: cleanGroup(f.suggest, 'suggest'),
@@ -113,25 +119,81 @@ export function bare(f) {
 
 export const sameFormula = (a, b) => JSON.stringify(bare(cleanFormula(a))) === JSON.stringify(bare(cleanFormula(b)));
 
-export const isDefault = (f) => sameFormula(f, DEFAULT_FORMULA);
+// --- 5-a-side ------------------------------------------------------------------------------
+//
+// Five a side is a smaller pitch with more running per player, so its formula leans on
+// pace and stamina: five points more of each in every outfield position's OVR (taken from
+// the other stats in proportion), and gaps in either counting double in the stat mix.
+
+const BOOST = 5;
+const OUTFIELD = ['Defender', 'Midfielder', 'Striker', 'Any'];
+
+function lift(row) {
+  const up = ['Pace', 'Stamina'];
+  const want = Object.fromEntries(up.map((k) => [k, Math.min(100, row[k] + BOOST)]));
+  const others = STATS.filter((k) => !up.includes(k));
+  const rest = others.reduce((sum, k) => sum + row[k], 0);
+  const left = 100 - want.Pace - want.Stamina;
+  const scaled = Object.fromEntries(others.map((k) => [k, rest ? (row[k] * left) / rest : left / others.length]));
+  return toHundred({ ...scaled, ...want });
+}
+
+export function boostFor5(f) {
+  const base = cleanFormula(bare(f));
+  const weights = { ...base.weights };
+  OUTFIELD.forEach((pos) => {
+    weights[pos] = lift(base.weights[pos]);
+  });
+  return cleanFormula({ ...base, weights, stress: { ...base.stress, Pace: 2, Stamina: 2 } });
+}
+
+export const DEFAULT_FORMULA_5 = boostFor5(DEFAULT_FORMULA);
+
+export const defaultFor = (size) => (size === 5 ? DEFAULT_FORMULA_5 : cleanFormula(DEFAULT_FORMULA));
+
+export const isDefault = (f, size = 6) => sameFormula(f, defaultFor(size));
+
+// A document's two formulas. `formula` is the 6-a-side one (it was the only one before
+// there were two); a document with no `formula5` yet gets the 6-a-side formula with the
+// 5-a-side lean on top, so any change already made carries over.
+export function formulasOf(doc) {
+  const six = cleanFormula(doc && doc.formula);
+  const five = doc && doc.formula5 ? cleanFormula(doc.formula5) : boostFor5(six);
+  return { 5: five, 6: six };
+}
 
 // --- the active formula ------------------------------------------------------------------
 
-let active = cleanFormula(DEFAULT_FORMULA);
+let byFormat = { 5: DEFAULT_FORMULA_5, 6: cleanFormula(DEFAULT_FORMULA) };
+// Until the app says which format is on the board, the original (6-a-side) formula.
+let active = byFormat[6];
 
 export const formula = () => active;
+
+// The formula for a format, for things that look back at matches played in either.
+export const formulaFor = (size) => byFormat[size === 6 ? 6 : 5];
+
+export function setFormulas(both, size) {
+  byFormat = { 5: both[5], 6: both[6] };
+  active = formulaFor(size);
+}
 
 export function setFormula(f) {
   active = f || cleanFormula(DEFAULT_FORMULA);
 }
 
+// Tries a formula for one synchronous call. It stands in for both formats meanwhile, so a
+// preview that looks back at past matches judges them all by the formula being tried.
 export function withFormula(f, fn) {
   const was = active;
+  const wasBoth = byFormat;
   active = f;
+  byFormat = { 5: f, 6: f };
   try {
     return fn();
   } finally {
     active = was;
+    byFormat = wasBoth;
   }
 }
 
@@ -189,6 +251,7 @@ export const LABELS = {
   'cost.mix': 'Stat mix share',
   'cost.positions': 'Positions share',
   'cost.scale': 'Score strictness',
+  ...Object.fromEntries(STATS.map((k) => ['stress.' + k, k + ' in the stat mix'])),
   'results.light': 'Light nudge (points)',
   'results.strong': 'Strong nudge (points)',
   'results.draws': 'Pretend draws',
@@ -219,10 +282,10 @@ export function diffFormula(a, b) {
       }
     });
   });
-  ['cost', 'results', 'search', 'suggest', 'switches'].forEach((g) => {
+  ['cost', 'stress', 'results', 'search', 'suggest', 'switches'].forEach((g) => {
     Object.keys(a[g]).forEach((k) => {
       if (a[g][k] !== b[g][k]) {
-        const show = (v) => (typeof v === 'boolean' ? (v ? 'On' : 'Off') : String(v));
+        const show = (v) => (typeof v === 'boolean' ? (v ? 'On' : 'Off') : g === 'stress' ? '×' + v : String(v));
         out.push({ key: g + '.' + k, label: LABELS[g + '.' + k] || k, from: show(a[g][k]), to: show(b[g][k]), group: g });
       }
     });

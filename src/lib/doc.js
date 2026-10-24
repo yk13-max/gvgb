@@ -58,7 +58,7 @@ function cleanSeasons(list) {
     .filter((s) => Number.isInteger(s.id) && s.id > 0 && !seen.has(s.id) && seen.add(s.id));
 }
 
-export function buildDoc({ players, history, teamSize, selected, match, teams, pos, seasons, formula, formulaPrev }) {
+export function buildDoc({ players, history, teamSize, selected, match, teams, pos, seasons, formula, formulaPrev, formula5, formula5Prev }) {
   const list = Array.isArray(players) ? players : [];
   const ids = new Set(list.map((p) => p.id));
   return {
@@ -74,6 +74,10 @@ export function buildDoc({ players, history, teamSize, selected, match, teams, p
     // How teams are made, and the one before the last change so it can be undone.
     formula: cleanFormula(formula),
     formulaPrev: formulaPrev ? cleanFormula(formulaPrev) : null,
+    // The 5-a-side formula. Left out (null) until it is first saved, and until then it is
+    // the 6-a-side formula with the 5-a-side lean on top — see formulasOf().
+    formula5: formula5 ? cleanFormula(formula5) : null,
+    formula5Prev: formula5Prev ? cleanFormula(formula5Prev) : null,
   };
 }
 
@@ -138,6 +142,8 @@ export function parseDoc(data) {
     // A document from before the formula could be edited gets the formula as it was then.
     formula: cleanFormula(d.formula),
     formulaPrev: d.formulaPrev ? cleanFormula(d.formulaPrev) : null,
+    formula5: d.formula5 ? cleanFormula(d.formula5) : null,
+    formula5Prev: d.formula5Prev ? cleanFormula(d.formula5Prev) : null,
     // Written by version 2 documents, when the squad view was still shared. It is a per-device
     // preference now, so it is read for the sake of old files and never written back.
     mini: typeof d.mini === 'boolean' ? d.mini : null,

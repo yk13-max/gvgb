@@ -5,7 +5,7 @@
 // are strongly consistent so a save never checks itself against a stale revision.
 import { getStore } from '@netlify/blobs';
 import { createHash, timingSafeEqual } from 'node:crypto';
-import { cleanFormula } from '../../src/lib/formula.js';
+import { cleanFormula, formulasOf } from '../../src/lib/formula.js';
 
 const STORE = 'fufa-team-balancer';
 const KEY = 'doc';
@@ -76,6 +76,10 @@ const formulaKey = (f) => {
   return JSON.stringify(rest);
 };
 const prevKey = (f) => (f ? formulaKey(f) : null);
+const bare5 = (f) => {
+  const { meta, ...rest } = f;
+  return rest;
+};
 
 
 // --- change summaries -------------------------------------------------------------------
@@ -167,7 +171,17 @@ export function summarise(before, after) {
   if (had && !same(bare(before.formula), bare(after.formula))) {
     const note = after.formula && after.formula.meta && after.formula.meta.note;
     const undone = before.formulaPrev && after.formula && same(bare(before.formulaPrev), bare(after.formula));
-    out.push((undone ? 'Undid the last team formula change' : 'Changed the team formula') + (note && !undone ? ': ' + note : ''));
+    out.push((undone ? 'Undid the last 6-a-side formula change' : 'Changed the 6-a-side formula') + (note && !undone ? ': ' + note : ''));
+  }
+  // The 5-a-side formula is compared as it works out, so first storing the one that was
+  // already in use (the 6-a-side formula with the 5-a-side lean) is not logged as a change.
+  if (had) {
+    const f5 = (d) => JSON.stringify(bare(formulasOf(d)[5]));
+    if (f5(before) !== f5(after)) {
+      const note = after.formula5 && after.formula5.meta && after.formula5.meta.note;
+      const undone = before.formula5Prev && after.formula5 && same(bare(before.formula5Prev), bare(after.formula5));
+      out.push((undone ? 'Undid the last 5-a-side formula change' : 'Changed the 5-a-side formula') + (note && !undone ? ': ' + note : ''));
+    }
   }
   return out;
 }
@@ -314,10 +328,20 @@ export default async (req) => {
       doc.formula = current.doc.formula;
       doc.formulaPrev = current.doc.formulaPrev || null;
     }
+    if (current && current.doc && current.doc.formula5 && !('formula5' in doc)) {
+      doc.formula5 = current.doc.formula5;
+      doc.formula5Prev = current.doc.formula5Prev || null;
+    }
 
     // Changing the formula, or its undo slot, needs the second code as well.
     const before = current && current.doc ? current.doc : {};
-    if (formulaKey(before.formula) !== formulaKey(doc.formula) || prevKey(before.formulaPrev) !== prevKey(doc.formulaPrev)) {
+    const five = (d) => JSON.stringify(bare5(formulasOf(d)[5]));
+    if (
+      formulaKey(before.formula) !== formulaKey(doc.formula) ||
+      prevKey(before.formulaPrev) !== prevKey(doc.formulaPrev) ||
+      five(before) !== five(doc) ||
+      prevKey(before.formula5Prev) !== prevKey(doc.formula5Prev)
+    ) {
       const no = await formulaDenied(req, store);
       if (no) {
         const b = await no.json();

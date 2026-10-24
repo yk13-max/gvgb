@@ -3,7 +3,7 @@
 // Ratings are an organiser's judgement; results are what happened. The balancer can
 // lean on both: each player's rating is nudged by a damped record and their recent form,
 // by up to a few points either way. The ratings themselves are never changed by this.
-import { formula } from './formula.js';
+import { formula, formulaFor, withFormula } from './formula.js';
 import { overall } from './model.js';
 import { outcome } from './weeks.js';
 
@@ -35,12 +35,14 @@ function decided(weeks) {
 
 // The rating a player went into a match with: the snapshot from that night when there is
 // one, worked out again under today's weights, or their rating now when there isn't.
+// Rated by the formula for the format that match was played in.
 function ratedAt(w, id, players) {
   const snap = w.ratings && w.ratings[id];
-  if (snap && snap.stats) return overall({ pos: snap.pos, stats: snap.stats });
+  const use = w.teamSize === 6 || w.teamSize === 5 ? formulaFor(w.teamSize) : formula();
+  if (snap && snap.stats) return withFormula(use, () => overall({ pos: snap.pos, stats: snap.stats }));
   if (snap && snap.ovr != null) return snap.ovr;
   const now = players.find((x) => x.id === id);
-  return now ? overall(now) : null;
+  return now ? withFormula(use, () => overall(now)) : null;
 }
 
 function sideAvg(w, list, players) {
