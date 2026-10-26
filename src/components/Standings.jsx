@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Button, Icon } from '../ds/index.js';
 import { shortName } from '../lib/names.js';
+import { matchWord, moreMatches } from '../lib/seasons.js';
 import { standings } from '../lib/standings.js';
 import { formatDate } from '../lib/whatsapp.js';
 import Crest from './Crest.jsx';
@@ -73,6 +74,7 @@ function Detail({ r }) {
             (r.games ? ' · ' + r.games + ' match' + (r.games === 1 ? '' : 'es') + ': ' + r.won + ' won, ' + r.lost + ' lost' : '') +
             (r.pct != null ? ' · win ratio ' + r.pct.toFixed(3) : '') +
             (r.total ? ' · ' + r.total + ' nomination' + (r.total === 1 ? '' : 's') : ' · no nominations yet')}
+        {r.short > 0 && <span className="tb-league-short-note"> Needs {moreMatches(r.short)} to take a place in the table.</span>}
       </div>
       {nights > 0 && (
         <div className="tb-league-nights">
@@ -107,22 +109,28 @@ function SortHead({ col, sort, onSort, className, children }) {
   );
 }
 
-export default function Standings({ weeks, players, seasonBar, seasonLabel, onHonours }) {
+export default function Standings({ weeks, players, seasonBar, seasonLabel, minGames = 0, onHonours }) {
   const ranked = useMemo(() => {
     // The league order is by win ratio. Ranks share a number when the ratio ties, and
     // the number stays with the player whatever column the table is later sorted by.
+    // A player short of the season's minimum matches keeps their spot in the order,
+    // greyed, but takes no position: the positions count qualified players only.
     const rows = standings(weeks, players);
     let rank = 0;
+    let seen = 0;
     let prev = null;
     return rows.map((r, i) => {
+      const short = Math.max(0, minGames - r.games);
+      if (short > 0) return { ...r, rank: null, short, order: i };
+      seen += 1;
       const key = r.pct == null ? 'none' : r.pct.toFixed(3);
       if (key !== prev) {
-        rank = i + 1;
+        rank = seen;
         prev = key;
       }
-      return { ...r, rank, order: i };
+      return { ...r, rank, short: 0, order: i };
     });
-  }, [weeks, players]);
+  }, [weeks, players, minGames]);
 
   const [sort, setSort] = useState({ key: 'rank', dir: 'asc' });
   const [open, setOpen] = useState(null);
@@ -175,7 +183,8 @@ export default function Standings({ weeks, players, seasonBar, seasonLabel, onHo
               marginTop: 2,
             }}
           >
-            {weeks.length} week{weeks.length === 1 ? '' : 's'} · tap a header to sort, a player for their nights
+            {weeks.length} week{weeks.length === 1 ? '' : 's'}
+            {minGames > 0 ? ' · ' + matchWord(minGames) + ' to take a place' : ''} · tap a header to sort, a player for their nights
           </div>
         </div>
         <div className="tb-tblbar-right">
@@ -227,6 +236,8 @@ export default function Standings({ weeks, players, seasonBar, seasonLabel, onHo
                   key={r.id}
                   className="tb-league-row"
                   data-open={isOpen ? '1' : '0'}
+                  data-unq={r.short > 0 ? '1' : '0'}
+                  title={r.short > 0 ? 'Needs ' + moreMatches(r.short) + ' to take a place' : undefined}
                   data-zero={r.total === 0 ? '1' : '0'}
                   tabIndex={0}
                   role="button"
@@ -239,9 +250,9 @@ export default function Standings({ weeks, players, seasonBar, seasonLabel, onHo
                     }
                   }}
                 >
-                  <td className="tb-league-rank">{r.rank}</td>
+                  <td className="tb-league-rank">{r.rank == null ? '–' : r.rank}</td>
                   <td className="tb-league-name">
-                    <span className="tb-league-rankinline">{r.rank}</span>
+                    <span className="tb-league-rankinline">{r.rank == null ? '–' : r.rank}</span>
                     {r.club && <Crest code={r.club} size={14} className="tb-league-crest" />}
                     <span className="tb-league-full">{r.name}</span>
                     <span className="tb-league-short">{shortName(r.name)}</span>

@@ -31,7 +31,7 @@ import { strengthOf } from './lib/strength.js';
 import RatingSuggestions from './components/RatingSuggestions.jsx';
 import { DEFAULT_STATS, balance, layout, relax } from './lib/model.js';
 import { samplePlayers } from './lib/samplePlayers.js';
-import { ALL, currentSeason, labelFor, seasonOptions, weeksIn } from './lib/seasons.js';
+import { ALL, currentSeason, labelFor, minGamesFor, seasonOptions, weeksIn } from './lib/seasons.js';
 import { loadCache, loadPrefs, saveCache, savePrefs } from './lib/storage.js';
 import { useSync } from './lib/useSync.js';
 import { putMatch } from './lib/weeks.js';
@@ -902,6 +902,7 @@ export default function App() {
       ) : page === 'awards' || page === 'formula' ? (
         <Standings
           weeks={seasonWeeks}
+          minGames={minGamesFor(activeSeason, seasons)}
           players={players}
           seasonBar={seasonBar}
           seasonLabel={seasonLabel}

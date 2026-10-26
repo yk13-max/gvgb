@@ -49,12 +49,19 @@ function cleanHonours(h) {
   return out;
 }
 
+// The fewest matches a player needs in a season to take a place in its table, or be
+// named its winner. 0 means no minimum.
+const cleanMin = (v) => {
+  const n = Math.round(Number(v));
+  return Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : 0;
+};
+
 function cleanSeasons(list) {
   if (!Array.isArray(list)) return [];
   const seen = new Set();
   return list
     .filter((s) => s && typeof s.name === 'string' && s.name.trim() && /^\d{4}-\d{2}-\d{2}$/.test(s.start || ''))
-    .map((s) => ({ id: Number(s.id), name: s.name.trim(), start: s.start, honours: cleanHonours(s.honours) }))
+    .map((s) => ({ id: Number(s.id), name: s.name.trim(), start: s.start, minGames: cleanMin(s.minGames), honours: cleanHonours(s.honours) }))
     .filter((s) => Number.isInteger(s.id) && s.id > 0 && !seen.has(s.id) && seen.add(s.id));
 }
 

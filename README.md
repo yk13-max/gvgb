@@ -288,6 +288,16 @@ beside the picker creates, renames and re-dates them, and shows how many weeks e
 Removing a season deletes no results: its weeks fall to the season before. Seasons live in the
 shared document like everything else.
 
+Each season can set a **minimum number of matches** (Min. matches in the Seasons dialog; a new
+season starts with the last one's number, and 0 means no minimum). Below it a player keeps their
+spot in the season's table, greyed, with a dash instead of a position — the positions count
+qualified players only — and opening their row says how many more matches they need. They can't
+be picked as season winner either, though the other honours (best player, attacker, midfielder,
+defender) stay open to anyone who played. While the season runs the winner's front runner is
+still whoever leads on win ratio, marked "Needs 2 more matches to qualify" until they have
+enough. *All time* has no minimum, and the talking points about the table (league leader, top
+four, climbing and dropping) only count qualified players.
+
 ### Honours
 
 **Honours** on the Table opens the season honours page: for each season, the **winner**, **best

@@ -1,5 +1,5 @@
 import { standings } from './standings.js';
-import { sortSeasons } from './seasons.js';
+import { moreMatches, shortOf, sortSeasons } from './seasons.js';
 
 // A season's honours: who won it, and the best in each line, picked by the organiser
 // once the season is done. Shown to everyone only when it is done — which, since a
@@ -30,7 +30,9 @@ export function bestPlayer(weeks, players) {
 // the most POTMs, the most nominations in each line. Each comes with how far ahead they
 // are, since "two clear" and "level with Jo" are different kinds of leading. Nobody
 // leads a line with nothing in it yet.
-export function frontRunners(weeks, players) {
+// `min` is the season's minimum matches. Anyone can lead on win ratio; the winner's card
+// says how many more matches they need when they haven't reached it yet.
+export function frontRunners(weeks, players, min = 0) {
   const rows = standings(weeks, players);
   const out = {};
   HONOURS.forEach(([key]) => {
@@ -58,6 +60,7 @@ export function frontRunners(weeks, players) {
       // nobody else on the board yet it is the whole count. The win ratio is not a count,
       // so the winner's margin is left to the record on the card.
       clear: key === 'winner' ? null : value(lead) - (next ? value(next) : 0),
+      needs: key === 'winner' ? shortOf(lead, min) : 0,
     };
   });
   return out;
@@ -66,6 +69,7 @@ export function frontRunners(weeks, players) {
 // The line under a front runner's name: what they lead by.
 export function lead(fr) {
   if (!fr) return '';
+  if (fr.needs > 0) return 'Needs ' + moreMatches(fr.needs) + ' to qualify';
   if (fr.level.length === 1) return 'Level with ' + fr.level[0].name.split(' ')[0];
   if (fr.level.length > 1) return 'Level with ' + fr.level.length + ' others';
   if (fr.clear == null) return 'Top of the table';
@@ -84,9 +88,10 @@ export function hasStarted(season, today) {
 // comes first: the table order for the winner and best player, nominations in that
 // line for the others. Nobody is excluded — a defender who played up front all
 // season can still be named best attacker.
-export function candidates(weeks, players, key) {
+export function candidates(weeks, players, key, min = 0) {
   const rows = standings(weeks, players).filter((r) => r.played.length > 0);
-  if (key === 'winner') return rows;
+  // Only the winner needs the minimum; each row says how many it is short.
+  if (key === 'winner') return rows.map((r) => ({ ...r, short: shortOf(r, min) }));
   return rows.slice().sort((a, b) => b[key] - a[key] || a.order - b.order || 0);
 }
 

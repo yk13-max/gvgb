@@ -1,7 +1,7 @@
 import { Button, Icon } from '../ds/index.js';
 import { HONOURS, PICKED, backing, bestPlayer, frontRunners, hasStarted, isFinished, lead } from '../lib/honours.js';
 import { initials, shortName } from '../lib/names.js';
-import { sortSeasons } from '../lib/seasons.js';
+import { matchWord, sortSeasons } from '../lib/seasons.js';
 import { standings } from '../lib/standings.js';
 import { weeksIn } from '../lib/seasons.js';
 import { formatDate } from '../lib/whatsapp.js';
@@ -32,7 +32,12 @@ function Card({ honour, row, season, hero, live }) {
           </div>
           <div className="tb-honour-back">
             {backing(r, key)}
-            {live && <span className="tb-honour-lead"> · {lead(row)}</span>}
+            {live && (
+              <span className="tb-honour-lead" data-short={row.needs > 0 ? '1' : '0'}>
+                {' '}
+                · {lead(row)}
+              </span>
+            )}
           </div>
         </>
       ) : (
@@ -62,7 +67,8 @@ function SeasonBlock({ season, seasons, weeks, players, today, canEdit, onEdit }
   // While the season runs, the cards show who is in line, worked out from the table —
   // never the organiser's early picks, which stay private until the season is done.
   const live = started && !finished;
-  const fr = live ? frontRunners(weeks, players) : null;
+  const min = season.minGames || 0;
+  const fr = live ? frontRunners(weeks, players, min) : null;
   const cards = (
     <div className="tb-honours">
       <Card honour={HONOURS[0]} row={live ? fr.winner : rowOf('winner')} season={season} hero live={live} />
@@ -82,6 +88,7 @@ function SeasonBlock({ season, seasons, weeks, players, today, canEdit, onEdit }
           <div className="tb-season-sub">
             From {formatDate(season.start)} · {nights} night{nights === 1 ? '' : 's'}
             {finished ? ' · finished' : started ? ' · in progress' : ' · not started'}
+            {min > 0 ? ' · ' + matchWord(min) + ' to place' : ''}
           </div>
         </div>
         {canEdit && (

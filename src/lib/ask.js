@@ -946,7 +946,7 @@ function honoursAnswer(season, seasons, weeks, players, today) {
     const winner = h.winner != null ? players.find((x) => x.id === h.winner) : null;
     return { headline: season.name + ': ' + (winner ? winner.name + ' won it' : 'the winner is not yet named') + (best ? ', ' + nameOf(players.find((x) => x.id === best.id), players) + ' best player with ' + plural(best.potm, 'POTM') : '') + '.', facts };
   }
-  const fr = frontRunners(sw, players);
+  const fr = frontRunners(sw, players, season.minGames || 0);
   HONOURS.forEach(([key, label]) => {
     const f = fr[key];
     facts.push([label + ' (front runner)', f ? nameOf(f.row.p || players.find((x) => x.id === f.row.id), players) + ' · ' + lead(f) : 'Nobody yet']);

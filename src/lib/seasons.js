@@ -61,6 +61,20 @@ export function labelFor(key, seasons) {
   return s ? s.name : 'All time';
 }
 
+// The minimum matches to place in the table for a season picker key. Only a real season
+// has one; "all time" and "before the first season" never do.
+export function minGamesFor(key, seasons) {
+  if (key === ALL || key === EARLIER || key == null) return 0;
+  const s = (seasons || []).find((x) => same(x.id, key));
+  return s ? s.minGames || 0 : 0;
+}
+
+// How many more matches a table row needs to qualify, 0 once it has.
+export const shortOf = (row, min) => Math.max(0, (min || 0) - (row ? row.games : 0));
+
+export const matchWord = (n) => n + ' match' + (n === 1 ? '' : 'es');
+export const moreMatches = (n) => n + ' more match' + (n === 1 ? '' : 'es');
+
 export function nextSeasonId(seasons) {
   return Math.max(0, ...(seasons || []).map((s) => Number(s.id) || 0)) + 1;
 }

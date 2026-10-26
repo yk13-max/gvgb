@@ -286,7 +286,8 @@ export function preMatchFacts(teams, weeks, players, { seasons = [], today, max 
   const now = today || new Date().toISOString().slice(0, 10);
   const cur = currentSeason(seasons, now);
   const tableWeeks = cur ? weeksIn(weeks || [], String(cur.id), seasons) : weeks || [];
-  const rows = standings(tableWeeks, players).filter((r) => r.pct != null && r.won + r.lost >= 3);
+  const minNow = cur ? cur.minGames || 0 : 0;
+  const rows = standings(tableWeeks, players).filter((r) => r.pct != null && r.won + r.lost >= 3 && r.games >= minNow);
   if (rows.length >= 4) {
     const top = rows[0];
     const bottom = rows[rows.length - 1];
@@ -500,7 +501,9 @@ export function postMatchFacts(week, weeks, players, { seasons = [], max = 4 } =
   const season = seasonOf(seasons, week.date);
   const inSeason = (list) => (season ? weeksIn(list, String(season.id), seasons) : list);
   const rank = (list) => {
-    const rows = standings(inSeason(list), players).filter((r) => r.pct != null);
+    // Only players who have reached the season's minimum hold a place.
+    const min = season ? season.minGames || 0 : 0;
+    const rows = standings(inSeason(list), players).filter((r) => r.pct != null && r.games >= min);
     return new Map(rows.map((r, i) => [r.id, i + 1]));
   };
   const was = rank(before);
