@@ -1,5 +1,5 @@
 // The team formula: every number and switch that decides how strong a player counts and
-// how a split is judged. There is one per format — 5-a-side and 6-a-side — and both travel
+// how a split is judged. There is one per format — 5, 6 and 7-a-side — and they all travel
 // with the shared document so every device balances the same way. The one for the format
 // on the board is the active one, which the model and the results nudge read from.
 //
@@ -149,32 +149,37 @@ export function boostFor5(f) {
 
 export const DEFAULT_FORMULA_5 = boostFor5(DEFAULT_FORMULA);
 
+export const FORMATS = [5, 6, 7];
+export const toFormat = (n) => (FORMATS.includes(Number(n)) ? Number(n) : 5);
+
 export const defaultFor = (size) => (size === 5 ? DEFAULT_FORMULA_5 : cleanFormula(DEFAULT_FORMULA));
 
 export const isDefault = (f, size = 6) => sameFormula(f, defaultFor(size));
 
-// A document's two formulas. `formula` is the 6-a-side one (it was the only one before
-// there were two); a document with no `formula5` yet gets the 6-a-side formula with the
-// 5-a-side lean on top, so any change already made carries over.
+// A document's formulas. `formula` is the 6-a-side one (it was the only one before there
+// were more). Until the others are first saved they work out from it: 5-a-side as the
+// 6-a-side formula with the 5-a-side lean on top, 7-a-side as the 6-a-side formula as it
+// stands — so any change already made carries over.
 export function formulasOf(doc) {
   const six = cleanFormula(doc && doc.formula);
   const five = doc && doc.formula5 ? cleanFormula(doc.formula5) : boostFor5(six);
-  return { 5: five, 6: six };
+  const seven = doc && doc.formula7 ? cleanFormula(doc.formula7) : cleanFormula(bare(six));
+  return { 5: five, 6: six, 7: seven };
 }
 
 // --- the active formula ------------------------------------------------------------------
 
-let byFormat = { 5: DEFAULT_FORMULA_5, 6: cleanFormula(DEFAULT_FORMULA) };
+let byFormat = { 5: DEFAULT_FORMULA_5, 6: cleanFormula(DEFAULT_FORMULA), 7: cleanFormula(DEFAULT_FORMULA) };
 // Until the app says which format is on the board, the original (6-a-side) formula.
 let active = byFormat[6];
 
 export const formula = () => active;
 
 // The formula for a format, for things that look back at matches played in either.
-export const formulaFor = (size) => byFormat[size === 6 ? 6 : 5];
+export const formulaFor = (size) => byFormat[toFormat(size)];
 
-export function setFormulas(both, size) {
-  byFormat = { 5: both[5], 6: both[6] };
+export function setFormulas(all, size) {
+  byFormat = { 5: all[5], 6: all[6], 7: all[7] || all[6] };
   active = formulaFor(size);
 }
 
@@ -182,13 +187,13 @@ export function setFormula(f) {
   active = f || cleanFormula(DEFAULT_FORMULA);
 }
 
-// Tries a formula for one synchronous call. It stands in for both formats meanwhile, so a
+// Tries a formula for one synchronous call. It stands in for every format meanwhile, so a
 // preview that looks back at past matches judges them all by the formula being tried.
 export function withFormula(f, fn) {
   const was = active;
   const wasBoth = byFormat;
   active = f;
-  byFormat = { 5: f, 6: f };
+  byFormat = { 5: f, 6: f, 7: f };
   try {
     return fn();
   } finally {

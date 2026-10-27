@@ -176,13 +176,16 @@ export function summarise(before, after) {
   }
   // The 5-a-side formula is compared as it works out, so first storing the one that was
   // already in use (the 6-a-side formula with the 5-a-side lean) is not logged as a change.
+  // The same for 7-a-side, which follows the 6-a-side formula until it is first saved.
   if (had) {
-    const f5 = (d) => JSON.stringify(bare(formulasOf(d)[5]));
-    if (f5(before) !== f5(after)) {
-      const note = after.formula5 && after.formula5.meta && after.formula5.meta.note;
-      const undone = before.formula5Prev && after.formula5 && same(bare(before.formula5Prev), bare(after.formula5));
-      out.push((undone ? 'Undid the last 5-a-side formula change' : 'Changed the 5-a-side formula') + (note && !undone ? ': ' + note : ''));
-    }
+    [5, 7].forEach((n) => {
+      const key = 'formula' + n;
+      const worked = (d) => JSON.stringify(bare(formulasOf(d)[n]));
+      if (worked(before) === worked(after)) return;
+      const note = after[key] && after[key].meta && after[key].meta.note;
+      const undone = before[key + 'Prev'] && after[key] && same(bare(before[key + 'Prev']), bare(after[key]));
+      out.push((undone ? 'Undid the last ' + n + '-a-side formula change' : 'Changed the ' + n + '-a-side formula') + (note && !undone ? ': ' + note : ''));
+    });
   }
   return out;
 }
@@ -329,19 +332,20 @@ export default async (req) => {
       doc.formula = current.doc.formula;
       doc.formulaPrev = current.doc.formulaPrev || null;
     }
-    if (current && current.doc && current.doc.formula5 && !('formula5' in doc)) {
-      doc.formula5 = current.doc.formula5;
-      doc.formula5Prev = current.doc.formula5Prev || null;
-    }
+    ['formula5', 'formula7'].forEach((key) => {
+      if (current && current.doc && current.doc[key] && !(key in doc)) {
+        doc[key] = current.doc[key];
+        doc[key + 'Prev'] = current.doc[key + 'Prev'] || null;
+      }
+    });
 
     // Changing the formula, or its undo slot, needs the second code as well.
     const before = current && current.doc ? current.doc : {};
-    const five = (d) => JSON.stringify(bare5(formulasOf(d)[5]));
+    const worked = (d, n) => JSON.stringify(bare5(formulasOf(d)[n]));
     if (
       formulaKey(before.formula) !== formulaKey(doc.formula) ||
       prevKey(before.formulaPrev) !== prevKey(doc.formulaPrev) ||
-      five(before) !== five(doc) ||
-      prevKey(before.formula5Prev) !== prevKey(doc.formula5Prev)
+      [5, 7].some((n) => worked(before, n) !== worked(doc, n) || prevKey(before['formula' + n + 'Prev']) !== prevKey(doc['formula' + n + 'Prev']))
     ) {
       const no = await formulaDenied(req, store);
       if (no) {

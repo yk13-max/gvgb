@@ -38,7 +38,7 @@ function decided(weeks) {
 // Rated by the formula for the format that match was played in.
 function ratedAt(w, id, players) {
   const snap = w.ratings && w.ratings[id];
-  const use = w.teamSize === 6 || w.teamSize === 5 ? formulaFor(w.teamSize) : formula();
+  const use = [5, 6, 7].includes(w.teamSize) ? formulaFor(w.teamSize) : formula();
   if (snap && snap.stats) return withFormula(use, () => overall({ pos: snap.pos, stats: snap.stats }));
   if (snap && snap.ovr != null) return snap.ovr;
   const now = players.find((x) => x.id === id);

@@ -65,13 +65,13 @@ function cleanSeasons(list) {
     .filter((s) => Number.isInteger(s.id) && s.id > 0 && !seen.has(s.id) && seen.add(s.id));
 }
 
-export function buildDoc({ players, history, teamSize, selected, match, teams, pos, seasons, formula, formulaPrev, formula5, formula5Prev }) {
+export function buildDoc({ players, history, teamSize, selected, match, teams, pos, seasons, formula, formulaPrev, formula5, formula5Prev, formula7, formula7Prev }) {
   const list = Array.isArray(players) ? players : [];
   const ids = new Set(list.map((p) => p.id));
   return {
     app: DOC_APP,
     version: DOC_VERSION,
-    teamSize: teamSize === 6 ? 6 : 5,
+    teamSize: teamSize === 6 || teamSize === 7 ? teamSize : 5,
     selected: (Array.isArray(selected) ? selected : []).filter((id) => ids.has(id)),
     match: cleanMatch(match),
     board: boardOf(teams, pos, ids),
@@ -85,6 +85,9 @@ export function buildDoc({ players, history, teamSize, selected, match, teams, p
     // the 6-a-side formula with the 5-a-side lean on top — see formulasOf().
     formula5: formula5 ? cleanFormula(formula5) : null,
     formula5Prev: formula5Prev ? cleanFormula(formula5Prev) : null,
+    // The 7-a-side formula: likewise null until first saved, and the 6-a-side one till then.
+    formula7: formula7 ? cleanFormula(formula7) : null,
+    formula7Prev: formula7Prev ? cleanFormula(formula7Prev) : null,
   };
 }
 
@@ -141,7 +144,7 @@ export function parseDoc(data) {
   return {
     players,
     history: toWeeks(d.history),
-    teamSize: d.teamSize === 5 || d.teamSize === 6 ? d.teamSize : null,
+    teamSize: [5, 6, 7].includes(d.teamSize) ? d.teamSize : null,
     selected: Array.isArray(d.selected) ? d.selected.map(Number).filter((id) => seen.has(id)) : null,
     match: d.match && typeof d.match === 'object' ? cleanMatch(d.match) : null,
     board: readBoard(d.board, byId),
@@ -151,6 +154,8 @@ export function parseDoc(data) {
     formulaPrev: d.formulaPrev ? cleanFormula(d.formulaPrev) : null,
     formula5: d.formula5 ? cleanFormula(d.formula5) : null,
     formula5Prev: d.formula5Prev ? cleanFormula(d.formula5Prev) : null,
+    formula7: d.formula7 ? cleanFormula(d.formula7) : null,
+    formula7Prev: d.formula7Prev ? cleanFormula(d.formula7Prev) : null,
     // Written by version 2 documents, when the squad view was still shared. It is a per-device
     // preference now, so it is read for the sake of old files and never written back.
     mini: typeof d.mini === 'boolean' ? d.mini : null,

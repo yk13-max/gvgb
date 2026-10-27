@@ -1,6 +1,6 @@
 # FUFA · Team balancer
 
-A web app for splitting a group of amateur footballers into two even 5-a-side or 6-a-side
+A web app for splitting a group of amateur footballers into two even 5, 6 or 7-a-side
 teams and laying them out on a tactics board. Works on desktop and on a phone.
 
 Built from the Claude Design handoff bundle (`Team Balancer.html` + the FUFA design system)
@@ -127,7 +127,7 @@ the squad, the stats table before you sort it, the line-ups — they read A–Z.
   first; **Undo last save** swaps back, and **Start from the original** resets the edit to the
   formula as first shipped. The formula is part of the shared data, so every device balances
   the same way.
-- **One formula per format.** 5-a-side and 6-a-side each have their own complete formula, picked
+- **One formula per format.** 5, 6 and 7-a-side each have their own complete formula, picked
   with a switch at the top of the formula page (it opens on whichever format is on the board).
   The 5-a-side one leans on pace and stamina: five points more of each in every outfield
   position's OVR, taken from the other stats in proportion, and gaps in either counting double
@@ -136,8 +136,9 @@ the squad, the stats table before you sort it, the line-ups — they read A–Z.
   rather than making the mix count for more. The ratings shown everywhere — cards, the stats
   table, the ladder, the team sheet — follow the format on the board, and past matches are judged
   by the formula for the format they were played in. Until the 5-a-side formula is first saved it
-  is the 6-a-side one with that lean on top, so earlier changes carry over; after that the two are
-  saved, undone and logged separately ("Changed the 5-a-side formula: …"), both behind the formula
+  is the 6-a-side one with that lean on top, and the 7-a-side formula is a plain copy of the
+  6-a-side one, so earlier changes carry over; after that they are
+  saved, undone and logged separately ("Changed the 5-a-side formula: …"), all behind the formula
   code.
 
 ### Match history
@@ -203,7 +204,7 @@ matches you played that night.
     mean whoever was last asked about.
   - *Which slice.* A season by name, **this season**, **last season**, **all time**; **since
     September**, **in September**, **in 2026**, **before 4/9**; a night by date (**4/9**, **on 4th
-    September**) or **last night**, **last 3 nights**; a venue (**at Goals**); **6-a-side**; the
+    September**) or **last night**, **last 3 nights**; a venue (**at Goals**); **6-a-side** or **7-a-side**; the
     nights a player won an award (**scores where Karthi was best defender**, **how many times has
     Sam been POTM**); the matches someone **won** or **lost** ("how many games has Sam lost with
     Jo?"). Without any of these, answers follow the season picker, and the scope line under every

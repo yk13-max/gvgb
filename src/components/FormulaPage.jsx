@@ -532,11 +532,11 @@ function ResultsPreview({ saved, draft, weeks, players, changed }) {
 
 export default function FormulaPage({ formulas, prevs, players, weeks: allWeeks, selected, teamSize, influence, onSave, onUndo, onBack }) {
   // Which format's formula is open: the one on the board, to start with.
-  const [size, setSize] = useState(teamSize === 6 ? 6 : 5);
+  const [size, setSize] = useState([5, 6, 7].includes(teamSize) ? teamSize : 5);
   const formula = formulas[size];
   const prev = prevs[size];
   // Previews look only at matches played in this format.
-  const weeks = useMemo(() => allWeeks.filter((w) => (w.teamSize === 6 ? 6 : 5) === size), [allWeeks, size]);
+  const weeks = useMemo(() => allWeeks.filter((w) => ([6, 7].includes(w.teamSize) ? w.teamSize : 5) === size), [allWeeks, size]);
   const saved = useMemo(() => cleanFormula(bare(formula)), [formula]);
   const [draft, setDraft] = useState(saved);
   const [pos, setPos] = useState('Defender');
@@ -647,7 +647,7 @@ export default function FormulaPage({ formulas, prevs, players, weeks: allWeeks,
         <h1>How teams are made</h1>
         <p className="fx-sub">Every number that decides the sides, laid out step by step. Move anything to see what it would do; nothing changes for the group until you save.</p>
         <div className="fx-format" role="group" aria-label="Format">
-          {[5, 6].map((n) => (
+          {[5, 6, 7].map((n) => (
             <button
               key={n}
               type="button"
@@ -664,7 +664,9 @@ export default function FormulaPage({ formulas, prevs, players, weeks: allWeeks,
         <p className="fx-format-note">
           {size === 5
             ? 'Five a side has its own formula, leaning on pace and stamina. It is used whenever the board is set to 5-a-side, and the ratings shown everywhere follow it.'
-            : 'Used whenever the board is set to 6-a-side, and the ratings shown everywhere follow it.'}
+            : size === 7
+              ? 'Seven a side has its own formula, which starts as a copy of the 6-a-side one. It is used whenever the board is set to 7-a-side, and the ratings shown everywhere follow it.'
+              : 'Used whenever the board is set to 6-a-side, and the ratings shown everywhere follow it.'}
           {changed ? ' Save or discard to switch format.' : ''}
         </p>
         <div className="fx-meta">

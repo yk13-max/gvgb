@@ -70,6 +70,8 @@ function stateFromDoc(parsed) {
     formulaPrev: parsed.formulaPrev || null,
     formula5: parsed.formula5 || null,
     formula5Prev: parsed.formula5Prev || null,
+    formula7: parsed.formula7 || null,
+    formula7Prev: parsed.formula7Prev || null,
   };
 }
 
@@ -196,18 +198,20 @@ export default function App() {
   const [influence, setInfluence] = useState(() => loadPrefs().influence);
   const [history, setHistory] = useState(start.history);
   const [seasons, setSeasons] = useState(start.seasons);
-  // Two formulas, one per format. `formula` is the 6-a-side one; `formula5` stays null
-  // until the 5-a-side one is first saved, and until then works out from the 6-a-side one.
+  // One formula per format. `formula` is the 6-a-side one; `formula5` and `formula7` stay
+  // null until first saved, and until then work out from the 6-a-side one.
   const [formula, setFormula] = useState(start.formula);
   const [formulaPrev, setFormulaPrev] = useState(start.formulaPrev);
   const [formula5, setFormula5] = useState(start.formula5);
   const [formula5Prev, setFormula5Prev] = useState(start.formula5Prev);
-  const formulas = useMemo(() => formulasOf({ formula, formula5 }), [formula, formula5]);
+  const [formula7, setFormula7] = useState(start.formula7);
+  const [formula7Prev, setFormula7Prev] = useState(start.formula7Prev);
+  const formulas = useMemo(() => formulasOf({ formula, formula5, formula7 }), [formula, formula5, formula7]);
   // Everything below reads the formula through the model, so the one for the format on
   // the board is made the active one before any of it renders. Ratings follow the format.
   setFormulas(formulas, teamSize);
   // Remounts the pages that hold ratings in memos when the formula moves them.
-  const formulaKey = useMemo(() => teamSize + JSON.stringify(formulas[5]) + JSON.stringify(formulas[6]), [formulas, teamSize]);
+  const formulaKey = useMemo(() => teamSize + JSON.stringify(formulas), [formulas, teamSize]);
   // Which season Results and the Table show. null means "whichever is current",
   // so a device that has never chosen follows the calendar as seasons are added.
   const [seasonKey, setSeasonKey] = useState(null);
@@ -238,8 +242,8 @@ export default function App() {
   // Everything the group shares, as one value. Anything not in here — the squad view, the
   // PNG switches, which page you are on — belongs to this browser alone.
   const doc = useMemo(
-    () => buildDoc({ players, history, teamSize, selected, match, teams, pos, seasons, formula, formulaPrev, formula5, formula5Prev }),
-    [players, history, teamSize, selected, match, teams, pos, seasons, formula, formulaPrev, formula5, formula5Prev]
+    () => buildDoc({ players, history, teamSize, selected, match, teams, pos, seasons, formula, formulaPrev, formula5, formula5Prev, formula7, formula7Prev }),
+    [players, history, teamSize, selected, match, teams, pos, seasons, formula, formulaPrev, formula5, formula5Prev, formula7, formula7Prev]
   );
 
   const applyDoc = useCallback((parsed) => {
@@ -256,6 +260,8 @@ export default function App() {
     setFormulaPrev(s.formulaPrev);
     setFormula5(s.formula5);
     setFormula5Prev(s.formula5Prev);
+    setFormula7(s.formula7);
+    setFormula7Prev(s.formula7Prev);
     setSel(null);
     setDraft(null);
     setQueue([]);
@@ -285,6 +291,8 @@ export default function App() {
       setFormulaPrev(parsed.formulaPrev);
       setFormula5(parsed.formula5);
       setFormula5Prev(parsed.formula5Prev);
+      setFormula7(parsed.formula7);
+      setFormula7Prev(parsed.formula7Prev);
     }, []),
   });
 
@@ -355,34 +363,36 @@ export default function App() {
       if (!r || r.kind !== 'ok') return { ok: false, message: 'The backup before saving did not go through, so nothing was changed. Try again in a moment.' };
     }
     const saved = cleanFormula({ ...next, meta: { note: note.trim(), by: savedName() || '', on: todayISO() } });
-    if (size === 5) {
-      setFormula5Prev(formulas[5]);
-      setFormula5(saved);
-    } else {
-      // Until it is first saved, the 5-a-side formula follows this one. Keep it as it is
-      // now, so changing 6-a-side never moves 5-a-side.
-      if (!formula5) setFormula5(formulas[5]);
-      setFormulaPrev(formula);
-      setFormula(saved);
-    }
+    put(size, saved);
     return { ok: true };
   }
 
+  // The three formulas' setters, so saving and undoing read the same for every format.
+  const slots = {
+    5: [formula5Prev, setFormula5, setFormula5Prev],
+    6: [formulaPrev, setFormula, setFormulaPrev],
+    7: [formula7Prev, setFormula7, setFormula7Prev],
+  };
+  function put(size, next) {
+    const [, set, setPrev] = slots[size] || slots[6];
+    if (size === 6 || !slots[size]) {
+      // Until they are first saved, 5 and 7-a-side follow this one. Keep them as they are
+      // now, so changing 6-a-side never moves the others.
+      if (!formula5) setFormula5(formulas[5]);
+      if (!formula7) setFormula7(formulas[7]);
+    }
+    setPrev(formulas[size] || formula);
+    set(next);
+  }
+
   async function undoFormula(size) {
-    const prev = size === 5 ? formula5Prev : formulaPrev;
+    const prev = (slots[size] || slots[6])[0];
     if (!prev) return { ok: false };
     if (sync.unlocked) {
       const r = await sync.makeBackup('formula');
       if (!r || r.kind !== 'ok') return { ok: false, message: 'The backup before undoing did not go through, so nothing was changed.' };
     }
-    if (size === 5) {
-      setFormula5Prev(formulas[5]);
-      setFormula5(prev);
-    } else {
-      if (!formula5) setFormula5(formulas[5]);
-      setFormulaPrev(formula);
-      setFormula(prev);
-    }
+    put(size, prev);
     return { ok: true };
   }
 
@@ -496,7 +506,7 @@ export default function App() {
   // The shared document, written to a file. Byte for byte what the server holds, plus a
   // note of when it was taken.
   function exportAll() {
-    exportJSON({ players, history, teamSize, selected, match, teams, pos, seasons, formula, formulaPrev, formula5, formula5Prev });
+    exportJSON({ players, history, teamSize, selected, match, teams, pos, seasons, formula, formulaPrev, formula5, formula5Prev, formula7, formula7Prev });
   }
 
   // Signed out, neither row exists: an export is every rating in one file, which is the
@@ -657,7 +667,7 @@ export default function App() {
   const formulaPage = (
     <FormulaPage
       formulas={formulas}
-      prevs={{ 5: formula5Prev, 6: formulaPrev }}
+      prevs={{ 5: formula5Prev, 6: formulaPrev, 7: formula7Prev }}
       players={players}
       weeks={history}
       selected={selected}
@@ -713,7 +723,7 @@ export default function App() {
         {page === 'balancer' && (
           <Segmented
             className="tb-fmt"
-            options={[5, 6].map((n) => [n, n + '-a-side'])}
+            options={[5, 6, 7].map((n) => [n, n + '-a-side'])}
             value={teamSize}
             disabled={!canEdit}
             onChange={(n) => {
@@ -1200,7 +1210,7 @@ export default function App() {
                   <div className="tb-menu-label">Format</div>
                   <Segmented
                     className="tb-menu-seg"
-                    options={[5, 6].map((n) => [n, n + '-a-side'])}
+                    options={[5, 6, 7].map((n) => [n, n + '-a-side'])}
                     value={teamSize}
                     onChange={(n) => {
                       setTeamSize(n);
