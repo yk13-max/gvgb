@@ -1002,10 +1002,10 @@ function parse(text, data, context) {
       rest = rest.replace(re, ' ');
     }
   });
-  const ts = rest.match(/\b([567]|five|six|seven)\s*-?\s*a\s*-?\s*sides?\b|\b([567])s\b/);
+  const ts = rest.match(/\b(11|10|[5-9]|five|six|seven|eight|nine|ten|eleven)\s*-?\s*a\s*-?\s*sides?\b|\b(11|10|[5-9])s\b/);
   if (ts) {
     const v = ts[1] || ts[2];
-    q.teamSize = v === 'five' ? 5 : v === 'six' ? 6 : v === 'seven' ? 7 : Number(v);
+    q.teamSize = { five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11 }[v] || Number(v);
     rest = rest.replace(ts[0], ' ');
   }
 

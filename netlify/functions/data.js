@@ -5,7 +5,10 @@
 // are strongly consistent so a save never checks itself against a stale revision.
 import { getStore } from '@netlify/blobs';
 import { createHash, timingSafeEqual } from 'node:crypto';
-import { cleanFormula, formulasOf } from '../../src/lib/formula.js';
+import { FORMATS, cleanFormula, formulasOf } from '../../src/lib/formula.js';
+
+// Every format but 6-a-side keeps its formula under its own key (see docKeyFor).
+const OTHERS = FORMATS.filter((n) => n !== 6);
 
 const STORE = 'fufa-team-balancer';
 const KEY = 'doc';
@@ -176,9 +179,9 @@ export function summarise(before, after) {
   }
   // The 5-a-side formula is compared as it works out, so first storing the one that was
   // already in use (the 6-a-side formula with the 5-a-side lean) is not logged as a change.
-  // The same for 7-a-side, which follows the 6-a-side formula until it is first saved.
+  // The same for 7 to 11-a-side, which follow the 6-a-side formula until first saved.
   if (had) {
-    [5, 7].forEach((n) => {
+    OTHERS.forEach((n) => {
       const key = 'formula' + n;
       const worked = (d) => JSON.stringify(bare(formulasOf(d)[n]));
       if (worked(before) === worked(after)) return;
@@ -332,7 +335,7 @@ export default async (req) => {
       doc.formula = current.doc.formula;
       doc.formulaPrev = current.doc.formulaPrev || null;
     }
-    ['formula5', 'formula7'].forEach((key) => {
+    OTHERS.map((n) => 'formula' + n).forEach((key) => {
       if (current && current.doc && current.doc[key] && !(key in doc)) {
         doc[key] = current.doc[key];
         doc[key + 'Prev'] = current.doc[key + 'Prev'] || null;
@@ -345,7 +348,7 @@ export default async (req) => {
     if (
       formulaKey(before.formula) !== formulaKey(doc.formula) ||
       prevKey(before.formulaPrev) !== prevKey(doc.formulaPrev) ||
-      [5, 7].some((n) => worked(before, n) !== worked(doc, n) || prevKey(before['formula' + n + 'Prev']) !== prevKey(doc['formula' + n + 'Prev']))
+      OTHERS.some((n) => worked(before, n) !== worked(doc, n) || prevKey(before['formula' + n + 'Prev']) !== prevKey(doc['formula' + n + 'Prev']))
     ) {
       const no = await formulaDenied(req, store);
       if (no) {

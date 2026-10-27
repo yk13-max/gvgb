@@ -1,5 +1,5 @@
 import { downloadBlob } from './download.js';
-import { ABBR, STATS, balanceScore, overall, ovrAvg, ovrTotal, statAvg } from './model.js';
+import { ABBR, STATS, balanceScore, overall, ovrAvg, ovrTotal, pinScale, statAvg } from './model.js';
 import { initials, shortName } from './names.js';
 import { drawFacts, layoutFacts } from './drawFacts.js';
 import { drawBadge, loadBadges } from './badges.js';
@@ -242,7 +242,9 @@ function drawBoard(teams, pos, showRatings, showSummary, facts = [], badges = {}
   // Pins sized for a phone: the image is shown at about half its width, so these read
   // as a comfortable 19pt disc and 11pt name. Each name sits on a dark tab so it stays
   // legible across the pitch lines.
-  const PIN = 38;
+  // Smaller for bigger formats, like the board itself.
+  const ps = pinScale(Math.max(teams.red.length, teams.blue.length));
+  const PIN = 38 * ps;
   ['red', 'blue'].forEach((t) =>
     teams[t].forEach((p) => {
       const c0 = pos[p.id] || { x: 50, y: t === 'red' ? 70 : 30 };
@@ -256,23 +258,23 @@ function drawBoard(teams, pos, showRatings, showSummary, facts = [], badges = {}
       g.lineWidth = 3;
       g.stroke();
       g.fillStyle = '#fff';
-      g.font = 'bold 30px "Barlow Condensed",sans-serif';
+      g.font = 'bold ' + Math.round(30 * ps) + 'px "Barlow Condensed",sans-serif';
       g.textAlign = 'center';
       g.textBaseline = 'middle';
       g.fillText(initials(p.name), x, y + 2);
-      if (p.club) drawBadge(g, p.club, badges[p.club], x + PIN * 0.98, y - PIN * 0.86, 30); // on the shoulder, clear of the initials
+      if (p.club) drawBadge(g, p.club, badges[p.club], x + PIN * 0.98, y - PIN * 0.86, 30 * ps); // on the shoulder, clear of the initials
 
       const label = showRatings ? shortName(p.name) + '  ' + overall(p) : shortName(p.name);
-      g.font = '700 22px Inter,sans-serif';
+      g.font = '700 ' + Math.round(22 * Math.max(ps, 0.8)) + 'px Inter,sans-serif';
       const tw = g.measureText(label).width + 16;
       // Kept on the canvas: a pin near the edge pulls its name inwards.
       const lx = Math.max(tw / 2 + 4, Math.min(PW - tw / 2 - 4, x));
-      const ly = Math.min(H - 18, y + PIN + 20);
+      const rh = Math.round(30 * Math.max(ps, 0.8));
+      const ly = Math.min(H - 18, y + PIN + rh * 0.66);
       g.fillStyle = 'rgba(10,14,20,0.72)';
       const rx = lx - tw / 2;
-      const ry = ly - 15;
+      const ry = ly - rh / 2;
       const rw = tw;
-      const rh = 30;
       const rr = 8;
       g.beginPath();
       g.moveTo(rx + rr, ry);

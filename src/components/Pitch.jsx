@@ -1,8 +1,8 @@
-import { ABBR, STATS, overall } from '../lib/model.js';
+import { ABBR, STATS, overall, pinScale } from '../lib/model.js';
 import { initials, shortName } from '../lib/names.js';
 import Crest from './Crest.jsx';
 
-function Pin({ p, team, x, y, showStats, showValues, selected, onPointerDown }) {
+function Pin({ p, team, x, y, showStats, showValues, selected, onPointerDown, crest = 15 }) {
   const col = team === 'red' ? 'var(--team-red)' : 'var(--team-blue)';
   // Without a handler the board is somebody else's to arrange: pins still read, but they
   // do not pick up, and the cursor says so.
@@ -29,8 +29,8 @@ function Pin({ p, team, x, y, showStats, showValues, selected, onPointerDown }) 
         className="tb-pin-badge"
         style={{
           position: 'relative',
-          width: 34,
-          height: 34,
+          width: 'var(--pin, 34px)',
+          height: 'var(--pin, 34px)',
           borderRadius: '50%',
           background: col,
           color: 'var(--white)',
@@ -39,7 +39,7 @@ function Pin({ p, team, x, y, showStats, showValues, selected, onPointerDown }) 
           justifyContent: 'center',
           fontFamily: 'var(--font-display)',
           fontWeight: 'var(--weight-bold)',
-          fontSize: 13,
+          fontSize: 'var(--pin-font, 13px)',
           border: '2px solid ' + (selected ? 'var(--color-accent)' : 'oklch(100% 0 0 / 0.75)'),
           boxShadow: selected
             ? '0 0 0 4px oklch(74% 0.16 95 / 0.35)'
@@ -48,7 +48,7 @@ function Pin({ p, team, x, y, showStats, showValues, selected, onPointerDown }) 
       >
         {initials(p.name)}
         {/* The club or country they support, tucked on the pin's shoulder. */}
-        {p.club && <Crest code={p.club} size={15} className="tb-pin-crest" />}
+        {p.club && <Crest code={p.club} size={crest} className="tb-pin-crest" />}
       </div>
       <div
         style={{
@@ -63,7 +63,7 @@ function Pin({ p, team, x, y, showStats, showValues, selected, onPointerDown }) 
         <span
           style={{
             fontFamily: 'var(--font-body)',
-            fontSize: 'var(--text-2xs)',
+            fontSize: 'var(--pin-name, var(--text-2xs))',
             fontWeight: 'var(--weight-semibold)',
             color: 'var(--white)',
             whiteSpace: 'nowrap',
@@ -109,16 +109,21 @@ function Pin({ p, team, x, y, showStats, showValues, selected, onPointerDown }) 
 
 export default function Pitch({ teams, pos, showStats, showValues = true, sel, onPinDown, pitchRef }) {
   const line = '1.5px solid oklch(100% 0 0 / 0.28)';
+  // Bigger formats get smaller pins, so eleven a side fits as well as five.
+  const s = pinScale(Math.max(teams.red.length, teams.blue.length));
+  const sizes = s < 1 ? { '--pin': 34 * s + 'px', '--pin-phone': Math.round(44 * s) + 'px', '--pin-font': 13 * s + 'px', '--pin-name': Math.max(9, 11 * s) + 'px' } : {};
   return (
     <div
       ref={pitchRef}
       className="tb-pitch"
+      data-small={s < 1 ? '1' : '0'}
       style={{
         position: 'relative',
         background: 'oklch(18% 0.015 230)', // the pitch stays dark in both themes
         borderRadius: 'var(--radius-lg)',
         border: '1px solid var(--slate-700)',
         overflow: 'hidden',
+        ...sizes,
       }}
     >
       <div style={{ position: 'absolute', inset: '2.5%', border: line, borderRadius: 2 }} />
@@ -165,6 +170,7 @@ export default function Pitch({ teams, pos, showStats, showValues = true, sel, o
               showValues={showValues}
               selected={sel && sel.id === p.id}
               onPointerDown={onPinDown}
+              crest={Math.max(10, Math.round(15 * s))}
             />
           );
         })

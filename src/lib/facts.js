@@ -94,12 +94,17 @@ function resultsOf(id, list) {
 
 // Every group of three or more within a side, up to the whole side, for streaks shared
 // by more than a pair. The biggest group sharing a run is the one worth naming.
+// On a big side (8 or more) the whole side, and groups of more than six, are left out: the
+// subsets run into thousands, and a run shared by seven players is rare enough not to miss.
 function groupsOf(side) {
   const out = [];
   const n = side.length;
+  const most = n <= 7 ? n : 6;
   for (let mask = 1; mask < 1 << n; mask++) {
-    const g = side.filter((_, i) => mask & (1 << i));
-    if (g.length >= 3) out.push(g);
+    let bits = 0;
+    for (let m = mask; m; m &= m - 1) bits += 1;
+    if (bits < 3 || bits > most) continue;
+    out.push(side.filter((_, i) => mask & (1 << i)));
   }
   return out;
 }

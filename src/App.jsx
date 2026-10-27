@@ -20,7 +20,7 @@ import StatsTable from './components/StatsTable.jsx';
 import SyncDialog, { syncLook } from './components/SyncDialog.jsx';
 import { exportJSON, readBackupFile } from './lib/backup.js';
 import { savedName, savedPassword } from './lib/remote.js';
-import { cleanFormula, formulasOf, setFormulas } from './lib/formula.js';
+import { FORMATS, cleanFormula, docKeyFor, formulasOf, setFormulas } from './lib/formula.js';
 import FormulaPage from './components/FormulaPage.jsx';
 import FormulaLock from './components/FormulaLock.jsx';
 import { buildDoc, parseDoc } from './lib/doc.js';
@@ -29,7 +29,7 @@ import { favourite, preMatchFacts } from './lib/facts.js';
 import { useTheme } from './lib/theme.js';
 import { strengthOf } from './lib/strength.js';
 import RatingSuggestions from './components/RatingSuggestions.jsx';
-import { DEFAULT_STATS, balance, layout, relax } from './lib/model.js';
+import { DEFAULT_STATS, balance, layout, pinScale, relax } from './lib/model.js';
 import { samplePlayers } from './lib/samplePlayers.js';
 import { ALL, currentSeason, labelFor, minGamesFor, seasonOptions, weeksIn } from './lib/seasons.js';
 import { loadCache, loadPrefs, saveCache, savePrefs } from './lib/storage.js';
@@ -68,10 +68,10 @@ function stateFromDoc(parsed) {
     seasons: parsed.seasons || [],
     formula: parsed.formula || cleanFormula(null),
     formulaPrev: parsed.formulaPrev || null,
-    formula5: parsed.formula5 || null,
-    formula5Prev: parsed.formula5Prev || null,
-    formula7: parsed.formula7 || null,
-    formula7Prev: parsed.formula7Prev || null,
+    // The other formats' formulas and their undo slots, under their document keys.
+    otherFormulas: Object.fromEntries(
+      FORMATS.filter((n) => n !== 6).flatMap((n) => [docKeyFor(n), docKeyFor(n) + 'Prev']).map((k) => [k, parsed[k] || null])
+    ),
   };
 }
 
@@ -118,6 +118,23 @@ function Segmented({ options, value, onChange, className, disabled }) {
         );
       })}
     </div>
+  );
+}
+
+// The match format: 5 to 11-a-side. Seven choices are too many for a row of buttons, so
+// it is a dropdown that says how many players the squad needs.
+function FormatPicker({ value, onChange, disabled, className }) {
+  return (
+    <label className={'tb-fmtpick ' + (className || '')}>
+      <span className="tb-fmtpick-label">Format</span>
+      <select value={value} disabled={disabled} aria-label="Match format" onChange={(e) => onChange(Number(e.target.value))}>
+        {FORMATS.map((n) => (
+          <option key={n} value={n}>
+            {n}-a-side · {n * 2} players
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
 
@@ -198,15 +215,13 @@ export default function App() {
   const [influence, setInfluence] = useState(() => loadPrefs().influence);
   const [history, setHistory] = useState(start.history);
   const [seasons, setSeasons] = useState(start.seasons);
-  // One formula per format. `formula` is the 6-a-side one; `formula5` and `formula7` stay
+  // One formula per format. `formula` is the 6-a-side one; the others (in `others`, by
+  // their document keys: formula5, formula7 … formula11, each with a …Prev) stay
   // null until first saved, and until then work out from the 6-a-side one.
   const [formula, setFormula] = useState(start.formula);
   const [formulaPrev, setFormulaPrev] = useState(start.formulaPrev);
-  const [formula5, setFormula5] = useState(start.formula5);
-  const [formula5Prev, setFormula5Prev] = useState(start.formula5Prev);
-  const [formula7, setFormula7] = useState(start.formula7);
-  const [formula7Prev, setFormula7Prev] = useState(start.formula7Prev);
-  const formulas = useMemo(() => formulasOf({ formula, formula5, formula7 }), [formula, formula5, formula7]);
+  const [others, setOthers] = useState(start.otherFormulas);
+  const formulas = useMemo(() => formulasOf({ formula, ...others }), [formula, others]);
   // Everything below reads the formula through the model, so the one for the format on
   // the board is made the active one before any of it renders. Ratings follow the format.
   setFormulas(formulas, teamSize);
@@ -242,8 +257,8 @@ export default function App() {
   // Everything the group shares, as one value. Anything not in here — the squad view, the
   // PNG switches, which page you are on — belongs to this browser alone.
   const doc = useMemo(
-    () => buildDoc({ players, history, teamSize, selected, match, teams, pos, seasons, formula, formulaPrev, formula5, formula5Prev, formula7, formula7Prev }),
-    [players, history, teamSize, selected, match, teams, pos, seasons, formula, formulaPrev, formula5, formula5Prev, formula7, formula7Prev]
+    () => buildDoc({ players, history, teamSize, selected, match, teams, pos, seasons, formula, formulaPrev, ...others }),
+    [players, history, teamSize, selected, match, teams, pos, seasons, formula, formulaPrev, others]
   );
 
   const applyDoc = useCallback((parsed) => {
@@ -258,10 +273,7 @@ export default function App() {
     setSeasons(s.seasons);
     setFormula(s.formula);
     setFormulaPrev(s.formulaPrev);
-    setFormula5(s.formula5);
-    setFormula5Prev(s.formula5Prev);
-    setFormula7(s.formula7);
-    setFormula7Prev(s.formula7Prev);
+    setOthers(s.otherFormulas);
     setSel(null);
     setDraft(null);
     setQueue([]);
@@ -289,10 +301,7 @@ export default function App() {
       if (parsed.error) return;
       setFormula(parsed.formula);
       setFormulaPrev(parsed.formulaPrev);
-      setFormula5(parsed.formula5);
-      setFormula5Prev(parsed.formula5Prev);
-      setFormula7(parsed.formula7);
-      setFormula7Prev(parsed.formula7Prev);
+      setOthers(stateFromDoc(parsed).otherFormulas);
     }, []),
   });
 
@@ -345,7 +354,7 @@ export default function App() {
     const s = nextSeed == null ? seed : nextSeed;
     const t = balance(pool, teamSize, s, strengthOf(history, players, influence));
     setTeams(t);
-    setPos(relax(Object.assign({}, layout(t.red, 'red'), layout(t.blue, 'blue'))));
+    setPos(relax(Object.assign({}, layout(t.red, 'red'), layout(t.blue, 'blue')), pinScale(teamSize)));
     setSel(null);
     if (isNarrow()) setView('board');
   }
@@ -367,26 +376,30 @@ export default function App() {
     return { ok: true };
   }
 
-  // The three formulas' setters, so saving and undoing read the same for every format.
-  const slots = {
-    5: [formula5Prev, setFormula5, setFormula5Prev],
-    6: [formulaPrev, setFormula, setFormulaPrev],
-    7: [formula7Prev, setFormula7, setFormula7Prev],
-  };
+  // Saving or undoing one format's formula. The one it replaces goes in its undo slot.
   function put(size, next) {
-    const [, set, setPrev] = slots[size] || slots[6];
-    if (size === 6 || !slots[size]) {
-      // Until they are first saved, 5 and 7-a-side follow this one. Keep them as they are
-      // now, so changing 6-a-side never moves the others.
-      if (!formula5) setFormula5(formulas[5]);
-      if (!formula7) setFormula7(formulas[7]);
+    if (size === 6) {
+      // Until they are first saved, the other formats follow this one. Keep them as they
+      // are now, so changing 6-a-side never moves the others.
+      setOthers((o) => {
+        const out = { ...o };
+        FORMATS.forEach((n) => {
+          if (n !== 6 && !out[docKeyFor(n)]) out[docKeyFor(n)] = formulas[n];
+        });
+        return out;
+      });
+      setFormulaPrev(formula);
+      setFormula(next);
+      return;
     }
-    setPrev(formulas[size] || formula);
-    set(next);
+    const k = docKeyFor(size);
+    setOthers((o) => ({ ...o, [k + 'Prev']: formulas[size], [k]: next }));
   }
 
+  const prevOf = (size) => (size === 6 ? formulaPrev : others[docKeyFor(size) + 'Prev']);
+
   async function undoFormula(size) {
-    const prev = (slots[size] || slots[6])[0];
+    const prev = prevOf(size);
     if (!prev) return { ok: false };
     if (sync.unlocked) {
       const r = await sync.makeBackup('formula');
@@ -506,7 +519,7 @@ export default function App() {
   // The shared document, written to a file. Byte for byte what the server holds, plus a
   // note of when it was taken.
   function exportAll() {
-    exportJSON({ players, history, teamSize, selected, match, teams, pos, seasons, formula, formulaPrev, formula5, formula5Prev, formula7, formula7Prev });
+    exportJSON({ players, history, teamSize, selected, match, teams, pos, seasons, formula, formulaPrev, ...others });
   }
 
   // Signed out, neither row exists: an export is every rating in one file, which is the
@@ -667,7 +680,7 @@ export default function App() {
   const formulaPage = (
     <FormulaPage
       formulas={formulas}
-      prevs={{ 5: formula5Prev, 6: formulaPrev, 7: formula7Prev }}
+      prevs={Object.fromEntries(FORMATS.map((n) => [n, prevOf(n)]))}
       players={players}
       weeks={history}
       selected={selected}
@@ -721,9 +734,8 @@ export default function App() {
           onChange={setPage}
         />
         {page === 'balancer' && (
-          <Segmented
+          <FormatPicker
             className="tb-fmt"
-            options={[5, 6, 7].map((n) => [n, n + '-a-side'])}
             value={teamSize}
             disabled={!canEdit}
             onChange={(n) => {
@@ -1208,9 +1220,8 @@ export default function App() {
               <>
                 <div className="tb-menu-group">
                   <div className="tb-menu-label">Format</div>
-                  <Segmented
-                    className="tb-menu-seg"
-                    options={[5, 6, 7].map((n) => [n, n + '-a-side'])}
+                  <FormatPicker
+                    className="tb-menu-fmt"
                     value={teamSize}
                     onChange={(n) => {
                       setTeamSize(n);

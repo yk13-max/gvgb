@@ -3,7 +3,7 @@
 // Ratings are an organiser's judgement; results are what happened. The balancer can
 // lean on both: each player's rating is nudged by a damped record and their recent form,
 // by up to a few points either way. The ratings themselves are never changed by this.
-import { formula, formulaFor, withFormula } from './formula.js';
+import { FORMATS, formula, formulaFor, withFormula } from './formula.js';
 import { overall } from './model.js';
 import { outcome } from './weeks.js';
 
@@ -38,7 +38,7 @@ function decided(weeks) {
 // Rated by the formula for the format that match was played in.
 function ratedAt(w, id, players) {
   const snap = w.ratings && w.ratings[id];
-  const use = [5, 6, 7].includes(w.teamSize) ? formulaFor(w.teamSize) : formula();
+  const use = FORMATS.includes(w.teamSize) ? formulaFor(w.teamSize) : formula();
   if (snap && snap.stats) return withFormula(use, () => overall({ pos: snap.pos, stats: snap.stats }));
   if (snap && snap.ovr != null) return snap.ovr;
   const now = players.find((x) => x.id === id);

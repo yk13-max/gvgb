@@ -252,11 +252,18 @@ const ROW = { Goalkeeper: 0, Defender: 1, Midfielder: 2, Any: 2, Striker: 3 };
 const DEPTH = [94, 82, 70, 58];
 const SOLO_X = [50, 40, 60, 50];
 
+// How big a pin is drawn, by players per side: full size up to 7-a-side, smaller from 8
+// so eleven a side still fits a phone's pitch without pins sitting on each other.
+export function pinScale(perSide) {
+  return perSide <= 7 ? 1 : perSide <= 9 ? 0.82 : 0.68;
+}
+
 // Pins are ~58px tall; keep them apart in % terms so nothing collides at small pitch sizes.
-export function relax(pos) {
+// Smaller pins (bigger formats) need less room, so the gaps shrink with them.
+export function relax(pos, scale = 1) {
   const ids = Object.keys(pos);
-  const MINY = 15;
-  const MINX = 21;
+  const MINY = 15 * scale;
+  const MINX = 21 * scale;
   for (let it = 0; it < 80; it++) {
     let moved = false;
     for (let i = 0; i < ids.length; i++) {
@@ -298,7 +305,9 @@ export function layout(team, side) {
     const list = rows[r];
     const n = list.length;
     list.forEach((p, i) => {
-      const x = n === 1 ? SOLO_X[r] || 50 : 14 + i * (72 / (n - 1));
+      // A busy row (bigger formats) uses more of the width.
+      const edge = n >= 4 ? 9 : 14;
+      const x = n === 1 ? SOLO_X[r] || 50 : edge + i * ((100 - 2 * edge) / (n - 1));
       const jx = n === 1 ? 0 : (Math.random() - 0.5) * 6;
       const jy = (Math.random() - 0.5) * (r === '0' ? 1.5 : 4);
       const d = DEPTH[r] + jy;
