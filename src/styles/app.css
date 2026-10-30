@@ -4752,3 +4752,81 @@ td[data-trend='bad'] {
   min-height: 44px;
   font-size: var(--text-sm);
 }
+
+/* Completing a season */
+.tb-season-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+.tb-weeklock {
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+.tb-weeklock svg {
+  vertical-align: -1px;
+}
+.tb-complete {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+}
+.tb-complete-h {
+  margin-top: 6px;
+  font: 700 var(--text-md) / 1.1 var(--font-display);
+  letter-spacing: 0.02em;
+}
+.tb-complete-top,
+.tb-complete-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.tb-complete-top {
+  counter-reset: place;
+}
+.tb-complete-top li,
+.tb-complete-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--color-border);
+}
+.tb-complete-top li:last-child,
+.tb-complete-list li:last-child {
+  border-bottom: 0;
+}
+.tb-complete-top li::before {
+  counter-increment: place;
+  content: counter(place);
+  font: 700 var(--text-md) / 1 var(--font-display);
+  color: var(--color-primary);
+  min-width: 14px;
+}
+.tb-complete-top li span:first-of-type {
+  flex: 1;
+}
+.tb-complete-n {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+.tb-complete-list li span:first-child {
+  color: var(--color-text-secondary);
+}
+.tb-complete-list li[data-missing='1'] span:last-child {
+  color: var(--color-warning-strong);
+  font-weight: 600;
+}
+.tb-complete-note,
+.tb-complete-miss {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}

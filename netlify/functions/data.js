@@ -148,6 +148,8 @@ export function summarise(before, after) {
     if (!o) out.push('Added season ' + s.name);
     else {
       if (o.name !== s.name || o.start !== s.start) out.push('Edited season ' + s.name);
+      if (!o.completed && s.completed) out.push('Completed season ' + s.name);
+      if (o.completed && !s.completed) out.push('Reopened season ' + s.name);
       if ((o.minGames || 0) !== (s.minGames || 0)) out.push((s.minGames ? 'Set ' + s.minGames + ' matches' : 'Removed the minimum matches') + ' to place in ' + s.name);
       if (!same(o.honours, s.honours)) out.push('Named honours for ' + s.name);
     }

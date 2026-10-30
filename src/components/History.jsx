@@ -93,7 +93,9 @@ function RatingsPanel({ week, players }) {
   );
 }
 
-function WeekCard({ week, players, shareCtx, onAwards, onEditMatch, onDeleteMatch, onDeleteWeek, canEdit, showValues }) {
+function WeekCard({ week, players, shareCtx, onAwards, onEditMatch, onDeleteMatch, onDeleteWeek, canEdit: canEdit0, locked, showValues }) {
+  // A night in a completed season reads as it did, but can't be changed.
+  const canEdit = canEdit0 && !locked;
   const [open, setOpen] = useState(false);
   const t = tally([week]);
   const named = weekPlayerIds(week);
@@ -116,6 +118,12 @@ function WeekCard({ week, players, shareCtx, onAwards, onEditMatch, onDeleteMatc
             {week.matches.length} match{week.matches.length === 1 ? '' : 'es'} · {week.teamSize}-a-side ·{' '}
             {named.length} players{week.venue ? ' · ' + week.venue : ''}
             {t.played > 0 && ' · ' + t.goalsRed + '–' + t.goalsBlue}
+            {locked && canEdit0 && (
+              <span className="tb-weeklock" title={locked.name + ' is complete. Reopen it on the Honours page to change this night.'}>
+                {' '}
+                · <Icon name="lock" size={11} /> {locked.name} complete
+              </span>
+            )}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
@@ -265,7 +273,7 @@ function WeekCard({ week, players, shareCtx, onAwards, onEditMatch, onDeleteMatc
   );
 }
 
-export default function History({ pngFacts = true, weeks, allWeeks, seasons, seasonKey, today, players, onAwards, onEditMatch, onDeleteMatch, onDeleteWeek, canEdit = true, showValues = true, seasonBar, seasonLabel }) {
+export default function History({ pngFacts = true, weeks, allWeeks, seasons, seasonKey, today, players, onAwards, onEditMatch, onDeleteMatch, onDeleteWeek, canEdit = true, lockedBy = () => null, showValues = true, seasonBar, seasonLabel }) {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
 
@@ -350,6 +358,7 @@ export default function History({ pngFacts = true, weeks, allWeeks, seasons, sea
             players={players}
             shareCtx={{ weeks: allWeeks || weeks, players, seasons: seasons || [], facts: pngFacts }}
             canEdit={canEdit}
+            locked={lockedBy(w.date)}
             showValues={showValues}
             onAwards={onAwards}
             onEditMatch={onEditMatch}

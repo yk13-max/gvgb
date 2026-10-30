@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button, Dialog, Icon, IconButton, Input } from '../ds/index.js';
-import { nextSeasonId, sortSeasons, suggestName } from '../lib/seasons.js';
+import { nextSeasonId, seasonOf, sortSeasons, suggestName } from '../lib/seasons.js';
 import { formatDate } from '../lib/whatsapp.js';
 
 function todayISO() {
@@ -9,7 +9,20 @@ function todayISO() {
   return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
 }
 
-export default function SeasonsDialog({ seasons, weeks, onChange, onClose }) {
+export default function SeasonsDialog({ seasons, weeks, onChange: apply, onClose }) {
+  const [blocked, setBlocked] = useState(null);
+  // A completed season's nights are fixed. Any change that would move a night into or out
+  // of one — a new season starting inside it, a neighbour's date moved — is turned down.
+  function onChange(next) {
+    const nightsOf = (list, id) => weeks.filter((w) => { const s = seasonOf(list, w.date); return s && s.id === id; }).map((w) => w.date).join(',');
+    const hit = seasons.find((s) => s.completed && nightsOf(seasons, s.id) !== nightsOf(next, s.id));
+    if (hit) {
+      setBlocked(hit.name + ' is complete, so its nights can’t move into or out of it. Reopen it on the Honours page first.');
+      return;
+    }
+    setBlocked(null);
+    apply(next);
+  }
   const [start, setStart] = useState(todayISO());
   const [name, setName] = useState(() => suggestName(todayISO()));
   const [touched, setTouched] = useState(false);
@@ -55,6 +68,7 @@ export default function SeasonsDialog({ seasons, weeks, onChange, onClose }) {
           named its winner. 0 means anyone who has played counts.
         </p>
 
+        {blocked && <p className="tb-sync-warn">{blocked}</p>}
         {sorted.length > 0 && (
           <div className="tb-seasonlist">
             {sorted
@@ -74,6 +88,8 @@ export default function SeasonsDialog({ seasons, weeks, onChange, onClose }) {
                     <input
                       className="tb-cellinput tb-seasonstart"
                       type="date"
+                      disabled={!!s.completed}
+                      title={s.completed ? 'Complete — reopen it on the Honours page to change it' : undefined}
                       aria-label={'Start of ' + s.name}
                       value={s.start}
                       onChange={(e) => restart(s.id, e.target.value)}
@@ -86,6 +102,7 @@ export default function SeasonsDialog({ seasons, weeks, onChange, onClose }) {
                         min={0}
                         max={100}
                         aria-label={'Minimum matches to place in ' + s.name}
+                        disabled={!!s.completed}
                         value={s.minGames || 0}
                         onChange={(e) => setMinFor(s.id, e.target.value)}
                       />
@@ -99,6 +116,7 @@ export default function SeasonsDialog({ seasons, weeks, onChange, onClose }) {
                       aria-label={'Remove season ' + s.name}
                       variant="ghost"
                       size="sm"
+                      disabled={!!s.completed}
                       onClick={() => remove(s.id)}
                     />
                   </div>

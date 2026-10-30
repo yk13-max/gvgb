@@ -19,8 +19,8 @@ export const EMPTY_HONOURS = { winner: null, player: null, attacker: null, midfi
 // player-of-the-match awards that season, worked out rather than chosen.
 export const PICKED = HONOURS.filter(([k]) => k !== 'player');
 
-export function bestPlayer(weeks, players) {
-  const rows = standings(weeks, players).filter((r) => r.potm > 0);
+export function bestPlayer(weeks, players, rows0) {
+  const rows = (rows0 || standings(weeks, players)).filter((r) => r.potm > 0);
   if (!rows.length) return null;
   // Most POTMs; a tie goes to whoever stands higher in the table.
   return rows.slice().sort((a, b) => b.potm - a.potm || a.order - b.order)[0];
@@ -76,8 +76,29 @@ export function lead(fr) {
   return fr.clear + ' clear';
 }
 
+// A season is finished once it is marked complete, or once the next one has started.
 export function isFinished(season, seasons, today) {
+  if (season && season.completed) return true;
   return sortSeasons(seasons).some((s) => s.start > season.start && s.start <= today);
+}
+
+// The table a season is judged by: the frozen one once it is complete, worked out from
+// its matches otherwise.
+export function tableOf(season, weeks, players) {
+  return season && season.completed ? season.completed.table : standings(weeks, players);
+}
+
+// Everything completing a season records: the final table as it stands (with how many
+// matches each player was short of the minimum), and the winner — top of that table
+// among players who reached the minimum. The rest of the honours are left as named.
+export function completion(season, weeks, players) {
+  const min = season.minGames || 0;
+  const table = standings(weeks, players).map((r) => {
+    const { recent, ...keep } = r;
+    return { ...keep, short: shortOf(r, min) };
+  });
+  const winner = table.find((r) => r.short === 0 && r.pct != null) || null;
+  return { table, winner };
 }
 
 export function hasStarted(season, today) {

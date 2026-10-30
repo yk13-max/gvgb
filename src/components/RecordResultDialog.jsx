@@ -34,7 +34,7 @@ function ScoreBox({ label, aria, color, value, onChange, showLabel = true }) {
   );
 }
 
-export default function RecordResultDialog({ teams, teamSize, match, weeks, existing, onSave, onClose }) {
+export default function RecordResultDialog({ teams, teamSize, match, weeks, existing, lockedBy = () => null, onSave, onClose }) {
   const [date, setDate] = useState(existing ? existing.date : match.date);
   const [played, setPlayed] = useState(existing ? existing.match.played : true);
   const [venue, setVenue] = useState(existing ? existing.venue || '' : match.venue || '');
@@ -106,7 +106,7 @@ export default function RecordResultDialog({ teams, teamSize, match, weeks, exis
           <Button variant="secondary" size="sm" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="primary" size="sm" onClick={save} disabled={!date || level}>
+          <Button variant="primary" size="sm" onClick={save} disabled={!date || level || !!lockedBy(date)}>
             {count > 1 ? 'Save ' + count + ' matches' : 'Save'}
           </Button>
         </>
@@ -132,6 +132,12 @@ export default function RecordResultDialog({ teams, teamSize, match, weeks, exis
         {date && (
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
             {note}
+          </div>
+        )}
+        {date && lockedBy(date) && (
+          <div className="tb-sync-warn">
+            {lockedBy(date).name} is complete, so nothing can be recorded on this date. Pick another date, or reopen the season on
+            the Honours page.
           </div>
         )}
 

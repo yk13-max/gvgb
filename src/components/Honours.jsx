@@ -1,8 +1,8 @@
-import { Button, Icon } from '../ds/index.js';
-import { HONOURS, PICKED, backing, bestPlayer, frontRunners, hasStarted, isFinished, lead } from '../lib/honours.js';
+import { useState } from 'react';
+import { Button, Dialog, Icon } from '../ds/index.js';
+import { HONOURS, PICKED, backing, bestPlayer, completion, frontRunners, hasStarted, isFinished, lead, tableOf } from '../lib/honours.js';
 import { initials, shortName } from '../lib/names.js';
 import { matchWord, sortSeasons } from '../lib/seasons.js';
-import { standings } from '../lib/standings.js';
 import { weeksIn } from '../lib/seasons.js';
 import { formatDate } from '../lib/whatsapp.js';
 import Crest from './Crest.jsx';
@@ -54,11 +54,94 @@ function Card({ honour, row, season, hero, live }) {
   );
 }
 
-function SeasonBlock({ season, seasons, weeks, players, today, canEdit, onEdit }) {
+// What completing a season will do, and what it will record, before it is done.
+function CompleteDialog({ season, weeks, players, onConfirm, onClose }) {
+  const c = completion(season, weeks, players);
+  const min = season.minGames || 0;
+  const top = c.table.filter((r) => r.short === 0 && r.pct != null).slice(0, 3);
+  const best = bestPlayer(weeks, players, c.table);
+  const h = season.honours || {};
+  const nameOf = (id) => (c.table.find((r) => r.id === id) || {}).name || 'someone no longer listed';
+  const picked = h.winner != null && (!c.winner || h.winner !== c.winner.id) ? nameOf(h.winner) : null;
+  const short = c.table.filter((r) => r.short > 0 && r.games > 0).length;
+  // Level with the winner on win ratio: the table's tie-breaks decided it, and that is worth saying.
+  const level = c.winner ? c.table.filter((r) => r.id !== c.winner.id && r.short === 0 && r.pct === c.winner.pct) : [];
+  const lines = [
+    ['Season winner', c.winner ? c.winner.name + ' · top of the table' : 'Nobody — no one has a result' + (min ? ' and ' + matchWord(min) : '')],
+    ['Best player', best ? best.name + ' · ' + backing(best, 'player') : 'Nobody — no POTM awards'],
+    ...PICKED.filter(([k]) => k !== 'winner').map(([k, label]) => [label, h[k] != null ? nameOf(h[k]) : null]),
+  ];
+  return (
+    <Dialog
+      open
+      title={'Complete ' + season.name + '?'}
+      onClose={onClose}
+      footer={
+        <>
+          <Button variant="secondary" size="sm" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button variant="primary" size="sm" icon={<Icon name="check" size={15} />} onClick={() => onConfirm(c)}>
+            Complete season
+          </Button>
+        </>
+      }
+    >
+      <div className="tb-complete">
+        <p className="tb-sync-note">
+          Completing reveals the honours to everyone, locks this season’s nights — no new results, edits, deletions or
+          nominations — and keeps the final table exactly as it stands. You can reopen it later.
+        </p>
+        <div className="tb-complete-h">Final top three</div>
+        {top.length ? (
+          <ol className="tb-complete-top">
+            {top.map((r) => (
+              <li key={r.id}>
+                <span>{r.name}</span>
+                <span className="tb-complete-n">
+                  {r.won}–{r.lost} · {r.pct.toFixed(3)}
+                </span>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <p className="tb-complete-miss">Nobody has qualified for the table yet.</p>
+        )}
+        {short > 0 && (
+          <p className="tb-complete-note">
+            {short} player{short === 1 ? '' : 's'} played fewer than {matchWord(min)} and won’t take a place.
+          </p>
+        )}
+        <div className="tb-complete-h">Honours</div>
+        <ul className="tb-complete-list">
+          {lines.map(([label, v]) => (
+            <li key={label} data-missing={v ? '0' : '1'}>
+              <span>{label}</span>
+              <span>{v || 'Not named yet'}</span>
+            </li>
+          ))}
+        </ul>
+        {level.length > 0 && (
+          <p className="tb-complete-note">
+            Level at the top on win ratio with {level.map((r) => r.name).join(', ')}. The table’s tie-breaks — more matches played,
+            then more wins, then more nominations — put {c.winner.name} first. You can change the winner afterwards with Edit
+            honours.
+          </p>
+        )}
+        {picked && <p className="tb-complete-note">The winner is set from the table, replacing {picked}, who was named by hand.</p>}
+        {lines.some(([, v]) => !v) && <p className="tb-complete-note">You can complete anyway and name the rest later.</p>}
+      </div>
+    </Dialog>
+  );
+}
+
+function SeasonBlock({ season, seasons, weeks, players, today, canEdit, onEdit, onComplete, onReopen }) {
   const finished = isFinished(season, seasons, today);
   const started = hasStarted(season, today);
-  const rows = standings(weeks, players);
-  const best = bestPlayer(weeks, players);
+  const [asking, setAsking] = useState(null); // 'complete' | 'reopen'
+  // A completed season is judged by the table it was completed with.
+  const rows = tableOf(season, weeks, players);
+  const best = bestPlayer(weeks, players, rows);
   // Best player is worked out, not picked; everything else comes from the organiser.
   const rowOf = (key) => (key === 'player' ? best : h[key] == null ? null : rows.find((r) => r.id === h[key]) || null);
   const h = season.honours || {};
@@ -87,14 +170,69 @@ function SeasonBlock({ season, seasons, weeks, players, today, canEdit, onEdit }
           <div className="tb-season-name">{season.name}</div>
           <div className="tb-season-sub">
             From {formatDate(season.start)} · {nights} night{nights === 1 ? '' : 's'}
-            {finished ? ' · finished' : started ? ' · in progress' : ' · not started'}
+            {season.completed ? '' : finished ? ' · finished' : started ? ' · in progress' : ' · not started'}
             {min > 0 ? ' · ' + matchWord(min) + ' to place' : ''}
+            {season.completed ? ' · completed ' + formatDate(season.completed.on) : ''}
           </div>
         </div>
         {canEdit && (
-          <Button variant="secondary" size="sm" icon={<Icon name="pencil" size={15} />} onClick={() => onEdit(season)}>
-            {named ? 'Edit honours' : 'Name honours'}
-          </Button>
+          <div className="tb-season-acts">
+            <Button variant="secondary" size="sm" icon={<Icon name="pencil" size={15} />} onClick={() => onEdit(season)}>
+              {named ? 'Edit honours' : 'Name honours'}
+            </Button>
+            {season.completed ? (
+              <Button variant="secondary" size="sm" icon={<Icon name="lock-open" size={15} />} onClick={() => setAsking('reopen')}>
+                Reopen season
+              </Button>
+            ) : (
+              started && (
+                <Button variant="primary" size="sm" icon={<Icon name="check" size={15} />} onClick={() => setAsking('complete')}>
+                  Complete season
+                </Button>
+              )
+            )}
+          </div>
+        )}
+        {asking === 'complete' && (
+          <CompleteDialog
+            season={season}
+            weeks={weeks}
+            players={players}
+            onClose={() => setAsking(null)}
+            onConfirm={(c) => {
+              setAsking(null);
+              onComplete(season, c);
+            }}
+          />
+        )}
+        {asking === 'reopen' && (
+          <Dialog
+            open
+            title={'Reopen ' + season.name + '?'}
+            onClose={() => setAsking(null)}
+            footer={
+              <>
+                <Button variant="secondary" size="sm" onClick={() => setAsking(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    setAsking(null);
+                    onReopen(season);
+                  }}
+                >
+                  Reopen season
+                </Button>
+              </>
+            }
+          >
+            <p className="tb-sync-note">
+              Its nights unlock for editing, and the table goes back to being worked out from the matches. The honours stay as
+              named, the winner included{isFinished({ ...season, completed: null }, seasons, today) ? '' : ', but are hidden again until the next season starts'}.
+            </p>
+          </Dialog>
         )}
       </div>
 
@@ -123,7 +261,7 @@ function SeasonBlock({ season, seasons, weeks, players, today, canEdit, onEdit }
   );
 }
 
-export default function Honours({ seasons, weeks, players, today, canEdit, onBack, onEdit }) {
+export default function Honours({ seasons, weeks, players, today, canEdit, onBack, onEdit, onComplete, onReopen }) {
   const sorted = sortSeasons(seasons).slice().reverse();
   return (
     <div className="tb-page-stats tb-honourspage">
@@ -160,6 +298,8 @@ export default function Honours({ seasons, weeks, players, today, canEdit, onBac
             today={today}
             canEdit={canEdit}
             onEdit={onEdit}
+            onComplete={onComplete}
+            onReopen={onReopen}
           />
         ))}
         {!sorted.length && (

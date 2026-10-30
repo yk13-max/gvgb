@@ -308,8 +308,20 @@ it (the winner's record and ratio; a best attacker's nominations). **Best player
 picked: it is whoever won the most player-of-the-match awards that season, ties going to the
 higher table position, and the card shows the count. Signed in, **Name honours** on a season
 picks the other four from the players who turned out that season, every list leading with the
-obvious choice. A season is finished once the next one has started, and that is when its
-honours are shown to everyone. While a season is in progress the same cards show the **front
+obvious choice. A season is finished once the next one has started — or once it is marked
+complete — and that is when its honours are shown to everyone.
+
+**Complete season** (signed in, on each started season) finalises it. A summary comes first:
+the final top three, the winner it will set, the honours as named and any still missing, and a
+note when the top is a tie decided by the table's tie-breaks. Completing then reveals the
+honours to everyone, sets the **winner** to the top of the table among players who reached the
+season's minimum matches (the other honours stay as named, and can still be edited), keeps the
+**final table** exactly as it stood — later renames or removed players never change it — and
+**locks** the season's nights: no new results on its dates, and no edits, deletions or
+nominations on its weeks, which show a lock and "2026 complete". The Seasons dialog won't move
+its start date or minimum, remove it, or add a season that would take nights into or out of
+it. **Reopen season** undoes all of that (the honours stay as named). Both are in the change
+history. While a season is in progress the same cards show the **front
 runners** instead — the table leader, the most POTMs, the most nominations in each line — with
 what they lead by ("2 clear", "Level with Jo"); these come from the table, never from picks an
 organiser has entered early, which stay out of sight. Most

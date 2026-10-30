@@ -56,12 +56,39 @@ const cleanMin = (v) => {
   return Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : 0;
 };
 
+// A completed season keeps its final table as it stood, so nothing later — a rename, a
+// player removed, a formula change — can move it. Only the fields the table shows.
+const ISO = /^\d{4}-\d{2}-\d{2}$/;
+const int = (v) => (Number.isFinite(Number(v)) ? Math.max(0, Math.round(Number(v))) : 0);
+function cleanFrozenRow(r) {
+  if (!r || !Number.isInteger(Number(r.id)) || typeof r.name !== 'string') return null;
+  const out = { id: Number(r.id), name: r.name.slice(0, 80), club: typeof r.club === 'string' ? r.club : null };
+  ['games', 'won', 'lost', 'attacker', 'midfielder', 'defender', 'potm', 'total', 'formWins', 'short', 'order'].forEach((k) => {
+    out[k] = int(r[k]);
+  });
+  out.pct = Number.isFinite(Number(r.pct)) && r.pct !== null ? Number(r.pct) : null;
+  out.form = Array.isArray(r.form) ? r.form.filter((x) => x === 'W' || x === 'L').slice(0, 5) : [];
+  out.played = Array.isArray(r.played) ? r.played.filter((d) => typeof d === 'string' && ISO.test(d)) : [];
+  out.wins = Array.isArray(r.wins)
+    ? r.wins.filter((w) => w && ISO.test(w.date || '')).map((w) => ({ date: w.date, award: String(w.award || ''), label: String(w.label || '') }))
+    : [];
+  return out;
+}
+function cleanCompleted(c) {
+  if (!c || typeof c !== 'object' || !ISO.test(c.on || '')) return null;
+  return {
+    on: c.on,
+    by: typeof c.by === 'string' ? c.by.slice(0, 40) : '',
+    table: (Array.isArray(c.table) ? c.table : []).map(cleanFrozenRow).filter(Boolean),
+  };
+}
+
 function cleanSeasons(list) {
   if (!Array.isArray(list)) return [];
   const seen = new Set();
   return list
     .filter((s) => s && typeof s.name === 'string' && s.name.trim() && /^\d{4}-\d{2}-\d{2}$/.test(s.start || ''))
-    .map((s) => ({ id: Number(s.id), name: s.name.trim(), start: s.start, minGames: cleanMin(s.minGames), honours: cleanHonours(s.honours) }))
+    .map((s) => ({ id: Number(s.id), name: s.name.trim(), start: s.start, minGames: cleanMin(s.minGames), honours: cleanHonours(s.honours), completed: cleanCompleted(s.completed) }))
     .filter((s) => Number.isInteger(s.id) && s.id > 0 && !seen.has(s.id) && seen.add(s.id));
 }
 

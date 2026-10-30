@@ -109,18 +109,19 @@ function SortHead({ col, sort, onSort, className, children }) {
   );
 }
 
-export default function Standings({ weeks, players, seasonBar, seasonLabel, minGames = 0, onHonours }) {
+export default function Standings({ weeks, players, seasonBar, seasonLabel, minGames = 0, frozen = null, onHonours }) {
   const ranked = useMemo(() => {
     // The league order is by win ratio. Ranks share a number when the ratio ties, and
     // the number stays with the player whatever column the table is later sorted by.
     // A player short of the season's minimum matches keeps their spot in the order,
     // greyed, but takes no position: the positions count qualified players only.
-    const rows = standings(weeks, players);
+    // A completed season shows the table it was completed with, never a recount.
+    const rows = frozen ? frozen.table : standings(weeks, players);
     let rank = 0;
     let seen = 0;
     let prev = null;
     return rows.map((r, i) => {
-      const short = Math.max(0, minGames - r.games);
+      const short = frozen ? r.short || 0 : Math.max(0, minGames - r.games);
       if (short > 0) return { ...r, rank: null, short, order: i };
       seen += 1;
       const key = r.pct == null ? 'none' : r.pct.toFixed(3);
@@ -130,7 +131,7 @@ export default function Standings({ weeks, players, seasonBar, seasonLabel, minG
       }
       return { ...r, rank, short: 0, order: i };
     });
-  }, [weeks, players, minGames]);
+  }, [weeks, players, minGames, frozen]);
 
   const [sort, setSort] = useState({ key: 'rank', dir: 'asc' });
   const [open, setOpen] = useState(null);
@@ -183,6 +184,7 @@ export default function Standings({ weeks, players, seasonBar, seasonLabel, minG
               marginTop: 2,
             }}
           >
+            {frozen ? 'Final table · completed ' + formatDate(frozen.on) + ' · ' : ''}
             {weeks.length} week{weeks.length === 1 ? '' : 's'}
             {minGames > 0 ? ' · ' + matchWord(minGames) + ' to take a place' : ''} · tap a header to sort, a player for their nights
           </div>

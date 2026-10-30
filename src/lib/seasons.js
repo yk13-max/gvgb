@@ -75,6 +75,12 @@ export const shortOf = (row, min) => Math.max(0, (min || 0) - (row ? row.games :
 export const matchWord = (n) => n + ' match' + (n === 1 ? '' : 'es');
 export const moreMatches = (n) => n + ' more match' + (n === 1 ? '' : 'es');
 
+// The completed season a date falls in, if any. Its nights are locked.
+export function completedFor(seasons, date) {
+  const s = seasonOf(seasons, date);
+  return s && s.completed ? s : null;
+}
+
 export function nextSeasonId(seasons) {
   return Math.max(0, ...(seasons || []).map((s) => Number(s.id) || 0)) + 1;
 }

@@ -31,7 +31,7 @@ import { strengthOf } from './lib/strength.js';
 import RatingSuggestions from './components/RatingSuggestions.jsx';
 import { DEFAULT_STATS, balance, layout, pinScale, relax } from './lib/model.js';
 import { samplePlayers } from './lib/samplePlayers.js';
-import { ALL, currentSeason, labelFor, minGamesFor, seasonOptions, weeksIn } from './lib/seasons.js';
+import { ALL, completedFor, currentSeason, labelFor, minGamesFor, seasonOptions, weeksIn } from './lib/seasons.js';
 import { loadCache, loadPrefs, saveCache, savePrefs } from './lib/storage.js';
 import { useSync } from './lib/useSync.js';
 import { putMatch } from './lib/weeks.js';
@@ -481,7 +481,30 @@ export default function App() {
   // A match belongs to the week matching its date; recording one creates that week and
   // snapshots what every player who turned out was rated at the time. A session is often
   // several games with the same sides, so they arrive as a list and fold in one at a time.
+  // A night in a completed season is locked: no new results, edits, deletions or
+  // nominations until the season is reopened.
+  const lockedBy = (date) => completedFor(seasons, date);
+
+  function completeSeason(season, c) {
+    setSeasons((ss) =>
+      ss.map((x) =>
+        x.id === season.id
+          ? { ...x, completed: { on: todayISO(), by: savedName() || '', table: c.table }, honours: { ...(x.honours || {}), winner: c.winner ? c.winner.id : null } }
+          : x
+      )
+    );
+  }
+
+  function reopenSeason(season) {
+    setSeasons((ss) => ss.map((x) => (x.id === season.id ? { ...x, completed: null } : x)));
+  }
+
   function saveResult(entry) {
+    const locked = lockedBy(entry.date);
+    if (locked) {
+      setNotice({ title: 'Season complete', text: entry.date + ' falls in ' + locked.name + ', which is complete. Reopen it on the Honours page to add or change its results.' });
+      return;
+    }
     const next = entry.matches.reduce(
       (weeks, m) => putMatch(weeks, { date: entry.date, venue: entry.venue, teamSize: entry.teamSize, match: m, players }),
       history
@@ -505,6 +528,8 @@ export default function App() {
   }
 
   function deleteMatch(weekId, matchId) {
+    const w = history.find((x) => x.id === weekId);
+    if (w && lockedBy(w.date)) return;
     setHistory((h) =>
       h
         .map((w) => (w.id === weekId ? { ...w, matches: w.matches.filter((m) => m.id !== matchId) } : w))
@@ -513,6 +538,8 @@ export default function App() {
   }
 
   function deleteWeek(weekId) {
+    const w = history.find((x) => x.id === weekId);
+    if (w && lockedBy(w.date)) return;
     setHistory((h) => h.filter((w) => w.id !== weekId));
   }
 
@@ -915,6 +942,7 @@ export default function App() {
           seasonBar={seasonBar}
           seasonLabel={seasonLabel}
           canEdit={canEdit}
+          lockedBy={lockedBy}
           showValues={showValues}
           onAwards={(w) => setAwarding(w)}
           onEditMatch={(week, match) => setRecording({ week, match })}
@@ -925,6 +953,7 @@ export default function App() {
         <Standings
           weeks={seasonWeeks}
           minGames={minGamesFor(activeSeason, seasons)}
+          frozen={(seasons.find((x) => String(x.id) === String(activeSeason)) || {}).completed || null}
           players={players}
           seasonBar={seasonBar}
           seasonLabel={seasonLabel}
@@ -939,6 +968,8 @@ export default function App() {
           canEdit={canEdit}
           onBack={() => setPage('awards')}
           onEdit={(season) => setHonouring(season)}
+          onComplete={completeSeason}
+          onReopen={reopenSeason}
         />
       ) : page === 'ladder' ? (
         showValues ? (
@@ -1339,6 +1370,7 @@ export default function App() {
                 }
               : null
           }
+          lockedBy={lockedBy}
           onSave={saveResult}
           onClose={() => setRecording(null)}
         />
@@ -1346,7 +1378,7 @@ export default function App() {
       {awarding && (
         <WeekAwardsDialog
           week={history.find((w) => w.id === awarding.id) || awarding}
-          canEdit={canEdit}
+          canEdit={canEdit && !lockedBy(awarding.date)}
           onSave={saveAwards}
           onClose={() => setAwarding(null)}
         />
