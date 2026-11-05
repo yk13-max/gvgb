@@ -184,6 +184,13 @@ matches you played that night.
   sides' ratings behind the scenes and says only that the lower-rated side won, with one to
   three pips for how big a surprise it was, and the favourite meter shows a bar and words but
   never a percentage. A **talking points** switch turns them off.
+  They lean on the current season: head to head, best duos, rivalries, player-of-the-match
+  awards and experience are worked out for this season first and ranked higher for it, with the
+  all-time count alongside where it adds something ("met 2 times this season — Blue lead 2–0
+  (Red 4–1 all-time)"). Only when the season has nothing to say do they reach back, and then say
+  so ("met 6 times in past seasons", "on record", "all-time"). After the night, a new season best
+  — biggest win, highest-scoring game, most goals in a session — is called out when it isn't
+  an all-time record.
 - **Ask the results.** A question box at the top of Results answers in plain words, worked
   out from everything recorded as you type. It picks out **who** is named (players by first
   name, surname, "Jo R" or nickname; clubs — "Arsenal fans"; positions — "which defender"),

@@ -175,11 +175,33 @@ export function preMatchFacts(teams, weeks, players, { seasons = [], today, max 
   const both = [...red, ...blue];
   const facts = [];
 
+  // Talking points lean on this season. Each one that counts past matches is worked out
+  // for the current season first, and ranked a little higher for it; only when the season
+  // has nothing to say does it fall back to earlier seasons, worded as such and ranked lower.
+  const nowISO = today || new Date().toISOString().slice(0, 10);
+  const seasonCur = currentSeason(seasons, nowISO);
+  const seasonList = seasonCur ? chrono(weeksIn(weeks || [], String(seasonCur.id), seasons)) : null;
+  const scopes = seasonList
+    ? [
+        { list: seasonList, now: true, bonus: 8 },
+        { list: all, now: false, bonus: -10 },
+      ]
+    : [{ list: all, now: null, bonus: 0 }];
+  // The first scope that has something, or null.
+  const first = (fn) => {
+    for (const sc of scopes) {
+      const r = fn(sc.list);
+      if (r) return { ...r, sc };
+    }
+    return null;
+  };
+
   // Head to head: the exact sides first, then sides that were mostly these players.
   const total = both.length;
-  let exact = { n: 0, red: 0, blue: 0 };
-  let close = { n: 0, red: 0, blue: 0, min: total };
-  all.forEach(({ m, o }) => {
+  const meetings = (list) => {
+  const exact = { n: 0, red: 0, blue: 0 };
+  const close = { n: 0, red: 0, blue: 0, min: total };
+  list.forEach(({ m, o }) => {
     const straight = red.filter((id) => has(m.red, id)).length + blue.filter((id) => has(m.blue, id)).length;
     const swapped = red.filter((id) => has(m.blue, id)).length + blue.filter((id) => has(m.red, id)).length;
     const aligned = straight >= swapped;
@@ -196,10 +218,29 @@ export function preMatchFacts(teams, weeks, players, { seasons = [], today, max 
       close.min = Math.min(close.min, overlap);
     }
   });
-  const lead = (t) => (t.red === t.blue ? 'level at ' + t.red + '–' + t.blue : (t.red > t.blue ? 'Red' : 'Blue') + ' lead ' + Math.max(t.red, t.blue) + '–' + Math.min(t.red, t.blue));
-  if (exact.n) facts.push({ cat: 'h2h', weight: 95, text: 'Rematch! These exact sides have met ' + plural(exact.n, 'time') + ' — ' + lead(exact) + '.' });
-  else if (close.n) facts.push({ cat: 'h2h', weight: 72, text: 'Familiar foes: sides with at least ' + close.min + ' of these ' + total + ' players have met ' + plural(close.n, 'time') + ' — ' + lead(close) + '.' });
-  else if (all.length >= 5) facts.push({ cat: 'h2h', weight: 30, text: 'A fresh fixture: these sides have never lined up like this before.' });
+  return exact.n || close.n ? { exact, close } : null;
+  };
+  const lead = (t, past) =>
+    t.red === t.blue
+      ? (past ? 'level at ' : 'level at ') + t.red + '–' + t.blue
+      : (t.red > t.blue ? 'Red' : 'Blue') + (past ? ' led ' : ' lead ') + Math.max(t.red, t.blue) + '–' + Math.min(t.red, t.blue);
+  const h2h = first(meetings);
+  if (h2h) {
+    const { exact, close, sc } = h2h;
+    const past = sc.now === false;
+    // This season's meetings, with the all-time count alongside when there is more of it.
+    const allTime = sc.now ? meetings(all) : null;
+    const more = (t, key) => (allTime && allTime[key].n > t.n ? ' (' + lead(allTime[key]).replace(/ lead /, ' ').replace(/^level at /, 'level ') + ' all-time)' : '');
+    const when = sc.now ? ' this season' : past ? ' in past seasons' : '';
+    if (exact.n)
+      facts.push({ cat: 'h2h', weight: 95 + sc.bonus, text: 'Rematch! These exact sides ' + (past ? 'met ' : 'have met ') + plural(exact.n, 'time') + when + ' — ' + lead(exact, past) + more(exact, 'exact') + '.' });
+    else
+      facts.push({
+        cat: 'h2h',
+        weight: 72 + sc.bonus,
+        text: 'Familiar foes: sides with at least ' + close.min + ' of these ' + total + ' players ' + (past ? 'met ' : 'have met ') + plural(close.n, 'time') + when + ' — ' + lead(close, past) + '.',
+      });
+  } else if (all.length >= 5) facts.push({ cat: 'h2h', weight: 30, text: 'A fresh fixture: these sides have never lined up like this before.' });
 
   // In form: the player on each side with the most wins in their last five this season.
   // Only someone with three or more counts as in form; a side with nobody is left out,
@@ -236,13 +277,13 @@ export function preMatchFacts(teams, weeks, players, { seasons = [], today, max 
   }
 
   // Partnerships: each side's best duo on record, and team-mates for the first time.
-  const duo = (side) => {
+  const duo = (side, list) => {
     let best = null;
     for (let i = 0; i < side.length; i++)
       for (let j = i + 1; j < side.length; j++) {
         let w = 0;
         let l = 0;
-        all.forEach(({ m, o }) => {
+        list.forEach(({ m, o }) => {
           const together = (has(m.red, side[i]) && has(m.red, side[j])) ? 'red' : has(m.blue, side[i]) && has(m.blue, side[j]) ? 'blue' : null;
           if (!together || (o !== 'red' && o !== 'blue')) return;
           if (o === together) w += 1;
@@ -255,11 +296,16 @@ export function preMatchFacts(teams, weeks, players, { seasons = [], today, max 
       }
     return best;
   };
-  const rd = duo(red);
-  const bd = duo(blue);
-  if (rd || bd) {
+  const duos = first((list) => {
+    const rd = duo(red, list);
+    const bd = duo(blue, list);
+    return rd || bd ? { rd, bd } : null;
+  });
+  if (duos) {
+    const { rd, bd, sc } = duos;
     const part = (label, d) => (d ? label + ': ' + name(d.a) + ' & ' + name(d.b) + ' (' + d.w + '–' + d.l + ' together)' : null);
-    facts.push({ cat: 'duo', weight: 58 + Math.round(((rd ? rd.pct : 0) + (bd ? bd.pct : 0)) * 5), text: 'Best duos — ' + [part('Red', rd), part('Blue', bd)].filter(Boolean).join(' · ') + '.' });
+    const head = sc.now ? 'Best duos this season — ' : sc.now === false ? 'Best duos on record — ' : 'Best duos — ';
+    facts.push({ cat: 'duo', weight: 58 + sc.bonus + Math.round(((rd ? rd.pct : 0) + (bd ? bd.pct : 0)) * 5), text: head + [part('Red', rd), part('Blue', bd)].filter(Boolean).join(' · ') + '.' });
   }
   const firsts = [];
   [red, blue].forEach((side) => {
@@ -304,12 +350,14 @@ export function preMatchFacts(teams, weeks, players, { seasons = [], today, max 
   }
 
   // Rivalry: the most one-sided personal record among players facing each other tonight.
+  // Three meetings are enough within a season; across seasons it takes four.
+  const rivalIn = (list, least) => {
   let rival = null;
   red.forEach((r) =>
     blue.forEach((bl) => {
       let rw = 0;
       let bw = 0;
-      all.forEach(({ m, o }) => {
+      list.forEach(({ m, o }) => {
         if (o !== 'red' && o !== 'blue') return;
         const rSide = has(m.red, r) ? 'red' : has(m.blue, r) ? 'blue' : null;
         const bSide = has(m.red, bl) ? 'red' : has(m.blue, bl) ? 'blue' : null;
@@ -318,35 +366,47 @@ export function preMatchFacts(teams, weeks, players, { seasons = [], today, max 
         else bw += 1;
       });
       const n = rw + bw;
-      if (n < 4) return;
+      if (n < least) return;
       const top = Math.max(rw, bw);
       if (top / n < 0.75) return;
       const score = top * 2 - n + n / 10;
       if (!rival || score > rival.score) rival = rw >= bw ? { a: r, b: bl, w: rw, n, score } : { a: bl, b: r, w: bw, n, score };
     })
   );
+  return rival;
+  };
+  const rival = first((list) => rivalIn(list, list === all ? 4 : 3));
   if (rival) {
+    const when = rival.sc.now ? ' this season' : rival.sc.now === false ? ' all-time' : '';
     const text =
       rival.w === rival.n
-        ? name(rival.a) + ' has never lost to ' + name(rival.b) + ' in ' + rival.n + ' meetings. Tonight they’re on opposite sides again.'
-        : name(rival.a) + ' has won ' + rival.w + ' of ' + rival.n + ' against ' + name(rival.b) + '. A chance for revenge tonight.';
-    facts.push({ cat: 'rival', weight: 60 + rival.n, text });
+        ? name(rival.a) + ' has never lost to ' + name(rival.b) + ' in ' + rival.n + ' meetings' + when + '. Tonight they’re on opposite sides again.'
+        : name(rival.a) + ' has won ' + rival.w + ' of ' + rival.n + ' against ' + name(rival.b) + when + '. A chance for revenge tonight.';
+    facts.push({ cat: 'rival', weight: 60 + rival.sc.bonus + rival.n, text });
   }
 
-  // Honours: player-of-the-match awards each side brings.
-  const potm = new Map();
-  (weeks || []).forEach((w) => {
-    const id = w.awards && w.awards.potm;
-    if (id != null) potm.set(id, (potm.get(id) || 0) + 1);
-  });
-  const haul = (side) => side.reduce((sum, id) => sum + (potm.get(id) || 0), 0);
-  const rh = haul(red);
-  const bh = haul(blue);
-  if (rh + bh >= 3) {
+  // Honours: player-of-the-match awards each side brings — this season's when there are
+  // enough to talk about, everyone's career haul otherwise.
+  const weeksOf = (list) => [...new Set(list.map((x) => x.week))];
+  const awardsIn = (list, least) => {
+    const potm = new Map();
+    weeksOf(list).forEach((w) => {
+      const id = w.awards && w.awards.potm;
+      if (id != null) potm.set(id, (potm.get(id) || 0) + 1);
+    });
+    const haul = (side) => side.reduce((sum, id) => sum + (potm.get(id) || 0), 0);
+    const rh = haul(red);
+    const bh = haul(blue);
+    return rh + bh >= least ? { potm, rh, bh } : null;
+  };
+  const honours = first((list) => awardsIn(list, list === all ? 3 : 2));
+  if (honours) {
+    const { potm, rh, bh, sc } = honours;
+    const when = sc.now ? ' this season' : sc.now === false ? ' all-time' : '';
     const star = both.filter((id) => potm.get(id)).sort((x, y) => potm.get(y) - potm.get(x))[0];
     const most = potm.get(star);
-    const lead = rh === bh ? 'Both sides bring ' + plural(rh, 'player-of-the-match award') : (rh > bh ? 'Red' : 'Blue') + ' bring ' + plural(Math.max(rh, bh), 'player-of-the-match award') + ' to ' + (rh > bh ? 'Blue' : 'Red') + '’s ' + Math.min(rh, bh);
-    facts.push({ cat: 'honours', weight: 52 + Math.min(12, rh + bh), text: lead + (most >= 2 ? '. ' + name(star) + ' has the most on the pitch, with ' + most + '.' : '.') });
+    const lead = rh === bh ? 'Both sides bring ' + plural(rh, 'player-of-the-match award') + when : (rh > bh ? 'Red' : 'Blue') + ' bring ' + plural(Math.max(rh, bh), 'player-of-the-match award') + when + ' to ' + (rh > bh ? 'Blue' : 'Red') + '’s ' + Math.min(rh, bh);
+    facts.push({ cat: 'honours', weight: 52 + sc.bonus + Math.min(12, rh + bh), text: lead + (most >= 2 ? '. ' + name(star) + ' has the most on the pitch, with ' + most + '.' : '.') });
   }
 
   // Due a win: the longest losing run on the pitch, three or more.
@@ -392,11 +452,19 @@ export function preMatchFacts(teams, weeks, players, { seasons = [], today, max 
   });
 
   // Experience: matches on record between each side's players, when one side has clearly more.
-  const exp = (side) => side.reduce((sum, id) => sum + gamesOf(id, all), 0);
-  const re = exp(red);
-  const be = exp(blue);
-  if (re + be >= 30 && Math.max(re, be) >= Math.min(re, be) * 1.3) {
-    facts.push({ cat: 'exp', weight: 46, text: (re > be ? 'Red' : 'Blue') + ' bring ' + Math.max(re, be) + ' matches of experience to ' + (re > be ? 'Blue' : 'Red') + '’s ' + Math.min(re, be) + '.' });
+  const expIn = (list, least) => {
+    const exp = (side) => side.reduce((sum, id) => sum + gamesOf(id, list), 0);
+    const re = exp(red);
+    const be = exp(blue);
+    return re + be >= least && Math.max(re, be) >= Math.min(re, be) * 1.3 ? { re, be } : null;
+  };
+  const xp = first((list) => expIn(list, list === all ? 30 : 15));
+  if (xp) {
+    const { re, be, sc } = xp;
+    const text = sc.now
+      ? (re > be ? 'Red' : 'Blue') + ' have played ' + Math.max(re, be) + ' matches between them this season to ' + (re > be ? 'Blue' : 'Red') + '’s ' + Math.min(re, be) + '.'
+      : (re > be ? 'Red' : 'Blue') + ' bring ' + Math.max(re, be) + ' matches of experience to ' + (re > be ? 'Blue' : 'Red') + '’s ' + Math.min(re, be) + '.';
+    facts.push({ cat: 'exp', weight: 46 + sc.bonus, text });
   }
 
   // Table: the season's top four leaning to one side.
@@ -494,12 +562,20 @@ export function postMatchFacts(week, weeks, players, { seasons = [], max = 4 } =
     const high = mine.slice().sort((a, b) => goals(b) - goals(a))[0];
     const sc = ({ m, o }) => Math.max(m.redScore, m.blueScore) + '–' + Math.min(m.redScore, m.blueScore) + ' to ' + (o === 'red' ? 'Red' : 'Blue');
     const which = (x) => (week.matches.length > 1 ? ' in match ' + x.n : '');
+    // An all-time record is the bigger story; failing that, a best for this season.
+    const seasonNow = seasonOf(seasons, week.date);
+    const prevSeason = seasonNow ? prev.filter((x) => (seasonOf(seasons, x.date) || {}).id === seasonNow.id) : [];
+    const seasonBest = (fn) => (prevSeason.length >= 3 ? Math.max(...prevSeason.map(fn)) : Infinity);
     if (margin(big) > bestMargin) facts.push({ cat: 'record', weight: 92, text: sc(big) + which(big) + ' is the biggest win on record.' });
     else if (margin(big) === bestMargin && margin(big) >= 3) facts.push({ cat: 'record', weight: 66, text: sc(big) + which(big) + ' equals the biggest win on record.' });
+    else if (margin(big) > seasonBest(margin) && margin(big) >= 3) facts.push({ cat: 'record', weight: 74, text: sc(big) + which(big) + ' is the biggest win of ' + seasonNow.name + '.' });
     if (goals(high) > bestGoals) facts.push({ cat: 'record', weight: 86, text: plural(goals(high), 'goal') + which(high) + ' — the highest-scoring game yet.' });
+    else if (goals(high) > seasonBest(goals)) facts.push({ cat: 'record', weight: 70, text: plural(goals(high), 'goal') + which(high) + ' — the highest-scoring game of ' + seasonNow.name + '.' });
     const nightGoals = mine.reduce((s, x) => s + goals(x), 0);
     const nights = before.map((w) => scored(chrono([w])).reduce((s, x) => s + goals(x), 0));
+    const seasonNights = seasonNow ? before.filter((w) => (seasonOf(seasons, w.date) || {}).id === seasonNow.id).map((w) => scored(chrono([w])).reduce((s, x) => s + goals(x), 0)) : [];
     if (nights.length >= 3 && nightGoals > Math.max(...nights)) facts.push({ cat: 'record', weight: 70, text: plural(nightGoals, 'goal') + ' on the night — the most in a single session.' });
+    else if (seasonNights.length >= 3 && nightGoals > Math.max(...seasonNights)) facts.push({ cat: 'record', weight: 60, text: plural(nightGoals, 'goal') + ' on the night — the most in a session this season.' });
   }
 
   // Table movement within the week's season.
