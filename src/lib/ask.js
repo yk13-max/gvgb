@@ -938,7 +938,7 @@ function honoursAnswer(season, seasons, weeks, players, today) {
   const facts = [];
   if (finished) {
     const h = season.honours || {};
-    const best = bestPlayer(sw, players);
+    const best = bestPlayer(sw, players, null, season.minGames || 0);
     HONOURS.forEach(([key, label]) => {
       const p = key === 'player' ? best && players.find((x) => x.id === best.id) : h[key] != null ? players.find((x) => x.id === h[key]) : null;
       facts.push([label, p ? p.name : 'Not yet named']);

@@ -4830,3 +4830,15 @@ td[data-trend='bad'] {
   font-size: var(--text-xs);
   color: var(--color-text-secondary);
 }
+
+/* Where the players short of the season's minimum begin. */
+.tb-league-split td {
+  padding: 8px 12px 4px;
+  border-top: 2px solid var(--color-border-strong);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  background: var(--color-surface-sunken);
+}

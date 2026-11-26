@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button, Dialog, Icon } from '../ds/index.js';
 import { HONOURS, PICKED, backing, bestPlayer, completion, frontRunners, hasStarted, isFinished, lead, tableOf } from '../lib/honours.js';
 import { initials, shortName } from '../lib/names.js';
-import { matchWord, sortSeasons } from '../lib/seasons.js';
+import { matchWord, moreMatches, sortSeasons } from '../lib/seasons.js';
 import { weeksIn } from '../lib/seasons.js';
 import { formatDate } from '../lib/whatsapp.js';
 import Crest from './Crest.jsx';
@@ -61,7 +61,12 @@ function CompleteDialog({ season, weeks, players, onConfirm, onClose }) {
   const top = c.table.filter((r) => r.short === 0 && r.pct != null).slice(0, 3);
   const best = bestPlayer(weeks, players, c.table);
   const h = season.honours || {};
-  const nameOf = (id) => (c.table.find((r) => r.id === id) || {}).name || 'someone no longer listed';
+  const rowOf = (id) => c.table.find((r) => r.id === id);
+  const nameOf = (id) => {
+    const r = rowOf(id);
+    if (!r) return 'someone no longer listed';
+    return r.short ? r.name + ' · ' + moreMatches(r.short) + ' short of the minimum' : r.name;
+  };
   const picked = h.winner != null && (!c.winner || h.winner !== c.winner.id) ? nameOf(h.winner) : null;
   const short = c.table.filter((r) => r.short > 0 && r.games > 0).length;
   // Level with the winner on win ratio: the table's tie-breaks decided it, and that is worth saying.
@@ -141,7 +146,7 @@ function SeasonBlock({ season, seasons, weeks, players, today, canEdit, onEdit, 
   const [asking, setAsking] = useState(null); // 'complete' | 'reopen'
   // A completed season is judged by the table it was completed with.
   const rows = tableOf(season, weeks, players);
-  const best = bestPlayer(weeks, players, rows);
+  const best = bestPlayer(weeks, players, season.completed ? rows : null, season.minGames || 0);
   // Best player is worked out, not picked; everything else comes from the organiser.
   const rowOf = (key) => (key === 'player' ? best : h[key] == null ? null : rows.find((r) => r.id === h[key]) || null);
   const h = season.honours || {};

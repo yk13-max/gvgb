@@ -72,6 +72,14 @@ export function minGamesFor(key, seasons) {
 // How many more matches a table row needs to qualify, 0 once it has.
 export const shortOf = (row, min) => Math.max(0, (min || 0) - (row ? row.games : 0));
 
+// A season's table with everyone who has reached its minimum matches first, in their
+// usual order, and those short of it after them, in theirs. Each row says how short it is.
+// With `min` null the rows already say (a completed season's frozen table).
+export function qualifiedFirst(rows, min) {
+  const marked = rows.map((r) => ({ ...r, short: min == null ? r.short || 0 : shortOf(r, min) }));
+  return [...marked.filter((r) => !r.short), ...marked.filter((r) => r.short)].map((r, i) => ({ ...r, order: i }));
+}
+
 export const matchWord = (n) => n + ' match' + (n === 1 ? '' : 'es');
 export const moreMatches = (n) => n + ' more match' + (n === 1 ? '' : 'es');
 

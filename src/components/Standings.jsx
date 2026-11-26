@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Button, Icon } from '../ds/index.js';
 import { shortName } from '../lib/names.js';
-import { matchWord, moreMatches } from '../lib/seasons.js';
+import { matchWord, moreMatches, qualifiedFirst } from '../lib/seasons.js';
 import { standings } from '../lib/standings.js';
 import { formatDate } from '../lib/whatsapp.js';
 import Crest from './Crest.jsx';
@@ -113,23 +113,22 @@ export default function Standings({ weeks, players, seasonBar, seasonLabel, minG
   const ranked = useMemo(() => {
     // The league order is by win ratio. Ranks share a number when the ratio ties, and
     // the number stays with the player whatever column the table is later sorted by.
-    // A player short of the season's minimum matches keeps their spot in the order,
-    // greyed, but takes no position: the positions count qualified players only.
+    // Players who have reached the season's minimum matches come first, ranked; those
+    // short of it follow, greyed and unranked, in their own win-ratio order.
     // A completed season shows the table it was completed with, never a recount.
-    const rows = frozen ? frozen.table : standings(weeks, players);
+    const rows = qualifiedFirst(frozen ? frozen.table : standings(weeks, players), frozen ? null : minGames);
     let rank = 0;
     let seen = 0;
     let prev = null;
     return rows.map((r, i) => {
-      const short = frozen ? r.short || 0 : Math.max(0, minGames - r.games);
-      if (short > 0) return { ...r, rank: null, short, order: i };
+      if (r.short > 0) return { ...r, rank: null, order: i };
       seen += 1;
       const key = r.pct == null ? 'none' : r.pct.toFixed(3);
       if (key !== prev) {
         rank = seen;
         prev = key;
       }
-      return { ...r, rank, short: 0, order: i };
+      return { ...r, rank, order: i };
     });
   }, [weeks, players, minGames, frozen]);
 
@@ -231,9 +230,16 @@ export default function Standings({ weeks, players, seasonBar, seasonLabel, minG
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => {
+            {rows.map((r, idx) => {
               const isOpen = open === r.id;
+              // In table order, a line marks where the players short of the minimum begin.
+              const split = sort.key === 'rank' && sort.dir === 'asc' && r.short > 0 && (idx === 0 || !rows[idx - 1].short);
               return [
+                split && (
+                  <tr key="split" className="tb-league-split">
+                    <td colSpan={COLS.length + 2}>Not yet qualified · needs {matchWord(minGames || (frozen && r.games + r.short) || 0)}</td>
+                  </tr>
+                ),
                 <tr
                   key={r.id}
                   className="tb-league-row"

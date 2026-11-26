@@ -1,5 +1,5 @@
 import { standings } from './standings.js';
-import { moreMatches, shortOf, sortSeasons } from './seasons.js';
+import { moreMatches, qualifiedFirst, sortSeasons } from './seasons.js';
 
 // A season's honours: who won it, and the best in each line, picked by the organiser
 // once the season is done. Shown to everyone only when it is done — which, since a
@@ -19,8 +19,10 @@ export const EMPTY_HONOURS = { winner: null, player: null, attacker: null, midfi
 // player-of-the-match awards that season, worked out rather than chosen.
 export const PICKED = HONOURS.filter(([k]) => k !== 'player');
 
-export function bestPlayer(weeks, players, rows0) {
-  const rows = (rows0 || standings(weeks, players)).filter((r) => r.potm > 0);
+// Only players who reached the season's minimum matches can be best player. Given a
+// table (a completed season's), its rows already say who was short.
+export function bestPlayer(weeks, players, rows0, min = 0) {
+  const rows = qualifiedFirst(rows0 || standings(weeks, players), rows0 ? null : min).filter((r) => r.potm > 0 && !r.short);
   if (!rows.length) return null;
   // Most POTMs; a tie goes to whoever stands higher in the table.
   return rows.slice().sort((a, b) => b.potm - a.potm || a.order - b.order)[0];
@@ -30,10 +32,11 @@ export function bestPlayer(weeks, players, rows0) {
 // the most POTMs, the most nominations in each line. Each comes with how far ahead they
 // are, since "two clear" and "level with Jo" are different kinds of leading. Nobody
 // leads a line with nothing in it yet.
-// `min` is the season's minimum matches. Anyone can lead on win ratio; the winner's card
-// says how many more matches they need when they haven't reached it yet.
+// `min` is the season's minimum matches. Players who have reached it lead each honour;
+// only when none of them has anything in a line can someone short of it lead, and then
+// the card says how many more matches they need.
 export function frontRunners(weeks, players, min = 0) {
-  const rows = standings(weeks, players);
+  const rows = qualifiedFirst(standings(weeks, players), min);
   const out = {};
   HONOURS.forEach(([key]) => {
     let ranked;
@@ -43,9 +46,12 @@ export function frontRunners(weeks, players, min = 0) {
       value = (r) => r.pct;
     } else {
       const stat = key === 'player' ? 'potm' : key;
-      ranked = rows.filter((r) => r[stat] > 0).sort((a, b) => b[stat] - a[stat] || a.order - b.order);
+      ranked = rows.filter((r) => r[stat] > 0).sort((a, b) => (a.short ? 1 : 0) - (b.short ? 1 : 0) || b[stat] - a[stat] || a.order - b.order);
       value = (r) => r[stat];
     }
+    // Level and next count only among players on the same footing — qualified with
+    // qualified — so "2 clear" never counts someone who can't win it.
+    if (ranked.length && !ranked[0].short) ranked = ranked.filter((r) => !r.short);
     if (!ranked.length) {
       out[key] = null;
       return;
@@ -60,7 +66,7 @@ export function frontRunners(weeks, players, min = 0) {
       // nobody else on the board yet it is the whole count. The win ratio is not a count,
       // so the winner's margin is left to the record on the card.
       clear: key === 'winner' ? null : value(lead) - (next ? value(next) : 0),
-      needs: key === 'winner' ? shortOf(lead, min) : 0,
+      needs: lead.short || 0,
     };
   });
   return out;
@@ -93,9 +99,9 @@ export function tableOf(season, weeks, players) {
 // among players who reached the minimum. The rest of the honours are left as named.
 export function completion(season, weeks, players) {
   const min = season.minGames || 0;
-  const table = standings(weeks, players).map((r) => {
+  const table = qualifiedFirst(standings(weeks, players), min).map((r) => {
     const { recent, ...keep } = r;
-    return { ...keep, short: shortOf(r, min) };
+    return keep;
   });
   const winner = table.find((r) => r.short === 0 && r.pct != null) || null;
   return { table, winner };
@@ -107,13 +113,13 @@ export function hasStarted(season, today) {
 
 // Everyone who turned out in the season, ordered so the obvious pick for each honour
 // comes first: the table order for the winner and best player, nominations in that
-// line for the others. Nobody is excluded — a defender who played up front all
-// season can still be named best attacker.
+// line for the others. Any position can win any line — a defender who played up front all
+// season can still be named best attacker — but every honour needs the season's minimum
+// matches: qualified players lead each list, those short of it follow, marked.
 export function candidates(weeks, players, key, min = 0) {
-  const rows = standings(weeks, players).filter((r) => r.played.length > 0);
-  // Only the winner needs the minimum; each row says how many it is short.
-  if (key === 'winner') return rows.map((r) => ({ ...r, short: shortOf(r, min) }));
-  return rows.slice().sort((a, b) => b[key] - a[key] || a.order - b.order || 0);
+  const rows = qualifiedFirst(standings(weeks, players), min).filter((r) => r.played.length > 0);
+  if (key === 'winner') return rows;
+  return rows.slice().sort((a, b) => (a.short ? 1 : 0) - (b.short ? 1 : 0) || b[key] - a[key] || a.order - b.order || 0);
 }
 
 // The line under a name on its card: the number that backs the honour up.

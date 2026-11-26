@@ -6,9 +6,9 @@ import { matchWord, moreMatches } from '../lib/seasons.js';
 export default function HonoursDialog({ season, weeks, players, onSave, onClose }) {
   const [h, setH] = useState({ ...EMPTY_HONOURS, ...(season.honours || {}) });
   const any = weeks.length > 0;
-  const best = bestPlayer(weeks, players);
   const min = season.minGames || 0;
-
+  const best = bestPlayer(weeks, players, null, min);
+  
   return (
     <Dialog
       open
@@ -29,7 +29,7 @@ export default function HonoursDialog({ season, weeks, players, onSave, onClose 
         <div className="tb-sync-note">
           {any
             ? 'Anyone who turned out this season can be named. Each list leads with the obvious pick — the table order for the winner, nominations in that line for the rest.' +
-              (min ? ' To be named season winner a player needs ' + matchWord(min) + ' this season.' : '')
+              (min ? ' Every honour needs ' + matchWord(min) + ' this season; players short of that are listed after, and can’t be picked.' : '')
             : 'Nobody has played in this season yet.'}
         </div>
         <div className="tb-honour-auto">

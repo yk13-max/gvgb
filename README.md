@@ -298,12 +298,13 @@ shared document like everything else.
 
 Each season can set a **minimum number of matches** (Min. matches in the Seasons dialog; a new
 season starts with the last one's number, and 0 means no minimum). Below it a player keeps their
-spot in the season's table, greyed, with a dash instead of a position — the positions count
-qualified players only — and opening their row says how many more matches they need. They can't
-be picked as season winner either, though the other honours (best player, attacker, midfielder,
-defender) stay open to anyone who played. While the season runs the winner's front runner is
-still whoever leads on win ratio, marked "Needs 2 more matches to qualify" until they have
-enough. *All time* has no minimum, and the talking points about the table (league leader, top
+place below everyone who has reached it: qualified players come first, ranked, then a "Not yet
+qualified" line and the rest, greyed, with a dash for a position, in their own win-ratio order.
+Opening their row says how many more matches they need. Every honour needs the minimum too: best
+player only counts qualified players, and in Name honours qualified players lead each list while
+those short of it are listed after and can't be picked. Front runners are qualified players; only
+when nobody qualified has anything in a line does someone short of it lead, marked "Needs 2 more
+matches to qualify". *All time* has no minimum, and the talking points about the table (league leader, top
 four, climbing and dropping) only count qualified players.
 
 ### Honours
