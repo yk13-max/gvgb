@@ -23,6 +23,7 @@ import { savedName, savedPassword } from './lib/remote.js';
 import { FORMATS, cleanFormula, docKeyFor, formulasOf, setFormulas } from './lib/formula.js';
 import FormulaPage from './components/FormulaPage.jsx';
 import FormulaLock from './components/FormulaLock.jsx';
+import FavouriteBar from './components/FavouriteBar.jsx';
 import { buildDoc, parseDoc } from './lib/doc.js';
 import { exportBoard } from './lib/exportBoard.js';
 import { favourite, preMatchFacts } from './lib/facts.js';
@@ -1028,6 +1029,9 @@ export default function App() {
           {built ? (
             <>
               <div style={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', justifyContent: 'center' }}>
+                {/* The bar takes the pitch's width: both sit in a column as wide as the pitch. */}
+                <div className="tb-boardcol">
+                <FavouriteBar fav={favourite(teams, strengthOf(history, players, influence))} />
                 <Pitch
                   teams={teams}
                   pos={pos}
@@ -1037,6 +1041,7 @@ export default function App() {
                   onPinDown={canEdit ? onPinDown : null}
                   pitchRef={pitchRef}
                 />
+                </div>
               </div>
               <div
                 style={{

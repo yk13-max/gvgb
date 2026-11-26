@@ -4842,3 +4842,111 @@ td[data-trend='bad'] {
   color: var(--color-text-tertiary);
   background: var(--color-surface-sunken);
 }
+
+/* The live favourite bar over the pitch */
+.tb-boardcol {
+  height: 100%;
+  min-height: 0;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tb-boardcol .tb-pitch {
+  flex: 1;
+  min-height: 430px;
+  height: auto;
+}
+.tb-favbar {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tb-favbar-words {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-body);
+  line-height: 1.2;
+}
+.tb-favbar-tag {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--amber-700);
+}
+.tb-favbar[data-side='red'] .tb-favbar-tag {
+  color: var(--team-red);
+}
+.tb-favbar[data-side='blue'] .tb-favbar-tag {
+  color: var(--team-blue);
+}
+.tb-favbar-who {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+.tb-favbar-track {
+  position: relative;
+  display: flex;
+  height: 14px;
+  border-radius: 7px;
+  overflow: visible;
+  background: var(--color-surface-sunken);
+}
+.tb-favbar-red,
+.tb-favbar-blue {
+  display: flex;
+  align-items: center;
+  font: 700 9px / 1 var(--font-body);
+  letter-spacing: 0.04em;
+  color: white;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.tb-favbar-red {
+  background: var(--team-red);
+  border-radius: 7px 0 0 7px;
+  padding-left: 8px;
+  transition: width 450ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.tb-favbar-blue {
+  flex: 1;
+  background: var(--team-blue);
+  justify-content: flex-end;
+  padding-right: 8px;
+  border-radius: 0 7px 7px 0;
+}
+.tb-favbar[data-side='red'] .tb-favbar-blue,
+.tb-favbar[data-side='blue'] .tb-favbar-red {
+  opacity: 0.5;
+}
+.tb-favbar-mid {
+  position: absolute;
+  left: 50%;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--color-text-tertiary);
+  opacity: 0.7;
+}
+.tb-favbar-cut {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 4px;
+  margin-left: -2px;
+  border-radius: 2px;
+  background: var(--color-text-primary);
+  box-shadow: 0 0 0 2px var(--color-bg);
+  transition: left 450ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .tb-favbar-red,
+  .tb-favbar-cut {
+    transition: none;
+  }
+}

@@ -155,6 +155,11 @@ matches you played that night.
   no score. Editing is always one match: the one you opened.
 - The date on a match is what decides its week, so editing a match's date moves it between
   weeks, and a week with no matches left disappears.
+- **Live favourite bar.** Above the pitch, as wide as it, a red/blue bar shows who the formula
+  expects to win and how clearly (slight favourites, favourites, clear favourites, too close to
+  call), worked out the same way as the team sheet's meter. It slides as players are dragged,
+  swapped or re-balanced, so you can watch a swap tip the balance. Words and a bar only, never
+  a number, so viewers see it too.
 - **Talking points on the shared images.** Export PNG on the Balancer adds a **Pre-match**
   strip under the pitch, and Share on a Results week adds **Talking points** to the card: up to
   eight facts on the team sheet and four on the results card, the strongest from each kind first.
