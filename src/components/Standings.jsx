@@ -3,6 +3,7 @@ import { Button, Icon } from '../ds/index.js';
 import { shortName } from '../lib/names.js';
 import { matchWord, moreMatches, qualifiedFirst } from '../lib/seasons.js';
 import { standings } from '../lib/standings.js';
+import { exportTable } from '../lib/exportTable.js';
 import { formatDate } from '../lib/whatsapp.js';
 import Crest from './Crest.jsx';
 
@@ -190,6 +191,15 @@ export default function Standings({ weeks, players, seasonBar, seasonLabel, minG
         </div>
         <div className="tb-tblbar-right">
           {seasonBar}
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={<Icon name="download" size={15} />}
+            disabled={!ranked.length}
+            onClick={() => exportTable(ranked, { seasonLabel, weeks: weeks.length, min: minGames, completedOn: frozen ? frozen.on : null })}
+          >
+            Export PNG
+          </Button>
           <Button variant="secondary" size="sm" icon={<Icon name="award" size={15} />} onClick={onHonours}>
             Honours
           </Button>

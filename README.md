@@ -291,6 +291,15 @@ places, `0.268`; a dash until there is a result to count). Tap any header to sor
 the `#` stays the position by win ratio, so a player's rank travels with them whatever the
 order. Results are not ratings, so viewers see all of it.
 
+
+**Export PNG** on the Table shares the table for the season in view as an image, the same
+size and style as the results card and never taller than 2:3: position, player (with their
+club badge), games, W–L, win ratio, POTMs and the last five, qualified players first and the
+rest under a "Not yet qualified" line. A long table trims its rows a little and then stops
+with "and N more". Underneath, up to three talking points: who tops the table (or who is level
+at the top), a tight race behind the leader, who is in form, the POTM lead, who has played
+most, and who is one match from qualifying. A completed season exports its final table. No
+ratings appear, so anyone can export it.
 ### Seasons
 
 A season is a name and the date it starts, and runs until the next one starts; a week belongs

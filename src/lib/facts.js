@@ -23,6 +23,7 @@ export const CATEGORY = {
   record: { tag: 'Record', tone: 'gold' },
   table: { tag: 'Table', tone: 'blue' },
   upset: { tag: 'Upset meter', tone: 'red' },
+  qual: { tag: 'Qualifying', tone: 'blue' },
   rival: { tag: 'Rivalry', tone: 'red' },
   honours: { tag: 'Honours', tone: 'gold' },
   due: { tag: 'Due a win', tone: 'blue' },
@@ -134,7 +135,7 @@ function bestGroupRun(sides, list, minRun = 3) {
   return best;
 }
 
-const listNames = (names) => names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
+const listNames = (names) => (names.length < 2 ? names.join('') : names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1]);
 
 function runOf(results) {
   if (!results.length) return { kind: null, n: 0 };
@@ -633,5 +634,48 @@ export function postMatchFacts(week, weeks, players, { seasons = [], max = 4 } =
   } else if (decided && close) facts.push({ cat: 'upset', weight: 34, meter: 0, text: 'No real upsets: every result went roughly to form.' });
   else if (decided) facts.push({ cat: 'upset', weight: 34, meter: 0, text: 'The form book held: the higher-rated side won ' + (decided === 1 ? 'the match' : 'every match') + '.' });
 
+  return pick(facts, max);
+}
+
+// --- the table -----------------------------------------------------------------------------
+
+const ratio = (p) => p.toFixed(3).replace(/^0/, '');
+
+// Talking points for the shared league table: the race at the top, who is in form, the
+// POTM count, who has played most, and who still needs matches to qualify. `rows` is the
+// table as shown — qualified first, each row saying how many matches it is short.
+export function tableFacts(rows, { min = 0, max = 3 } = {}) {
+  const facts = [];
+  const name = (r) => (rows.some((o) => o.id !== r.id && firstName(o.name) === firstName(r.name)) ? shortName(r.name) : firstName(r.name));
+  const placed = rows.filter((r) => !r.short && r.pct != null);
+  if (placed.length >= 2) {
+    const top = placed[0];
+    const level = placed.filter((r) => r !== top && r.pct === top.pct);
+    const next = placed.find((r) => r.pct < top.pct);
+    if (level.length) facts.push({ cat: 'table', weight: 90, text: listNames([top, ...level].map(name)) + ' are level at the top on ' + ratio(top.pct) + '.' });
+    else facts.push({ cat: 'table', weight: 88, text: name(top) + ' tops the table on ' + top.won + '–' + top.lost + (next ? ', ahead of ' + name(next) + ' (' + next.won + '–' + next.lost + ').' : '.') });
+    const chasing = placed.filter((r) => r !== top && top.pct - r.pct <= 0.05 && !level.includes(r));
+    if (chasing.length >= 2) facts.push({ cat: 'table', weight: 70, text: 'Tight at the top: ' + chasing.length + ' more within .050 of the lead.' });
+  }
+  const hot = placed.filter((r) => r.form && r.form.length >= 3).sort((a, b) => b.formWins - a.formWins || b.form.length - a.form.length || a.order - b.order)[0];
+  if (hot && hot.formWins >= 3) facts.push({ cat: 'form', weight: 62 + hot.formWins, text: 'In form: ' + name(hot) + ' has won ' + hot.formWins + ' of their last ' + hot.form.length + '.' });
+  const potm = rows.filter((r) => r.potm > 0).sort((a, b) => b.potm - a.potm || a.order - b.order);
+  if (potm.length && potm[0].potm >= 2) {
+    const tied = potm.filter((r) => r.potm === potm[0].potm);
+    facts.push({ cat: 'honours', weight: 60 + potm[0].potm, text: (tied.length > 1 ? listNames(tied.map(name)) + ' share the POTM lead with ' : name(potm[0]) + ' leads the POTM count with ') + potm[0].potm + '.' });
+  }
+  const most = rows.slice().sort((a, b) => b.games - a.games || a.order - b.order)[0];
+  if (most && most.games >= 5) facts.push({ cat: 'exp', weight: 48, text: 'Ever-present: ' + name(most) + ' has played the most, ' + plural(most.games, 'match', 'matches') + '.' });
+  const short = rows.filter((r) => r.short > 0 && r.games > 0);
+  if (min && short.length) {
+    const close = short.filter((r) => r.short === 1);
+    facts.push({
+      cat: 'qual',
+      weight: 54,
+      text: close.length
+        ? listNames(close.slice(0, 3).map(name)) + (close.length > 3 ? ' and others' : '') + ' ' + (close.length === 1 ? 'is' : 'are') + ' one match from qualifying.'
+        : plural(short.length, 'player') + ' still ' + (short.length === 1 ? 'needs' : 'need') + ' more matches to reach ' + plural(min, 'match', 'matches') + '.',
+    });
+  }
   return pick(facts, max);
 }
