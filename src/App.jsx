@@ -507,7 +507,9 @@ export default function App() {
       return;
     }
     const next = entry.matches.reduce(
-      (weeks, m) => putMatch(weeks, { date: entry.date, venue: entry.venue, teamSize: entry.teamSize, match: m, players }),
+      // A match can name its own date: the other games that night carried along by a
+      // line-up change stay on their night even if the edited one moves.
+      (weeks, m) => putMatch(weeks, { date: m.date || entry.date, venue: m.date ? null : entry.venue, teamSize: entry.teamSize, match: m, players }),
       history
     );
     setHistory(next);
@@ -1375,6 +1377,7 @@ export default function App() {
                 }
               : null
           }
+          players={players}
           lockedBy={lockedBy}
           onSave={saveResult}
           onClose={() => setRecording(null)}

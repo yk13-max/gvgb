@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button, Dialog, Icon, IconButton, Input, Switch } from '../ds/index.js';
-import { shortName } from '../lib/names.js';
+import { byName, shortName } from '../lib/names.js';
+import { AWARDS } from '../lib/weeks.js';
 import { BLUE_LABEL, RED_LABEL, formatDate } from '../lib/whatsapp.js';
 
 function ScoreBox({ label, aria, color, value, onChange, showLabel = true }) {
@@ -34,7 +35,75 @@ function ScoreBox({ label, aria, color, value, onChange, showLabel = true }) {
   );
 }
 
-export default function RecordResultDialog({ teams, teamSize, match, weeks, existing, lockedBy = () => null, onSave, onClose }) {
+const sig = (list) =>
+  (list || [])
+    .map((p) => p.id)
+    .sort((a, b) => a - b)
+    .join(',');
+
+// The sides of a recorded match, editable: tap the arrows to send a player across, the
+// cross to take them off, or pick someone from the roster to put them on.
+function SideEditor({ label, color, side, list, other, onMove, onRemove, onAdd, roster }) {
+  const taken = new Set([...list, ...other].map((p) => p.id));
+  const free = roster.filter((p) => !taken.has(p.id)).sort(byName);
+  return (
+    <div className="tb-sides-col">
+      <div className="tb-sides-head" style={{ color }}>
+        {label} <span>{list.length}</span>
+      </div>
+      {list.length === 0 && <div className="tb-sides-empty">Nobody on this side.</div>}
+      {list.map((p) => (
+        <div key={p.id} className="tb-sides-row">
+          <span className="tb-sides-name">{shortName(p.name)}</span>
+          <IconButton
+            icon={<Icon name="arrow-left-right" size={14} />}
+            aria-label={'Move ' + p.name + ' to ' + (side === 'red' ? 'BLUE' : 'RED')}
+            variant="ghost"
+            size="sm"
+            onClick={() => onMove(p.id)}
+          />
+          <IconButton
+            icon={<Icon name="x" size={14} />}
+            aria-label={'Take ' + p.name + ' off ' + label}
+            variant="ghost"
+            size="sm"
+            onClick={() => onRemove(p.id)}
+          />
+        </div>
+      ))}
+      {free.length > 0 && (
+        <select
+          className="tb-sides-add"
+          aria-label={'Add a player to ' + label}
+          value=""
+          onChange={(e) => {
+            const p = free.find((x) => String(x.id) === e.target.value);
+            if (p) onAdd({ id: p.id, name: p.name });
+          }}
+        >
+          <option value="">+ Add player</option>
+          {free.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+      )}
+    </div>
+  );
+}
+
+export default function RecordResultDialog({
+  teams,
+  teamSize,
+  match,
+  weeks,
+  existing,
+  players = [],
+  lockedBy = () => null,
+  onSave,
+  onClose,
+}) {
   const [date, setDate] = useState(existing ? existing.date : match.date);
   const [played, setPlayed] = useState(existing ? existing.match.played : true);
   const [venue, setVenue] = useState(existing ? existing.venue || '' : match.venue || '');
@@ -47,12 +116,61 @@ export default function RecordResultDialog({ teams, teamSize, match, weeks, exis
     },
   ]);
 
-  const sides = existing
-    ? { red: existing.match.red, blue: existing.match.blue }
-    : {
-        red: teams.red.map((p) => ({ id: p.id, name: p.name })),
-        blue: teams.blue.map((p) => ({ id: p.id, name: p.name })),
-      };
+  // A recorded match keeps its own sides, and those can be put right here — someone
+  // swapped bibs at half time, or the night's squad was entered wrong. A new result is
+  // logged against the board, which is where its sides get changed.
+  const [sides, setSides] = useState(() =>
+    existing
+      ? { red: existing.match.red || [], blue: existing.match.blue || [] }
+      : {
+          red: teams.red.map((p) => ({ id: p.id, name: p.name })),
+          blue: teams.blue.map((p) => ({ id: p.id, name: p.name })),
+        }
+  );
+  const flip = (k) => (k === 'red' ? 'blue' : 'red');
+  const move = (from, id) =>
+    setSides((s) => {
+      const p = s[from].find((x) => x.id === id);
+      return { [from]: s[from].filter((x) => x.id !== id), [flip(from)]: [...s[flip(from)], p] };
+    });
+  const removeFrom = (from, id) => setSides((s) => ({ ...s, [from]: s[from].filter((x) => x.id !== id) }));
+  const addTo = (to, p) => setSides((s) => ({ ...s, [to]: [...s[to], p] }));
+
+  // The other matches that night played with the very same sides. A session is
+  // usually several games between one pair of teams, so fixing the line-up of one
+  // nearly always means fixing all of them.
+  const home = existing ? weeks.find((w) => w.matches.some((m) => m.id === existing.match.id)) : null;
+  const twins = existing && home
+    ? home.matches.filter(
+        (m) =>
+          m.id !== existing.match.id &&
+          sig(m.red) === sig(existing.match.red) &&
+          sig(m.blue) === sig(existing.match.blue)
+      )
+    : [];
+  const [allTwins, setAllTwins] = useState(true);
+  const changedSides =
+    !!existing && (sig(sides.red) !== sig(existing.match.red) || sig(sides.blue) !== sig(existing.match.blue));
+  const emptySide = !sides.red.length || !sides.blue.length;
+  // Anyone taken off this night entirely who holds one of its awards.
+  const gone = existing && home
+    ? AWARDS.filter(([k]) => {
+        const id = home.awards && home.awards[k];
+        if (id == null) return false;
+        const stays = [...sides.red, ...sides.blue].some((p) => p.id === id);
+        const elsewhere = home.matches.some(
+          (m) =>
+            m.id !== existing.match.id &&
+            !(allTwins && twins.some((t) => t.id === m.id)) &&
+            [...(m.red || []), ...(m.blue || [])].some((p) => p.id === id)
+        );
+        return !stays && !elsewhere;
+      }).map(([k, label]) => {
+        const id = home.awards[k];
+        const who = [...(existing.match.red || []), ...(existing.match.blue || [])].find((p) => p.id === id);
+        return label + (who ? ' (' + shortName(who.name) + ')' : '');
+      })
+    : [];
 
   // Which match of that week's session this is — a Friday can hold several.
   const week = weeks.find((w) => w.date === date);
@@ -82,6 +200,10 @@ export default function RecordResultDialog({ teams, teamSize, match, weeks, exis
               red: sides.red,
               blue: sides.blue,
             },
+            // The rest of the session's games with the same sides follow, scores untouched.
+            ...(existing && changedSides && allTwins
+              ? twins.map((m) => ({ ...m, red: sides.red, blue: sides.blue, date: home.date }))
+              : []),
           ];
     onSave({ isNew: !existing, date, venue: venue.trim(), teamSize: existing ? existing.teamSize : teamSize, matches });
   }
@@ -106,7 +228,7 @@ export default function RecordResultDialog({ teams, teamSize, match, weeks, exis
           <Button variant="secondary" size="sm" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="primary" size="sm" onClick={save} disabled={!date || level || !!lockedBy(date)}>
+          <Button variant="primary" size="sm" onClick={save} disabled={!date || level || emptySide || !!lockedBy(date)}>
             {count > 1 ? 'Save ' + count + ' matches' : 'Save'}
           </Button>
         </>
@@ -231,6 +353,60 @@ export default function RecordResultDialog({ teams, teamSize, match, weeks, exis
           </div>
         )}
 
+        {existing ? (
+          <div className="tb-sides">
+            <div className="tb-sides-title">Teams</div>
+            <div className="tb-sides-cols">
+              {[
+                ['red', RED_LABEL, 'var(--team-red)'],
+                ['blue', BLUE_LABEL, 'var(--team-blue)'],
+              ].map(([k, label, color]) => (
+                <SideEditor
+                  key={k}
+                  side={k}
+                  label={label}
+                  color={color}
+                  list={sides[k]}
+                  other={sides[flip(k)]}
+                  roster={players}
+                  onMove={(id) => move(k, id)}
+                  onRemove={(id) => removeFrom(k, id)}
+                  onAdd={(p) => addTo(k, p)}
+                />
+              ))}
+            </div>
+            {emptySide && <div className="tb-sync-warn">Each side needs at least one player.</div>}
+            {!emptySide && sides.red.length !== sides.blue.length && (
+              <div className="tb-sides-note">
+                Uneven sides — {sides.red.length} v {sides.blue.length}. Fine if that is how it was played.
+              </div>
+            )}
+            {changedSides && twins.length > 0 && (
+              <Switch
+                checked={allTwins}
+                onChange={(e) => setAllTwins(e.target.checked)}
+                label={
+                  'Also change the other ' +
+                  (twins.length === 1 ? 'match' : twins.length + ' matches') +
+                  ' that night with these sides'
+                }
+                style={{ fontSize: 'var(--text-sm)' }}
+              />
+            )}
+            {changedSides && gone.length > 0 && (
+              <div className="tb-sides-note">
+                {gone.join(', ')} — no longer played that night. Change the award from the week’s awards if it should
+                move.
+              </div>
+            )}
+            {changedSides && (
+              <div className="tb-sides-note">
+                Results, the table and honours recount from the new sides. Anyone added keeps the ratings they have now
+                as that night’s snapshot.
+              </div>
+            )}
+          </div>
+        ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, borderTop: '1px solid var(--color-border)', paddingTop: 12 }}>
           <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-2xs)', color: 'var(--color-text-tertiary)' }}>
             {count > 1 ? 'The same two sides for all ' + count + ' matches.' : 'The sides as drafted.'}
@@ -256,6 +432,7 @@ export default function RecordResultDialog({ teams, teamSize, match, weeks, exis
             </div>
           ))}
         </div>
+        )}
       </div>
     </Dialog>
   );

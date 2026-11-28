@@ -153,6 +153,14 @@ matches you played that night.
   already exists for that date they join it — record two now and three later and the session
   reads 1–5. **Match was played** off records the night as called off instead, teams kept and
   no score. Editing is always one match: the one you opened.
+- **Editing the teams on a recorded match.** The edit dialog lists both sides: the arrows send
+  a player to the other side, the cross takes them off, and **+ Add player** puts anyone from
+  the roster on. Both sides need at least one player; uneven sides are allowed, with a note.
+  If other matches that night were played with the same sides, a switch (on by default) carries
+  the change to them too, keeping their scores. Results, the table and honours recount from the
+  new sides. Anyone added gets their current ratings as that night's snapshot. If someone taken
+  off that night holds one of its awards, the dialog says so; the award stays until changed in
+  the week's awards. Completed seasons stay locked.
 - The date on a match is what decides its week, so editing a match's date moves it between
   weeks, and a week with no matches left disappears.
 - **Live favourite bar.** Above the pitch, as wide as it, a red/blue bar shows who the formula
