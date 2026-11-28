@@ -3,7 +3,7 @@ import { Icon } from '../ds/index.js';
 import { ABBR, STATS, statAvg } from '../lib/model.js';
 import { shortName } from '../lib/names.js';
 
-const CHIP_H = 40; // the taller mobile chip, so lanes never overlap on either layout
+const CHIP_H = 34; // full-size chip; shrinks when a crowded roster needs it
 const NARROW = '(max-width:760px)';
 const TICKS = [100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 0];
 
@@ -27,8 +27,41 @@ function assignLanes(sorted, valueOf, minGap) {
 // scroll gesture, and the ± buttons land the last point a thumb cannot. The order is
 // frozen while a slider is held so a row never jumps out from under a finger; it
 // re-sorts on release, which is when the eye is ready to see where the player landed.
+// Every player has to be on screen at once, so the rows are sized from the height the
+// list has: one line each, as tall as fits. A big roster splits into two columns rather
+// than shrinking rows past what a thumb can hold.
+const ROW_GAP = 3;
+const ROW_MIN = 24; // a slider thumb still lands at this height; below it the list scrolls
+const ROW_MAX = 52;
+export function fitRows(n, height) {
+  if (!n) return { cols: 1, rows: 0, rowH: ROW_MAX };
+  const at = (cols) => {
+    const rows = Math.ceil(n / cols);
+    return { cols, rows, rowH: Math.floor((height - ROW_GAP * (rows - 1)) / rows) };
+  };
+  const one = at(1);
+  // Two columns once a single one would squeeze rows under 36px: by then the ± buttons
+  // would be gone anyway, and wider rows read better than slivers.
+  const fit = one.rowH >= 36 ? one : at(2);
+  return { ...fit, rowH: Math.max(ROW_MIN, Math.min(ROW_MAX, fit.rowH)) };
+}
+
 function LadderList({ sorted, stat, valueOf, avg, selected, canEdit, setValue }) {
   const [heldId, setHeldId] = useState(null);
+  const boxRef = useRef(null);
+  const [boxH, setBoxH] = useState(560);
+  useLayoutEffect(() => {
+    const el = boxRef.current;
+    if (!el) return undefined;
+    const measure = () => setBoxH(el.getBoundingClientRect().height || 560);
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    measure();
+    return () => ro.disconnect();
+  }, []);
+  const { cols, rows, rowH } = fitRows(sorted.length, boxH);
+  // The ± buttons need room: a single column with rows tall enough to tap them.
+  const nudges = canEdit && cols === 1 && rowH >= 40;
   const frozen = useRef(null);
   // What is frozen is the order, as ids — never the player objects. A row has to keep
   // rendering the live value while its slider is held, or the number would stick and
@@ -48,7 +81,17 @@ function LadderList({ sorted, stat, valueOf, avg, selected, canEdit, setValue })
   };
 
   return (
-    <div className="tb-ladderlist" role="list">
+    <div
+      className="tb-ladderlist"
+      role="list"
+      ref={boxRef}
+      data-cols={cols}
+      style={{
+        gridTemplateColumns: 'repeat(' + cols + ', minmax(0, 1fr))',
+        gridTemplateRows: 'repeat(' + Math.max(rows, 1) + ', ' + rowH + 'px)',
+        '--row-h': rowH + 'px',
+      }}
+    >
       {order.map((p) => {
         const v = valueOf(p);
         const inSquad = selected.includes(p.id);
@@ -61,51 +104,47 @@ function LadderList({ sorted, stat, valueOf, avg, selected, canEdit, setValue })
             data-held={heldId === p.id ? '1' : '0'}
             data-above={v >= avg ? '1' : '0'}
           >
-            <div className="tb-ladderrow-top">
-              <span className="tb-ladderrow-rank">{rankOf(p)}</span>
-              <span className="tb-ladderrow-name">{shortName(p.name)}</span>
-              <span className="tb-ladderrow-val">{v}</span>
-            </div>
-            <div className="tb-ladderrow-ctl">
-              {canEdit && (
-                <button
-                  type="button"
-                  className="tb-nudge"
-                  aria-label={'Lower ' + p.name + ' by one'}
-                  disabled={v <= 0}
-                  onClick={() => setValue(p.id, v - 1)}
-                >
-                  <Icon name="minus" size={16} />
-                </button>
-              )}
-              <input
-                type="range"
-                className="tb-slider"
-                min="0"
-                max="100"
-                step="1"
-                value={v}
-                disabled={!canEdit}
-                aria-label={p.name + ' ' + stat}
-                style={{ '--pct': v + '%', '--avg': avg + '%' }}
-                onPointerDown={() => hold(p)}
-                onPointerUp={release}
-                onPointerCancel={release}
-                onBlur={release}
-                onChange={(e) => setValue(p.id, Number(e.target.value))}
-              />
-              {canEdit && (
-                <button
-                  type="button"
-                  className="tb-nudge"
-                  aria-label={'Raise ' + p.name + ' by one'}
-                  disabled={v >= 100}
-                  onClick={() => setValue(p.id, v + 1)}
-                >
-                  <Icon name="plus" size={16} />
-                </button>
-              )}
-            </div>
+            <span className="tb-ladderrow-rank">{rankOf(p)}</span>
+            <span className="tb-ladderrow-name">{shortName(p.name)}</span>
+            {nudges && (
+              <button
+                type="button"
+                className="tb-nudge"
+                aria-label={'Lower ' + p.name + ' by one'}
+                disabled={v <= 0}
+                onClick={() => setValue(p.id, v - 1)}
+              >
+                <Icon name="minus" size={14} />
+              </button>
+            )}
+            <input
+              type="range"
+              className="tb-slider"
+              min="0"
+              max="100"
+              step="1"
+              value={v}
+              disabled={!canEdit}
+              aria-label={p.name + ' ' + stat}
+              style={{ '--pct': v + '%', '--avg': avg + '%' }}
+              onPointerDown={() => hold(p)}
+              onPointerUp={release}
+              onPointerCancel={release}
+              onBlur={release}
+              onChange={(e) => setValue(p.id, Number(e.target.value))}
+            />
+            {nudges && (
+              <button
+                type="button"
+                className="tb-nudge"
+                aria-label={'Raise ' + p.name + ' by one'}
+                disabled={v >= 100}
+                onClick={() => setValue(p.id, v + 1)}
+              >
+                <Icon name="plus" size={14} />
+              </button>
+            )}
+            <span className="tb-ladderrow-val">{v}</span>
           </div>
         );
       })}
@@ -117,11 +156,11 @@ export default function StatLadder({ players, selected, onPatch, canEdit = true 
   const [stat, setStat] = useState(STATS[0]);
   const [dragId, setDragId] = useState(null);
   const [plotH, setPlotH] = useState(420);
+  const [plotW, setPlotW] = useState(900);
   const [narrow, setNarrow] = useState(() => window.matchMedia(NARROW).matches);
   const plotRef = useRef(null);
   const drag = useRef(null);
   const frozenLane = useRef({});
-  const laneW = narrow ? 112 : 128;
 
   useEffect(() => {
     const mq = window.matchMedia(NARROW);
@@ -133,9 +172,14 @@ export default function StatLadder({ players, selected, onPatch, canEdit = true 
   useLayoutEffect(() => {
     const el = plotRef.current;
     if (!el) return undefined;
-    const ro = new ResizeObserver(() => setPlotH(el.getBoundingClientRect().height || 420));
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      setPlotH(r.height || 420);
+      setPlotW(r.width || 900);
+    };
+    const ro = new ResizeObserver(measure);
     ro.observe(el);
-    setPlotH(el.getBoundingClientRect().height || 420);
+    measure();
     return () => ro.disconnect();
   }, []);
 
@@ -150,9 +194,17 @@ export default function StatLadder({ players, selected, onPatch, canEdit = true 
     [players, stat]
   );
 
-  // A chip is CHIP_H tall, so the gap that avoids overlap depends on the plot's height.
-  const minGap = ((CHIP_H + 6) / Math.max(plotH, 1)) * 100;
-  const { lane, count } = useMemo(() => assignLanes(sorted, valueOf, minGap), [sorted, stat, minGap]);
+  // Everyone has to fit across the plot without scrolling sideways. Chips start at full
+  // size; if the crowded bands need more columns than the width holds, they get shorter
+  // (fewer columns) and then narrower until they do.
+  const { lane, chipH, laneW } = useMemo(() => {
+    for (const h of [CHIP_H, 30, 26, 22, 18]) {
+      const fit = assignLanes(sorted, valueOf, ((h + 4) / Math.max(plotH, 1)) * 100);
+      if (fit.count * 128 <= plotW) return { ...fit, chipH: h, laneW: 128 };
+      if (h === 18) return { ...fit, chipH: h, laneW: Math.max(56, Math.floor(plotW / fit.count)) };
+    }
+    return null;
+  }, [sorted, stat, plotH, plotW]);
   const laneOf = (p) => (dragId === p.id && frozenLane.current[p.id] != null ? frozenLane.current[p.id] : lane[p.id]);
 
   const avg = players.length ? statAvg(players, stat) : 0;
@@ -275,7 +327,12 @@ export default function StatLadder({ players, selected, onPatch, canEdit = true 
         )
       ) : (
       <div className="tb-plotwrap">
-        <div className="tb-plot" ref={plotRef} style={{ minWidth: count * laneW }}>
+        <div
+          className="tb-plot"
+          ref={plotRef}
+          data-tight={laneW < 100 ? '1' : '0'}
+          style={{ '--chip-h': chipH + 'px', '--chip-w': laneW - 8 + 'px' }}
+        >
           {TICKS.map((t) => (
             <div key={t} className="tb-tick" style={{ top: 100 - t + '%' }}>
               <span className="tb-tick-label">{t}</span>

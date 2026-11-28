@@ -372,11 +372,17 @@ worse than Sam" is easier to judge than a number in isolation.
 On a desktop it is a plot: click a stat to switch to it, then drag a player up or down to rate
 them against the others. Arrow keys nudge the focused player by 1, Page keys by 10, and the
 dashed line marks the squad average. Benched players are dashed and dimmed. Chips fan into
-columns when a band gets crowded so nothing overlaps.
+columns when a band gets crowded so nothing overlaps, and the whole squad always fits the
+window: when the columns would run past its width, chips get shorter (fewer columns), then
+narrower, rather than scrolling sideways.
 
-On a phone it is a list, highest first: one row per player with a slider and a − / + pair,
-each a full 44px, and the stat chosen from a native picker. A native slider gives a thumb a
-real handle and never fights the page for the scroll gesture. The order holds still while a
+On a phone it is a list, highest first, sized so every player is on screen without scrolling:
+one line per player (rank, name, slider, value), each row as tall as the height allows. With a
+small squad the rows are tall enough to keep a − / + pair; a squad too big for one column
+splits into two, read down the left first. Only a roster too big for two columns of the
+smallest rows (around 40 players on a small phone) scrolls. The stat is chosen from a native
+picker. A native slider gives a thumb a real handle and never fights the page for the scroll
+gesture. The order holds still while a
 slider is held, so a row never jumps out from under a finger, and re-sorts the moment you let
 go. A green edge marks players above the squad average; a faint tick on each slider marks
 where that average sits.
