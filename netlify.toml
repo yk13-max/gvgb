@@ -1,0 +1,24 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[functions]
+  node_bundler = "esbuild"
+
+# No rule for /api/data on purpose. The function claims that path itself (see the
+# `config` export in netlify/functions/data.js), and a function with a custom path is
+# not also served at /.netlify/functions/<name> — a redirect pointing there 404s, and a
+# forced one never falls through. The client knows both spellings and uses whichever
+# answers, so this stays a routing preference rather than a single point of failure.
+
+# A single-page app: everything else renders index.html.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# The document is never cached — a stale copy would look like someone else's save.
+[[headers]]
+  for = "/api/data"
+  [headers.values]
+    Cache-Control = "no-store"
