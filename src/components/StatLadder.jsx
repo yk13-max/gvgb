@@ -46,6 +46,48 @@ export function fitRows(n, height) {
   return { ...fit, rowH: Math.max(ROW_MIN, Math.min(ROW_MAX, fit.rowH)) };
 }
 
+// Slides rows from where they were to where a re-sort put them: measure every row before
+// and after the order changes, start each one back at its old spot, and let it glide
+// home. Skipped for anyone who has asked for reduced motion.
+function useReorderAnimation(orderKey) {
+  const nodes = useRef(new Map());
+  const last = useRef(new Map());
+  const lastKey = useRef(orderKey);
+  // Layout positions, not screen boxes: an animation in flight moves a row with a
+  // transform, which offsetTop/offsetLeft ignore, so a second re-sort mid-glide still
+  // starts from the right place.
+  const where = () => {
+    const m = new Map();
+    nodes.current.forEach((el, id) => m.set(id, { x: el.offsetLeft, y: el.offsetTop }));
+    return m;
+  };
+  useLayoutEffect(() => {
+    const now = where();
+    const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (orderKey !== lastKey.current && !calm) {
+      now.forEach((r, id) => {
+        const was = last.current.get(id);
+        const el = nodes.current.get(id);
+        if (!was || !el || !el.animate) return;
+        const dx = was.x - r.x;
+        const dy = was.y - r.y;
+        if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+        el.animate([{ transform: 'translate(' + dx + 'px,' + dy + 'px)' }, { transform: 'none' }], {
+          duration: 320,
+          easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
+        });
+      });
+    }
+    // Recorded after every render, so a resize never leaves stale positions behind.
+    lastKey.current = orderKey;
+    last.current = now;
+  });
+  return (id) => (el) => {
+    if (el) nodes.current.set(id, el);
+    else nodes.current.delete(id);
+  };
+}
+
 function LadderList({ sorted, stat, valueOf, avg, selected, canEdit, setValue }) {
   const [heldId, setHeldId] = useState(null);
   const boxRef = useRef(null);
@@ -70,6 +112,9 @@ function LadderList({ sorted, stat, valueOf, avg, selected, canEdit, setValue })
   const order =
     heldId != null && frozen.current ? frozen.current.map((id) => byId.get(id)).filter(Boolean) : sorted;
   const rankOf = (p) => sorted.findIndex((x) => x.id === p.id) + 1;
+  // Re-measured whenever the order on screen changes — on release after a slide, on a
+  // ± tap that passes someone, or on switching stat.
+  const track = useReorderAnimation(order.map((p) => p.id).join(','));
 
   const hold = (p) => {
     frozen.current = sorted.map((x) => x.id);
@@ -98,6 +143,7 @@ function LadderList({ sorted, stat, valueOf, avg, selected, canEdit, setValue })
         return (
           <div
             key={p.id}
+            ref={track(p.id)}
             className="tb-ladderrow"
             role="listitem"
             data-benched={inSquad ? '0' : '1'}

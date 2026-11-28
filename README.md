@@ -384,7 +384,10 @@ smallest rows (around 40 players on a small phone) scrolls. The stat is chosen f
 picker. A native slider gives a thumb a real handle and never fights the page for the scroll
 gesture. The order holds still while a
 slider is held, so a row never jumps out from under a finger, and re-sorts the moment you let
-go. A green edge marks players above the squad average; a faint tick on each slider marks
+go, with the rows sliding to their new places rather than jumping. On a desktop the chips
+glide to their new height and column the same way; the one being dragged follows the pointer
+with no lag. Both animations are off for anyone who has turned on reduced motion. A green edge
+marks players above the squad average; a faint tick on each slider marks
 where that average sits.
 
 ### Player stats
